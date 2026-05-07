@@ -1,0 +1,60 @@
+# =========================
+# XenoHavenModToolkit
+# .NET (WPF/WinForms) repo
+# =========================
+
+# --- Build outputs ---
+**/[Bb]in/
+**/[Oo]bj/
+
+# Publish / packaging outputs (repo-level)
+dist/
+
+# --- Visual Studio / MSBuild ---
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+*.rsuser
+
+# MSBuild logs / diagnostics
+msbuild.log
+msbuild.binlog
+*.binlog
+
+# --- NuGet ---
+**/packages/
+*.nupkg
+*.snupkg
+project.lock.json
+**/project.assets.json
+**/project.packagespec.json
+**/project.nuget.cache
+**/*.nuget.dgspec.json
+**/*.nuget.g.props
+**/*.nuget.g.targets
+
+# --- Test results / coverage ---
+TestResults/
+coverage*/
+*.coverage
+*.coveragexml
+
+# --- Rider / JetBrains ---
+.idea/
+*.sln.iml
+
+# --- VS Code ---
+.vscode/
+
+# --- OS / tooling clutter ---
+[Tt]humbs.db
+Desktop.ini
+.DS_Store
+
+# --- Logs / temp ---
+*.log
+*.tmp
+*.temp
+

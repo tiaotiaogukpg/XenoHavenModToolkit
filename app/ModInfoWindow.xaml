@@ -11,6 +11,12 @@
 
         <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
             <StackPanel>
+                <TextBlock Text="guid（用于唯一标识 Mod）" Margin="0,0,0,6"/>
+                <DockPanel Margin="0,0,0,14">
+                    <TextBox x:Name="GuidBox" Margin="0,0,8,0" IsReadOnly="True"/>
+                    <Button Content="重新生成" Width="100" Click="RegenerateGuid_Click"/>
+                </DockPanel>
+
                 <TextBlock Text="name" Margin="0,0,0,6"/>
                 <TextBox x:Name="NameBox" Margin="0,0,0,14"/>
 

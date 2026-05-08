@@ -11,6 +11,17 @@ public partial class ModInfoWindow : Window
     {
         InitializeComponent();
         TryPrefill(existingMainXml);
+        EnsureGuidInitialized();
+    }
+
+    private void EnsureGuidInitialized()
+    {
+        if (Guid.TryParse(GuidBox.Text?.Trim(), out var guid) && guid != Guid.Empty)
+        {
+            return;
+        }
+
+        GuidBox.Text = Guid.NewGuid().ToString("D");
     }
 
     private void TryPrefill(string existingMainXml)
@@ -23,6 +34,7 @@ public partial class ModInfoWindow : Window
                 return;
             }
 
+            GuidBox.Text = doc.Root.Element("guid")?.Value ?? GuidBox.Text;
             NameBox.Text = doc.Root.Element("name")?.Value ?? NameBox.Text;
             AuthorBox.Text = doc.Root.Element("auth")?.Value ?? AuthorBox.Text;
             VersionBox.Text = doc.Root.Element("version")?.Value ?? VersionBox.Text;
@@ -35,13 +47,25 @@ public partial class ModInfoWindow : Window
         }
     }
 
+    private void RegenerateGuid_Click(object sender, RoutedEventArgs e)
+    {
+        GuidBox.Text = Guid.NewGuid().ToString("D");
+    }
+
     private void Generate_Click(object sender, RoutedEventArgs e)
     {
+        var guidText = GuidBox.Text.Trim();
         var name = NameBox.Text.Trim();
         var author = AuthorBox.Text.Trim();
         var version = VersionBox.Text.Trim();
         var spec = SpecBox.Text.Trim();
         var description = DescriptionBox.Text;
+
+        if (!Guid.TryParse(guidText, out var guid) || guid == Guid.Empty)
+        {
+            System.Windows.MessageBox.Show(this, "guid 不合法。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
 
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -72,6 +96,7 @@ public partial class ModInfoWindow : Window
             new XElement("defs",
                 new XAttribute(XNamespace.Xmlns + "xsd", "http://www.w3.org/2001/XMLSchema"),
                 new XAttribute(XNamespace.Xmlns + "xsi", "http://www.w3.org/2001/XMLSchema-instance"),
+                new XElement("guid", guid.ToString("D")),
                 new XElement("name", name),
                 new XElement("auth", author),
                 new XElement("version", version),

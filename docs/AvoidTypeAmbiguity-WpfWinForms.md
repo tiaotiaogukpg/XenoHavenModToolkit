@@ -49,6 +49,7 @@
 当你需要用到 WPF 的拖拽/剪贴板/数据格式等，推荐在文件顶部集中声明别名：
 
 ```csharp
+using WpfApplication = System.Windows.Application;
 using WpfDataFormats = System.Windows.DataFormats;
 using WpfDragDropEffects = System.Windows.DragDropEffects;
 using WpfDragEventArgs = System.Windows.DragEventArgs;
@@ -56,6 +57,7 @@ using WpfDragEventArgs = System.Windows.DragEventArgs;
 
 然后在代码里只使用别名：
 
+- `WpfApplication.Current`
 - `WpfDataFormats.FileDrop`
 - `WpfDragEventArgs`
 - `WpfDragDropEffects.Copy`

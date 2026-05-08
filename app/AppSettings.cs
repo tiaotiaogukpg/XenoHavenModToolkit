@@ -8,6 +8,7 @@ internal sealed class AppSettings
     public string? ModsOverviewRoot { get; set; }
     public string? LastModPath { get; set; }
     public bool OpenLastModOnStartup { get; set; } = true;
+    public string Theme { get; set; } = nameof(AppTheme.Light);
 
     public static string GetSettingsFilePath()
     {

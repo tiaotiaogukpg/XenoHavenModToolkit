@@ -3,8 +3,9 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="新增 Building" Height="360" Width="520"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize">
-    <Grid Margin="12">
+        ResizeMode="NoResize"
+        Background="{DynamicResource Theme.WindowBackground}">
+    <Grid Margin="12" Background="{DynamicResource Theme.WindowBackground}">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
@@ -43,7 +44,7 @@
             <TextBlock Text="health" Grid.Row="5" Grid.Column="0" Margin="0,0,8,8"/>
             <TextBox x:Name="HealthBox" Grid.Row="5" Grid.Column="1" Margin="0,0,0,8" Text="100"/>
 
-            <TextBlock Grid.Row="6" Grid.ColumnSpan="2" Foreground="#666" TextWrapping="Wrap">
+            <TextBlock Grid.Row="6" Grid.ColumnSpan="2" Foreground="{DynamicResource Theme.SecondaryTextColor}" TextWrapping="Wrap">
                 创建后只会把条目写入编辑器里的 Buildings.xml（不会立刻写磁盘），请再点击主界面的“保存 XML”。
             </TextBlock>
         </Grid>

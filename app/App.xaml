@@ -3,12 +3,133 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              Startup="App_Startup">
     <Application.Resources>
-        <Style TargetType="Button">
-            <Setter Property="Margin" Value="4"/>
-            <Setter Property="Padding" Value="10,5"/>
-        </Style>
-        <Style TargetType="TextBlock">
-            <Setter Property="VerticalAlignment" Value="Center"/>
-        </Style>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Themes/Light.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <Style TargetType="Button">
+                <Setter Property="Margin" Value="4"/>
+                <Setter Property="Padding" Value="10,5"/>
+                <Setter Property="MinHeight" Value="30"/>
+                <Setter Property="Background" Value="{DynamicResource Theme.ButtonBackground}"/>
+                <Setter Property="Foreground" Value="{DynamicResource Theme.ButtonTextColor}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource Theme.BorderColor}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="ButtonChrome"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="3">
+                                <ContentPresenter HorizontalAlignment="Center"
+                                                  VerticalAlignment="Center"
+                                                  Margin="{TemplateBinding Padding}"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter TargetName="ButtonChrome" Property="Background" Value="{DynamicResource Theme.ButtonHoverBackground}"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Opacity" Value="0.55"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style TargetType="TextBlock">
+                <Setter Property="Foreground" Value="{DynamicResource Theme.TextColor}"/>
+                <Setter Property="VerticalAlignment" Value="Center"/>
+            </Style>
+
+            <Style TargetType="TextBox">
+                <Setter Property="Background" Value="{DynamicResource Theme.EditorBackground}"/>
+                <Setter Property="Foreground" Value="{DynamicResource Theme.TextColor}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource Theme.BorderColor}"/>
+                <Setter Property="SelectionBrush" Value="{DynamicResource Theme.SelectionBackground}"/>
+                <Setter Property="CaretBrush" Value="{DynamicResource Theme.TextColor}"/>
+            </Style>
+
+            <Style TargetType="ListBox">
+                <Setter Property="Background" Value="{DynamicResource Theme.PanelBackground}"/>
+                <Setter Property="Foreground" Value="{DynamicResource Theme.TextColor}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource Theme.BorderColor}"/>
+            </Style>
+
+            <Style TargetType="ListBoxItem">
+                <Setter Property="Foreground" Value="{DynamicResource Theme.TextColor}"/>
+                <Style.Triggers>
+                    <Trigger Property="IsSelected" Value="True">
+                        <Setter Property="Background" Value="{DynamicResource Theme.SelectionBackground}"/>
+                    </Trigger>
+                </Style.Triggers>
+            </Style>
+
+            <Style TargetType="TreeView">
+                <Setter Property="Background" Value="{DynamicResource Theme.PanelBackground}"/>
+                <Setter Property="Foreground" Value="{DynamicResource Theme.TextColor}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource Theme.BorderColor}"/>
+            </Style>
+
+            <Style TargetType="TreeViewItem">
+                <Setter Property="Foreground" Value="{DynamicResource Theme.TextColor}"/>
+            </Style>
+
+            <Style TargetType="TabControl">
+                <Setter Property="Background" Value="{DynamicResource Theme.PanelBackground}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource Theme.BorderColor}"/>
+            </Style>
+
+            <Style TargetType="TabItem">
+                <Setter Property="Background" Value="{DynamicResource Theme.TabBackground}"/>
+                <Setter Property="Foreground" Value="{DynamicResource Theme.TextColor}"/>
+                <Setter Property="Padding" Value="10,5"/>
+                <Setter Property="Margin" Value="0,0,2,0"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource Theme.BorderColor}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="TabItem">
+                            <Grid>
+                                <Border x:Name="TabChrome"
+                                        Background="{TemplateBinding Background}"
+                                        BorderBrush="{TemplateBinding BorderBrush}"
+                                        BorderThickness="{TemplateBinding BorderThickness}"
+                                        CornerRadius="3,3,0,0"
+                                        Padding="{TemplateBinding Padding}">
+                                    <ContentPresenter ContentSource="Header" RecognizesAccessKey="True"/>
+                                </Border>
+                            </Grid>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Setter TargetName="TabChrome" Property="Background" Value="{DynamicResource Theme.TabActiveBackground}"/>
+                                </Trigger>
+                                <!-- 点击获得焦点时显示淡蓝光 -->
+                                <Trigger Property="IsKeyboardFocusWithin" Value="True">
+                                    <Setter TargetName="TabChrome" Property="BorderBrush" Value="{DynamicResource Theme.FocusGlow}"/>
+                                </Trigger>
+                                <Trigger Property="IsEnabled" Value="False">
+                                    <Setter Property="Opacity" Value="0.6"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+            </Style>
+
+            <Style TargetType="CheckBox">
+                <Setter Property="Foreground" Value="{DynamicResource Theme.TextColor}"/>
+            </Style>
+
+            <Style TargetType="ComboBox">
+                <Setter Property="Background" Value="{DynamicResource Theme.EditorBackground}"/>
+                <Setter Property="Foreground" Value="{DynamicResource Theme.TextColor}"/>
+                <Setter Property="BorderBrush" Value="{DynamicResource Theme.BorderColor}"/>
+            </Style>
+        </ResourceDictionary>
     </Application.Resources>
 </Application>

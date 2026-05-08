@@ -1,0 +1,34 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Color x:Key="Theme.WindowBackgroundColor">#F5F5F5</Color>
+    <Color x:Key="Theme.PanelBackgroundColor">#FFFFFF</Color>
+    <Color x:Key="Theme.EditorBackgroundColor">#FFFFFF</Color>
+    <Color x:Key="Theme.TextColorValue">#1F1F1F</Color>
+    <Color x:Key="Theme.SecondaryTextColorValue">#666666</Color>
+    <Color x:Key="Theme.BorderColorValue">#D0D0D0</Color>
+    <Color x:Key="Theme.ButtonBackgroundColor">#F3F3F3</Color>
+    <Color x:Key="Theme.ButtonHoverBackgroundColor">#E6E6E6</Color>
+    <Color x:Key="Theme.ButtonTextColorValue">#1F1F1F</Color>
+    <Color x:Key="Theme.TabBackgroundColor">#ECECEC</Color>
+    <Color x:Key="Theme.TabActiveBackgroundColor">#FFFFFF</Color>
+    <Color x:Key="Theme.ConsoleBackgroundColor">#FFFFFF</Color>
+    <Color x:Key="Theme.ConsoleTextColorValue">#1F1F1F</Color>
+    <Color x:Key="Theme.SelectionBackgroundColor">#CFE8FF</Color>
+    <Color x:Key="Theme.FocusGlowColor">#8CC8FF</Color>
+
+    <SolidColorBrush x:Key="Theme.WindowBackground" Color="{StaticResource Theme.WindowBackgroundColor}"/>
+    <SolidColorBrush x:Key="Theme.PanelBackground" Color="{StaticResource Theme.PanelBackgroundColor}"/>
+    <SolidColorBrush x:Key="Theme.EditorBackground" Color="{StaticResource Theme.EditorBackgroundColor}"/>
+    <SolidColorBrush x:Key="Theme.TextColor" Color="{StaticResource Theme.TextColorValue}"/>
+    <SolidColorBrush x:Key="Theme.SecondaryTextColor" Color="{StaticResource Theme.SecondaryTextColorValue}"/>
+    <SolidColorBrush x:Key="Theme.BorderColor" Color="{StaticResource Theme.BorderColorValue}"/>
+    <SolidColorBrush x:Key="Theme.ButtonBackground" Color="{StaticResource Theme.ButtonBackgroundColor}"/>
+    <SolidColorBrush x:Key="Theme.ButtonHoverBackground" Color="{StaticResource Theme.ButtonHoverBackgroundColor}"/>
+    <SolidColorBrush x:Key="Theme.ButtonTextColor" Color="{StaticResource Theme.ButtonTextColorValue}"/>
+    <SolidColorBrush x:Key="Theme.TabBackground" Color="{StaticResource Theme.TabBackgroundColor}"/>
+    <SolidColorBrush x:Key="Theme.TabActiveBackground" Color="{StaticResource Theme.TabActiveBackgroundColor}"/>
+    <SolidColorBrush x:Key="Theme.ConsoleBackground" Color="{StaticResource Theme.ConsoleBackgroundColor}"/>
+    <SolidColorBrush x:Key="Theme.ConsoleTextColor" Color="{StaticResource Theme.ConsoleTextColorValue}"/>
+    <SolidColorBrush x:Key="Theme.SelectionBackground" Color="{StaticResource Theme.SelectionBackgroundColor}"/>
+    <SolidColorBrush x:Key="Theme.FocusGlow" Color="{StaticResource Theme.FocusGlowColor}"/>
+</ResourceDictionary>

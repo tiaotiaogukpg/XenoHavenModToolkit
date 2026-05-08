@@ -2,11 +2,16 @@
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media.Imaging;
 using System.Xml;
 using System.Xml.Linq;
 using Microsoft.Win32;
 using WinForms = System.Windows.Forms;
+
+using WpfDataFormats = System.Windows.DataFormats;
+using WpfDragDropEffects = System.Windows.DragDropEffects;
+using WpfDragEventArgs = System.Windows.DragEventArgs;
 
 namespace XenoHavenModToolkit;
 
@@ -22,39 +27,70 @@ public partial class MainWindow : Window
     private static readonly string ThingBuildingsFolderRelativePath = Path.Combine("Thing", "Buildings");
 
     private readonly ObservableCollection<BuildingEntry> buildings = [];
+    private readonly ObservableCollection<OverviewModEntry> overviewMods = [];
     private string? currentModRoot;
+    private AppSettings settings = new();
 
     public MainWindow()
     {
         InitializeComponent();
         BuildingList.ItemsSource = buildings;
+        ModOverviewList.ItemsSource = overviewMods;
+        UpdateTopBarState();
     }
 
-    public void PromptOpenModFolderOnStartup()
+    public void InitializeOnStartup()
     {
-        var last = LoadLastModPath();
-        using var dialog = new WinForms.FolderBrowserDialog
-        {
-            Description = "选择 XenoHaven Mod 根目录（包含 main.xml）",
-            UseDescriptionForTitle = true
-        };
+        settings = AppSettings.Load();
+        UpdateTopBarState();
 
-        if (!string.IsNullOrWhiteSpace(last) && Directory.Exists(last))
+        if (EnsureOverviewRootConfigured())
         {
-            dialog.SelectedPath = last;
-        }
+            RefreshOverviewList();
+            if (settings.OpenLastModOnStartup &&
+                !string.IsNullOrWhiteSpace(settings.LastModPath) &&
+                Directory.Exists(settings.LastModPath))
+            {
+                OpenModFolder(settings.LastModPath);
+            }
 
-        if (dialog.ShowDialog() != WinForms.DialogResult.OK)
-        {
-            Log("未选择 Mod 文件夹。你仍可点击“打开 Mod 文件夹”继续。");
             return;
         }
 
-        OpenModFolder(dialog.SelectedPath);
+        PromptOpenModFolder();
+        UpdateTopBarState();
     }
 
     private void OpenModFolder_Click(object sender, RoutedEventArgs e)
     {
+        PromptOpenModFolder();
+    }
+
+    private bool EnsureOverviewRootConfigured()
+    {
+        if (!string.IsNullOrWhiteSpace(settings.ModsOverviewRoot) && Directory.Exists(settings.ModsOverviewRoot))
+        {
+            return true;
+        }
+
+        using var dialog = new WinForms.FolderBrowserDialog
+        {
+            Description = "首次使用：请选择 Mod 总览目录（该目录下每个子文件夹都是一个 Mod）",
+            UseDescriptionForTitle = true
+        };
+
+        if (dialog.ShowDialog() != WinForms.DialogResult.OK)
+        {
+            return false;
+        }
+
+        settings.ModsOverviewRoot = dialog.SelectedPath;
+        settings.Save();
+        return true;
+    }
+
+    private void PromptOpenModFolder()
+    {
         using var dialog = new WinForms.FolderBrowserDialog
         {
             Description = "选择 XenoHaven Mod 根目录（包含 main.xml）",
@@ -67,17 +103,185 @@ public partial class MainWindow : Window
         }
 
         OpenModFolder(dialog.SelectedPath);
+        UpdateTopBarState();
+    }
+
+    private void RefreshOverview_Click(object sender, RoutedEventArgs e)
+    {
+        if (EnsureOverviewRootConfigured())
+        {
+            RefreshOverviewList();
+            Log("已刷新 Mod 总览列表。");
+        }
+    }
+
+    private void OpenSelectedOverviewMod_Click(object sender, RoutedEventArgs e)
+    {
+        OpenSelectedOverviewMod();
+    }
+
+    private void ModOverviewList_PreviewMouseDown(object sender, MouseButtonEventArgs e)
+    {
+        // 点击列表空白处时，WPF 默认不会清空 SelectedItem；这里手动清空以触发“返回总览状态”
+        var source = e.OriginalSource as DependencyObject;
+        var item = source is null ? null : ItemsControl.ContainerFromElement(ModOverviewList, source) as ListBoxItem;
+        if (item is null)
+        {
+            ModOverviewList.SelectedItem = null;
+        }
+    }
+
+    private void ModOverviewList_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (ModOverviewList.SelectedItem is null)
+        {
+            CloseCurrentMod();
+        }
+    }
+
+    private void ModOverviewList_DoubleClick(object sender, MouseButtonEventArgs e)
+    {
+        OpenSelectedOverviewMod();
+    }
+
+    private void OpenSelectedOverviewMod()
+    {
+        if (ModOverviewList.SelectedItem is not OverviewModEntry entry)
+        {
+            Log("请先在“Mod 总览”里选择一个 Mod。");
+            return;
+        }
+
+        OpenModFolder(entry.FullPath);
+        UpdateTopBarState();
+    }
+
+    private void RefreshOverviewList()
+    {
+        overviewMods.Clear();
+        if (string.IsNullOrWhiteSpace(settings.ModsOverviewRoot) || !Directory.Exists(settings.ModsOverviewRoot))
+        {
+            return;
+        }
+
+        foreach (var dir in new DirectoryInfo(settings.ModsOverviewRoot).GetDirectories().OrderBy(d => d.Name))
+        {
+            overviewMods.Add(new OverviewModEntry(
+                dir.FullName,
+                dir.Name,
+                File.Exists(Path.Combine(dir.FullName, MainXmlRelativePath))));
+        }
+    }
+
+    private void Settings_Click(object sender, RoutedEventArgs e)
+    {
+        var copy = new AppSettings
+        {
+            ModsOverviewRoot = settings.ModsOverviewRoot,
+            LastModPath = settings.LastModPath,
+            OpenLastModOnStartup = settings.OpenLastModOnStartup
+        };
+
+        var dialog = new SettingsWindow(copy) { Owner = this };
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        settings = dialog.Settings;
+        settings.Save();
+        RefreshOverviewList();
+        Log("设置已保存。");
     }
 
     private void OpenModFolder(string folder)
     {
         currentModRoot = folder;
         CurrentModPathText.Text = folder;
-        SaveLastModPath(folder);
+        settings.LastModPath = folder;
+        settings.Save();
         LoadTree();
         LoadKnownXmlFiles();
         ParseBuildingsFromEditor();
         Log($"已打开 Mod：{folder}");
+        UpdateTopBarState();
+    }
+
+    private void CloseCurrentMod()
+    {
+        if (string.IsNullOrWhiteSpace(currentModRoot))
+        {
+            return;
+        }
+
+        currentModRoot = null;
+        CurrentModPathText.Text = "未打开 Mod 文件夹";
+
+        buildings.Clear();
+        BuildingList.SelectedItem = null;
+        RefreshImagePreview();
+
+        ModFileTree.Items.Clear();
+        MainXmlEditor.Text = string.Empty;
+        BuildingsXmlEditor.Text = string.Empty;
+
+        UpdateTopBarState();
+        Log("已返回总览状态。");
+    }
+
+    private void UpdateTopBarState()
+    {
+        var opened = !string.IsNullOrWhiteSpace(currentModRoot) && Directory.Exists(currentModRoot);
+
+        NewModButton.Visibility = opened ? Visibility.Collapsed : Visibility.Visible;
+        CleanMetaButton.Visibility = opened ? Visibility.Collapsed : Visibility.Visible;
+
+        ModInfoButton.Visibility = opened ? Visibility.Visible : Visibility.Collapsed;
+        ValidateXmlButton.Visibility = opened ? Visibility.Visible : Visibility.Collapsed;
+        SaveXmlButton.Visibility = opened ? Visibility.Visible : Visibility.Collapsed;
+        CleanMetaOpenedButton.Visibility = opened ? Visibility.Visible : Visibility.Collapsed;
+        ExportReleaseButton.Visibility = opened ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private void NewMod_Click(object sender, RoutedEventArgs e)
+    {
+        try
+        {
+            if (!EnsureOverviewRootConfigured())
+            {
+                return;
+            }
+
+            var dialog = new NewModWindow { Owner = this };
+            if (dialog.ShowDialog() != true || dialog.Result is null)
+            {
+                return;
+            }
+
+            var targetFolder = Path.Combine(settings.ModsOverviewRoot!, dialog.Result.FolderName);
+            if (Directory.Exists(targetFolder))
+            {
+                Log($"新建失败：已存在同名文件夹：{dialog.Result.FolderName}");
+                return;
+            }
+
+            Directory.CreateDirectory(targetFolder);
+            Directory.CreateDirectory(Path.Combine(targetFolder, "Thing", "Buildings", "images", "icon"));
+
+            File.WriteAllText(Path.Combine(targetFolder, MainXmlRelativePath), dialog.Result.MainXml);
+
+            var buildingsXmlFolder = Path.Combine(targetFolder, "Thing", "Buildings");
+            Directory.CreateDirectory(buildingsXmlFolder);
+            File.WriteAllText(Path.Combine(buildingsXmlFolder, "Buildings.xml"), dialog.Result.BuildingsXml);
+
+            RefreshOverviewList();
+            OpenModFolder(targetFolder);
+            Log($"已新建 Mod：{dialog.Result.FolderName}");
+        }
+        catch (Exception ex)
+        {
+            Log($"新建 Mod 失败：{ex.Message}");
+        }
     }
 
     private void ValidateXml_Click(object sender, RoutedEventArgs e)
@@ -173,6 +377,46 @@ public partial class MainWindow : Window
     private void ImportIconImage_Click(object sender, RoutedEventArgs e)
     {
         ImportImageToSelectedBuilding(BuildingIconsRelativePath, "物品图标");
+    }
+
+    private void WorldImage_Click(object sender, MouseButtonEventArgs e)
+    {
+        ImportImageToSelectedBuilding(BuildingImagesRelativePath, "地图显示图");
+    }
+
+    private void IconImage_Click(object sender, MouseButtonEventArgs e)
+    {
+        ImportImageToSelectedBuilding(BuildingIconsRelativePath, "物品图标");
+    }
+
+    private void WorldImage_DragEnter(object sender, WpfDragEventArgs e)
+    {
+        HandleImageDragEnter(e, WorldImageDropBorder);
+    }
+
+    private void WorldImage_DragLeave(object sender, WpfDragEventArgs e)
+    {
+        ResetDropBorder(WorldImageDropBorder);
+    }
+
+    private void WorldImage_Drop(object sender, WpfDragEventArgs e)
+    {
+        HandleImageDrop(e, BuildingImagesRelativePath, "地图显示图", WorldImageDropBorder);
+    }
+
+    private void IconImage_DragEnter(object sender, WpfDragEventArgs e)
+    {
+        HandleImageDragEnter(e, IconImageDropBorder);
+    }
+
+    private void IconImage_DragLeave(object sender, WpfDragEventArgs e)
+    {
+        ResetDropBorder(IconImageDropBorder);
+    }
+
+    private void IconImage_Drop(object sender, WpfDragEventArgs e)
+    {
+        HandleImageDrop(e, BuildingIconsRelativePath, "物品图标", IconImageDropBorder);
     }
 
     private void CleanMeta_Click(object sender, RoutedEventArgs e)
@@ -339,7 +583,7 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ImportImageToSelectedBuilding(string targetRelativeFolder, string slotName)
+    private void ImportImageToSelectedBuilding(string targetRelativeFolder, string slotName, string? sourceImagePath = null)
     {
         if (!EnsureModOpen())
         {
@@ -352,23 +596,34 @@ public partial class MainWindow : Window
             return;
         }
 
-        var dialog = new Microsoft.Win32.OpenFileDialog
+        if (string.IsNullOrWhiteSpace(sourceImagePath))
         {
-            Title = $"选择{slotName}",
-            Filter = "图片文件|*.png;*.jpg;*.jpeg;*.bmp;*.webp|PNG 文件|*.png|所有文件|*.*"
-        };
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = $"选择{slotName}",
+                Filter = "图片文件|*.png;*.jpg;*.jpeg;*.bmp;*.webp|PNG 文件|*.png|所有文件|*.*"
+            };
 
-        if (dialog.ShowDialog() != true)
-        {
-            return;
+            if (dialog.ShowDialog() != true)
+            {
+                return;
+            }
+
+            sourceImagePath = dialog.FileName;
         }
 
         try
         {
+            if (!File.Exists(sourceImagePath))
+            {
+                Log($"{slotName}导入失败：文件不存在。");
+                return;
+            }
+
             var targetFolder = GetFullPath(targetRelativeFolder);
             Directory.CreateDirectory(targetFolder);
             var targetPath = Path.Combine(targetFolder, $"{building.Id}.png");
-            File.Copy(dialog.FileName, targetPath, overwrite: true);
+            File.Copy(sourceImagePath, targetPath, overwrite: true);
             RefreshImagePreview();
             LoadTree();
             Log($"{slotName}已导入：{Path.GetRelativePath(currentModRoot!, targetPath)}");
@@ -377,6 +632,70 @@ public partial class MainWindow : Window
         {
             Log($"{slotName}导入失败：{ex.Message}");
         }
+    }
+
+    private static void HandleImageDragEnter(WpfDragEventArgs e, Border border)
+    {
+        if (TryGetSingleImagePathFromDrag(e) is not null)
+        {
+            e.Effects = WpfDragDropEffects.Copy;
+            border.BorderBrush = System.Windows.Media.Brushes.DodgerBlue;
+        }
+        else
+        {
+            e.Effects = WpfDragDropEffects.None;
+        }
+
+        e.Handled = true;
+    }
+
+    private void HandleImageDrop(WpfDragEventArgs e, string targetRelativeFolder, string slotName, Border border)
+    {
+        try
+        {
+            var path = TryGetSingleImagePathFromDrag(e);
+            if (path is null)
+            {
+                return;
+            }
+
+            ImportImageToSelectedBuilding(targetRelativeFolder, slotName, path);
+        }
+        finally
+        {
+            ResetDropBorder(border);
+        }
+    }
+
+    private static void ResetDropBorder(Border border)
+    {
+        border.BorderBrush = System.Windows.Media.Brushes.LightGray;
+    }
+
+    private static string? TryGetSingleImagePathFromDrag(WpfDragEventArgs e)
+    {
+        if (!e.Data.GetDataPresent(WpfDataFormats.FileDrop))
+        {
+            return null;
+        }
+
+        if (e.Data.GetData(WpfDataFormats.FileDrop) is not string[] files || files.Length != 1)
+        {
+            return null;
+        }
+
+        var file = files[0];
+        var ext = Path.GetExtension(file);
+        if (!string.Equals(ext, ".png", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(ext, ".jpg", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(ext, ".jpeg", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(ext, ".bmp", StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(ext, ".webp", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        return file;
     }
 
     private void LoadKnownXmlFiles()
@@ -798,36 +1117,9 @@ public partial class MainWindow : Window
         Directory.CreateDirectory(GetFullPath(BuildingIconsRelativePath));
     }
 
-    private static string GetSettingsPath()
+    private sealed record OverviewModEntry(string FullPath, string FolderName, bool HasMainXml)
     {
-        var root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "XenoHavenModToolkit");
-        Directory.CreateDirectory(root);
-        return Path.Combine(root, "last-mod-path.txt");
-    }
-
-    private static string? LoadLastModPath()
-    {
-        try
-        {
-            var path = GetSettingsPath();
-            return File.Exists(path) ? File.ReadAllText(path).Trim() : null;
-        }
-        catch
-        {
-            return null;
-        }
-    }
-
-    private static void SaveLastModPath(string modRoot)
-    {
-        try
-        {
-            File.WriteAllText(GetSettingsPath(), modRoot);
-        }
-        catch
-        {
-            // ignore settings failures
-        }
+        public string DisplayName => HasMainXml ? FolderName : $"{FolderName}（未创建 main.xml）";
     }
 
     private EditableBuilding GetEditableBuildingFromSelectionOrDefaults()

@@ -12,15 +12,21 @@
 
         <DockPanel Grid.Row="0" Margin="8">
             <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
-                <Button Content="打开 Mod 文件夹" Click="OpenModFolder_Click"/>
-                <Button Content="Mod 信息" Click="ModInfo_Click"/>
-                <Button Content="增加 Building" Click="OpenBuildingEditor_Click"/>
-                <Button Content="校验 XML" Click="ValidateXml_Click"/>
-                <Button Content="保存 XML" Click="SaveXml_Click"/>
-                <Button Content="导入地图图" Click="ImportWorldImage_Click"/>
-                <Button Content="导入物品图标" Click="ImportIconImage_Click"/>
-                <Button Content="清理 .meta" Click="CleanMeta_Click"/>
-                <Button Content="导出发布版" Click="ExportRelease_Click"/>
+                <!-- 未打开 Mod 时显示 -->
+                <Button x:Name="NewModButton" Content="新建 Mod" Click="NewMod_Click"/>
+                <Button x:Name="CleanMetaButton" Content="清理 .meta" Click="CleanMeta_Click"/>
+
+                <!-- 已打开 Mod 后显示（顺序按需求） -->
+                <Button x:Name="ModInfoButton" Content="Mod 信息" Click="ModInfo_Click" Visibility="Collapsed"/>
+                <Button x:Name="ValidateXmlButton" Content="校验 XML" Click="ValidateXml_Click" Visibility="Collapsed"/>
+                <Button x:Name="SaveXmlButton" Content="保存 XML" Click="SaveXml_Click" Visibility="Collapsed"/>
+                <Button x:Name="CleanMetaOpenedButton" Content="清理 .meta" Click="CleanMeta_Click" Visibility="Collapsed"/>
+                <Button x:Name="ExportReleaseButton" Content="导出发布版" Click="ExportRelease_Click" Visibility="Collapsed"/>
+            </StackPanel>
+
+            <!-- 设置常驻最右边 -->
+            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                <Button x:Name="SettingsButton" Content="设置" Click="Settings_Click"/>
             </StackPanel>
             <TextBlock x:Name="CurrentModPathText"
                        DockPanel.Dock="Right"
@@ -36,10 +42,31 @@
                 <ColumnDefinition Width="330"/>
             </Grid.ColumnDefinitions>
 
-            <GroupBox Header="Mod 文件" Grid.Column="0" Margin="0,0,8,0">
-                <TreeView x:Name="ModFileTree"
-                          SelectedItemChanged="ModFileTree_SelectedItemChanged"/>
-            </GroupBox>
+            <Grid Grid.Column="0" Margin="0,0,8,0">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="220"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <GroupBox Header="Mod 总览">
+                    <DockPanel Margin="8">
+                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                            <Button Content="刷新" Click="RefreshOverview_Click"/>
+                            <Button Content="打开所选 Mod" Click="OpenSelectedOverviewMod_Click"/>
+                        </StackPanel>
+                        <ListBox x:Name="ModOverviewList"
+                                 DisplayMemberPath="DisplayName"
+                                 PreviewMouseDown="ModOverviewList_PreviewMouseDown"
+                                 SelectionChanged="ModOverviewList_SelectionChanged"
+                                 MouseDoubleClick="ModOverviewList_DoubleClick"/>
+                    </DockPanel>
+                </GroupBox>
+
+                <GroupBox Grid.Row="1" Header="当前 Mod（Buildings 关联树）" Margin="0,8,0,0">
+                    <TreeView x:Name="ModFileTree"
+                              SelectedItemChanged="ModFileTree_SelectedItemChanged"/>
+                </GroupBox>
+            </Grid>
 
             <TabControl Grid.Column="1" x:Name="XmlTabs">
                 <TabItem Header="main.xml">
@@ -82,20 +109,54 @@
                     </DockPanel>
                 </GroupBox>
 
-                <GroupBox Header="图片预览（按 id 映射）" Grid.Row="1" Margin="0,8,0,0">
+                <GroupBox Grid.Row="1" Margin="0,8,0,0" Header="图片预览（按 id 映射）">
                     <Grid Margin="8">
                         <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="*"/>
                         </Grid.RowDefinitions>
-                        <TextBlock x:Name="WorldImagePathText" Text="地图显示图：未选择建筑"/>
-                        <Border Grid.Row="1" BorderBrush="#CCC" BorderThickness="1" Margin="0,4,0,8">
+
+                        <WrapPanel Grid.Row="0" HorizontalAlignment="Left">
+                            <Button Content="导入地图图"
+                                    Click="ImportWorldImage_Click"
+                                    Padding="6,2"
+                                    Margin="0,0,8,0"
+                                    MinWidth="92"/>
+                            <Button Content="导入物品图标"
+                                    Click="ImportIconImage_Click"
+                                    Padding="6,2"
+                                    Margin="0,0,0,0"
+                                    MinWidth="108"/>
+                        </WrapPanel>
+
+                        <TextBlock Grid.Row="1" x:Name="WorldImagePathText" Text="地图显示图：未选择建筑" Margin="0,6,0,0"/>
+                        <Border x:Name="WorldImageDropBorder"
+                                Grid.Row="2"
+                                BorderBrush="#CCC"
+                                BorderThickness="1"
+                                Margin="0,4,0,8"
+                                AllowDrop="True"
+                                DragEnter="WorldImage_DragEnter"
+                                DragLeave="WorldImage_DragLeave"
+                                Drop="WorldImage_Drop"
+                                MouseLeftButtonUp="WorldImage_Click">
                             <Image x:Name="WorldImagePreview" Stretch="Uniform"/>
                         </Border>
-                        <TextBlock Grid.Row="2" x:Name="IconImagePathText" Text="物品图标：未选择建筑"/>
-                        <Border Grid.Row="3" BorderBrush="#CCC" BorderThickness="1" Margin="0,4,0,0">
+
+                        <TextBlock Grid.Row="3" x:Name="IconImagePathText" Text="物品图标：未选择建筑"/>
+                        <Border x:Name="IconImageDropBorder"
+                                Grid.Row="4"
+                                BorderBrush="#CCC"
+                                BorderThickness="1"
+                                Margin="0,4,0,0"
+                                AllowDrop="True"
+                                DragEnter="IconImage_DragEnter"
+                                DragLeave="IconImage_DragLeave"
+                                Drop="IconImage_Drop"
+                                MouseLeftButtonUp="IconImage_Click">
                             <Image x:Name="IconImagePreview" Stretch="Uniform"/>
                         </Border>
                     </Grid>

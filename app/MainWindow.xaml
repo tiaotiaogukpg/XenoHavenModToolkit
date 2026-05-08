@@ -13,6 +13,8 @@
         <DockPanel Grid.Row="0" Margin="8">
             <StackPanel DockPanel.Dock="Left" Orientation="Horizontal">
                 <Button Content="打开 Mod 文件夹" Click="OpenModFolder_Click"/>
+                <Button Content="Mod 信息" Click="ModInfo_Click"/>
+                <Button Content="增加 Building" Click="OpenBuildingEditor_Click"/>
                 <Button Content="校验 XML" Click="ValidateXml_Click"/>
                 <Button Content="保存 XML" Click="SaveXml_Click"/>
                 <Button Content="导入地图图" Click="ImportWorldImage_Click"/>
@@ -69,9 +71,15 @@
                 </Grid.RowDefinitions>
 
                 <GroupBox Header="建筑条目">
-                    <ListBox x:Name="BuildingList"
-                             DisplayMemberPath="DisplayName"
-                             SelectionChanged="BuildingList_SelectionChanged"/>
+                    <DockPanel Margin="8">
+                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                            <Button Content="新增 Building" Click="AddBuilding_Click"/>
+                            <Button Content="从 Buildings.xml 重新解析" Click="ReloadBuildings_Click"/>
+                        </StackPanel>
+                        <ListBox x:Name="BuildingList"
+                                 DisplayMemberPath="DisplayName"
+                                 SelectionChanged="BuildingList_SelectionChanged"/>
+                    </DockPanel>
                 </GroupBox>
 
                 <GroupBox Header="图片预览（按 id 映射）" Grid.Row="1" Margin="0,8,0,0">

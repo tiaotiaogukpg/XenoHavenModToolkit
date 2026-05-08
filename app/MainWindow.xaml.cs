@@ -19,6 +19,7 @@ public partial class MainWindow : Window
     private static readonly string BuildingsXmlRelativePath = Path.Combine("Thing", "Buildings", "Buildings.xml");
     private static readonly string BuildingImagesRelativePath = Path.Combine("Thing", "Buildings", "images");
     private static readonly string BuildingIconsRelativePath = Path.Combine("Thing", "Buildings", "images", "icon");
+    private static readonly string ThingBuildingsFolderRelativePath = Path.Combine("Thing", "Buildings");
 
     private readonly ObservableCollection<BuildingEntry> buildings = [];
     private string? currentModRoot;
@@ -27,6 +28,29 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         BuildingList.ItemsSource = buildings;
+    }
+
+    public void PromptOpenModFolderOnStartup()
+    {
+        var last = LoadLastModPath();
+        using var dialog = new WinForms.FolderBrowserDialog
+        {
+            Description = "选择 XenoHaven Mod 根目录（包含 main.xml）",
+            UseDescriptionForTitle = true
+        };
+
+        if (!string.IsNullOrWhiteSpace(last) && Directory.Exists(last))
+        {
+            dialog.SelectedPath = last;
+        }
+
+        if (dialog.ShowDialog() != WinForms.DialogResult.OK)
+        {
+            Log("未选择 Mod 文件夹。你仍可点击“打开 Mod 文件夹”继续。");
+            return;
+        }
+
+        OpenModFolder(dialog.SelectedPath);
     }
 
     private void OpenModFolder_Click(object sender, RoutedEventArgs e)
@@ -49,6 +73,7 @@ public partial class MainWindow : Window
     {
         currentModRoot = folder;
         CurrentModPathText.Text = folder;
+        SaveLastModPath(folder);
         LoadTree();
         LoadKnownXmlFiles();
         ParseBuildingsFromEditor();
@@ -59,6 +84,56 @@ public partial class MainWindow : Window
     {
         var messages = ValidateAll();
         Log(string.Join(Environment.NewLine, messages));
+    }
+
+    private void ModInfo_Click(object sender, RoutedEventArgs e)
+    {
+        if (!EnsureModOpen())
+        {
+            return;
+        }
+
+        var dialog = new ModInfoWindow(MainXmlEditor.Text)
+        {
+            Owner = this
+        };
+
+        if (dialog.ShowDialog() != true || string.IsNullOrWhiteSpace(dialog.GeneratedXml))
+        {
+            return;
+        }
+
+        MainXmlEditor.Text = dialog.GeneratedXml;
+        XmlTabs.SelectedIndex = 0;
+        LoadTree();
+        Log("已生成 main.xml（已写入编辑器）。别忘了点击“保存 XML”。");
+    }
+
+    private void OpenBuildingEditor_Click(object sender, RoutedEventArgs e)
+    {
+        if (!EnsureModOpen())
+        {
+            return;
+        }
+
+        try
+        {
+            var initial = GetEditableBuildingFromSelectionOrDefaults();
+            var dialog = new BuildingEditorWindow(initial) { Owner = this };
+            if (dialog.ShowDialog() != true || dialog.Result is null)
+            {
+                return;
+            }
+
+            UpsertBuildingToBuildingsXml(dialog.Result);
+            ParseBuildingsFromEditor();
+            LoadTree();
+            Log($"已写入 Buildings.xml（编辑器）：{dialog.Result.Id} - {dialog.Result.Name}。别忘了点击“保存 XML”。");
+        }
+        catch (Exception ex)
+        {
+            Log($"打开 Building 编辑失败：{ex.Message}");
+        }
     }
 
     private void SaveXml_Click(object sender, RoutedEventArgs e)
@@ -163,48 +238,105 @@ public partial class MainWindow : Window
 
     private void ModFileTree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
     {
-        if (e.NewValue is not TreeViewItem { Tag: string path } || Directory.Exists(path))
+        if (e.NewValue is not TreeViewItem item)
         {
             return;
         }
 
-        if (!Path.GetExtension(path).Equals(".xml", StringComparison.OrdinalIgnoreCase))
+        // 点击 Building 节点时，同步右侧选择与预览
+        if (item.Tag is int buildingId)
+        {
+            var match = buildings.FirstOrDefault(b => b.Id == buildingId);
+            if (match is not null)
+            {
+                BuildingList.SelectedItem = match;
+                BuildingList.ScrollIntoView(match);
+                RefreshImagePreview();
+            }
+
+            return;
+        }
+
+        // 点击文件节点（Buildings.xml / 图片等）时
+        if (item.Tag is not string path || Directory.Exists(path))
         {
             return;
         }
 
-        try
+        if (Path.GetExtension(path).Equals(".xml", StringComparison.OrdinalIgnoreCase))
         {
-            var text = File.ReadAllText(path);
-            var relativePath = Path.GetRelativePath(currentModRoot!, path);
-            if (relativePath.Equals(MainXmlRelativePath, StringComparison.OrdinalIgnoreCase))
+            try
             {
-                MainXmlEditor.Text = text;
-                XmlTabs.SelectedIndex = 0;
-            }
-            else if (relativePath.Equals(BuildingsXmlRelativePath, StringComparison.OrdinalIgnoreCase))
-            {
-                BuildingsXmlEditor.Text = text;
-                XmlTabs.SelectedIndex = 1;
-                ParseBuildingsFromEditor();
-            }
-            else
-            {
-                BuildingsXmlEditor.Text = text;
-                XmlTabs.SelectedIndex = 1;
-            }
+                var text = File.ReadAllText(path);
+                var relativePath = Path.GetRelativePath(currentModRoot!, path);
+                if (relativePath.Equals(BuildingsXmlRelativePath, StringComparison.OrdinalIgnoreCase))
+                {
+                    BuildingsXmlEditor.Text = text;
+                    XmlTabs.SelectedIndex = 1;
+                    ParseBuildingsFromEditor();
+                }
+                else if (relativePath.Equals(MainXmlRelativePath, StringComparison.OrdinalIgnoreCase))
+                {
+                    MainXmlEditor.Text = text;
+                    XmlTabs.SelectedIndex = 0;
+                }
+                else
+                {
+                    BuildingsXmlEditor.Text = text;
+                    XmlTabs.SelectedIndex = 1;
+                }
 
-            Log($"已载入 XML：{relativePath}");
-        }
-        catch (Exception ex)
-        {
-            Log($"载入 XML 失败：{ex.Message}");
+                Log($"已载入 XML：{relativePath}");
+            }
+            catch (Exception ex)
+            {
+                Log($"载入 XML 失败：{ex.Message}");
+            }
         }
     }
 
     private void BuildingList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         RefreshImagePreview();
+    }
+
+    private void ReloadBuildings_Click(object sender, RoutedEventArgs e)
+    {
+        ParseBuildingsFromEditor();
+        LoadTree();
+        Log("已从编辑器内容重新解析建筑条目并刷新树。");
+    }
+
+    private void AddBuilding_Click(object sender, RoutedEventArgs e)
+    {
+        if (!EnsureModOpen())
+        {
+            return;
+        }
+
+        try
+        {
+            var (nextId, nextName) = SuggestNewBuildingDefaults();
+            var dialog = new AddBuildingWindow(nextId, nextName)
+            {
+                Owner = this
+            };
+
+            if (dialog.ShowDialog() != true)
+            {
+                return;
+            }
+
+            var newEntry = dialog.Result!;
+            AddBuildingToBuildingsXml(newEntry);
+            ParseBuildingsFromEditor();
+            LoadTree();
+            Log($"已新增 Building：{newEntry.Id} - {newEntry.Name} ({newEntry.Type})。别忘了点击“保存 XML”。");
+        }
+        catch (Exception ex)
+        {
+            Log($"新增 Building 失败：{ex.Message}");
+        }
     }
 
     private void ImportImageToSelectedBuilding(string targetRelativeFolder, string slotName)
@@ -463,7 +595,50 @@ public partial class MainWindow : Window
             return;
         }
 
-        ModFileTree.Items.Add(CreateTreeItem(new DirectoryInfo(currentModRoot!)));
+        var rootInfo = new DirectoryInfo(currentModRoot!);
+        var root = new TreeViewItem
+        {
+            Header = rootInfo.Name,
+            Tag = rootInfo.FullName,
+            IsExpanded = true
+        };
+
+        // 只展示 Buildings 的关联信息（按你的需求精简）
+        var buildingsXmlPath = GetFullPath(BuildingsXmlRelativePath);
+        var buildingsXmlNode = new TreeViewItem
+        {
+            Header = $"Buildings.xml（{(File.Exists(buildingsXmlPath) ? "已存在" : "未创建")}）",
+            Tag = buildingsXmlPath,
+            IsExpanded = true
+        };
+
+        foreach (var b in buildings.OrderBy(b => b.Id))
+        {
+            var bNode = new TreeViewItem { Header = b.DisplayName, Tag = b.Id, IsExpanded = true };
+
+            bNode.Items.Add(new TreeViewItem { Header = $"id：{b.Id}" });
+            bNode.Items.Add(new TreeViewItem { Header = $"name：{b.Name}" });
+            bNode.Items.Add(new TreeViewItem { Header = $"type：{b.Type}" });
+
+            var worldPath = GetFullPath(Path.Combine(BuildingImagesRelativePath, $"{b.Id}.png"));
+            var iconPath = GetFullPath(Path.Combine(BuildingIconsRelativePath, $"{b.Id}.png"));
+            bNode.Items.Add(new TreeViewItem
+            {
+                Header = $"地图图：{(File.Exists(worldPath) ? Path.GetRelativePath(currentModRoot!, worldPath) : "未找到")}",
+                Tag = worldPath
+            });
+            bNode.Items.Add(new TreeViewItem
+            {
+                Header = $"图标：{(File.Exists(iconPath) ? Path.GetRelativePath(currentModRoot!, iconPath) : "未找到")}",
+                Tag = iconPath
+            });
+
+            buildingsXmlNode.Items.Add(bNode);
+        }
+
+        root.Items.Add(buildingsXmlNode);
+
+        ModFileTree.Items.Add(root);
     }
 
     private static TreeViewItem CreateTreeItem(FileSystemInfo info)
@@ -559,5 +734,213 @@ public partial class MainWindow : Window
     private sealed record BuildingEntry(int Id, string Name, string Type)
     {
         public string DisplayName => $"{Id} - {Name} ({Type})";
+    }
+
+    internal sealed record NewBuilding(int Id, string Name, string Type, int SizeX, int SizeY, int Health);
+    internal sealed record EditableBuilding(
+        int Id,
+        string Name,
+        string Type,
+        int Direction,
+        int Capbility,
+        int WorkbenchId,
+        int Health,
+        int SizeX,
+        int SizeY);
+
+    private (int nextId, string nextName) SuggestNewBuildingDefaults()
+    {
+        var nextId = buildings.Count == 0 ? 1 : buildings.Max(b => b.Id) + 1;
+        return (nextId, $"NewBuilding_{nextId}");
+    }
+
+    private void AddBuildingToBuildingsXml(NewBuilding b)
+    {
+        // 基于编辑器内容增量写入，避免“保存 XML”前读写磁盘导致用户修改丢失。
+        var doc = XDocument.Parse(BuildingsXmlEditor.Text, LoadOptions.PreserveWhitespace);
+        if (doc.Root?.Name.LocalName != "ArrayOfModBuildingXML")
+        {
+            throw new InvalidOperationException("Buildings.xml 根节点不是 ArrayOfModBuildingXML。");
+        }
+
+        if (doc.Root.Elements().Any(e => e.Name.LocalName == "ModBuildingXML" &&
+                                        int.TryParse(e.Elements().FirstOrDefault(x => x.Name.LocalName == "id")?.Value, out var id) &&
+                                        id == b.Id))
+        {
+            throw new InvalidOperationException($"Buildings.xml 中已存在相同 id：{b.Id}。");
+        }
+
+        var element =
+            new XElement("ModBuildingXML",
+                new XElement("id", b.Id),
+                new XElement("name", b.Name),
+                new XElement("type", b.Type),
+                new XElement("direction", 1),
+                new XElement("capbility", 1),
+                new XElement("workbenchId", 1),
+                new XElement("health", b.Health),
+                new XElement("size",
+                    new XElement("x", b.SizeX),
+                    new XElement("y", b.SizeY)
+                ),
+                new XElement("materials")
+            );
+
+        doc.Root.Add(new XText(Environment.NewLine + "  "));
+        doc.Root.Add(element);
+        doc.Root.Add(new XText(Environment.NewLine));
+        BuildingsXmlEditor.Text = doc.Declaration is null
+            ? doc.ToString()
+            : doc.Declaration + Environment.NewLine + doc.ToString();
+
+        // 确保图片目录存在（具体图片由用户导入）
+        Directory.CreateDirectory(GetFullPath(BuildingImagesRelativePath));
+        Directory.CreateDirectory(GetFullPath(BuildingIconsRelativePath));
+    }
+
+    private static string GetSettingsPath()
+    {
+        var root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "XenoHavenModToolkit");
+        Directory.CreateDirectory(root);
+        return Path.Combine(root, "last-mod-path.txt");
+    }
+
+    private static string? LoadLastModPath()
+    {
+        try
+        {
+            var path = GetSettingsPath();
+            return File.Exists(path) ? File.ReadAllText(path).Trim() : null;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private static void SaveLastModPath(string modRoot)
+    {
+        try
+        {
+            File.WriteAllText(GetSettingsPath(), modRoot);
+        }
+        catch
+        {
+            // ignore settings failures
+        }
+    }
+
+    private EditableBuilding GetEditableBuildingFromSelectionOrDefaults()
+    {
+        // 如果用户在列表里选了建筑，就尽量从 XML 里读出完整字段做“编辑”
+        if (BuildingList.SelectedItem is BuildingEntry selected)
+        {
+            var existing = TryReadEditableBuildingById(selected.Id);
+            if (existing is not null)
+            {
+                return existing;
+            }
+
+            return new EditableBuilding(selected.Id, selected.Name, selected.Type, 1, 1, 1, 100, 1, 1);
+        }
+
+        var (nextId, nextName) = SuggestNewBuildingDefaults();
+        return new EditableBuilding(nextId, nextName, "Building", 1, 1, 1, 100, 1, 1);
+    }
+
+    private EditableBuilding? TryReadEditableBuildingById(int id)
+    {
+        try
+        {
+            var doc = XDocument.Parse(BuildingsXmlEditor.Text);
+            if (doc.Root?.Name.LocalName != "ArrayOfModBuildingXML")
+            {
+                return null;
+            }
+
+            var el = doc.Root.Elements().FirstOrDefault(e => e.Name.LocalName == "ModBuildingXML" &&
+                                                             int.TryParse(e.Elements().FirstOrDefault(x => x.Name.LocalName == "id")?.Value, out var eid) &&
+                                                             eid == id);
+            if (el is null)
+            {
+                return null;
+            }
+
+            int ReadInt(string name, int fallback)
+                => int.TryParse(el.Elements().FirstOrDefault(x => x.Name.LocalName == name)?.Value, out var v) ? v : fallback;
+
+            var nameValue = el.Elements().FirstOrDefault(x => x.Name.LocalName == "name")?.Value ?? $"Building_{id}";
+            var typeValue = el.Elements().FirstOrDefault(x => x.Name.LocalName == "type")?.Value ?? "Building";
+            var size = el.Elements().FirstOrDefault(x => x.Name.LocalName == "size");
+            var sx = 1;
+            var sy = 1;
+            if (size is not null)
+            {
+                sx = int.TryParse(size.Elements().FirstOrDefault(x => x.Name.LocalName == "x")?.Value, out var vx) ? vx : 1;
+                sy = int.TryParse(size.Elements().FirstOrDefault(x => x.Name.LocalName == "y")?.Value, out var vy) ? vy : 1;
+            }
+
+            return new EditableBuilding(
+                id,
+                nameValue,
+                typeValue,
+                ReadInt("direction", 1),
+                ReadInt("capbility", 1),
+                ReadInt("workbenchId", 1),
+                ReadInt("health", 100),
+                sx,
+                sy);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private void UpsertBuildingToBuildingsXml(EditableBuilding b)
+    {
+        var doc = XDocument.Parse(BuildingsXmlEditor.Text, LoadOptions.PreserveWhitespace);
+        if (doc.Root?.Name.LocalName != "ArrayOfModBuildingXML")
+        {
+            throw new InvalidOperationException("Buildings.xml 根节点不是 ArrayOfModBuildingXML。");
+        }
+
+        var existing = doc.Root.Elements().FirstOrDefault(e => e.Name.LocalName == "ModBuildingXML" &&
+                                                               int.TryParse(e.Elements().FirstOrDefault(x => x.Name.LocalName == "id")?.Value, out var id) &&
+                                                               id == b.Id);
+
+        var element =
+            new XElement("ModBuildingXML",
+                new XElement("id", b.Id),
+                new XElement("name", b.Name),
+                new XElement("type", b.Type),
+                new XElement("direction", b.Direction),
+                new XElement("capbility", b.Capbility),
+                new XElement("workbenchId", b.WorkbenchId),
+                new XElement("health", b.Health),
+                new XElement("size",
+                    new XElement("x", b.SizeX),
+                    new XElement("y", b.SizeY)
+                ),
+                new XElement("materials")
+            );
+
+        if (existing is null)
+        {
+            doc.Root.Add(new XText(Environment.NewLine + "  "));
+            doc.Root.Add(element);
+            doc.Root.Add(new XText(Environment.NewLine));
+        }
+        else
+        {
+            existing.ReplaceWith(element);
+        }
+
+        BuildingsXmlEditor.Text = doc.Declaration is null
+            ? doc.ToString()
+            : doc.Declaration + Environment.NewLine + doc.ToString();
+
+        Directory.CreateDirectory(GetFullPath(BuildingImagesRelativePath));
+        Directory.CreateDirectory(GetFullPath(BuildingIconsRelativePath));
     }
 }

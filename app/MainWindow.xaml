@@ -76,31 +76,17 @@
             </Grid.ColumnDefinitions>
 
             <Grid Grid.Column="0" Margin="0,0,8,0">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="220"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-
                 <Border Style="{StaticResource SectionBorderStyle}">
                     <DockPanel>
-                        <TextBlock DockPanel.Dock="Top" Text="MOD EXPLORER" Style="{StaticResource SectionTitleStyle}"/>
+                        <TextBlock DockPanel.Dock="Top" Text="导航 / 资源树" Style="{StaticResource SectionTitleStyle}"/>
                         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
                             <Button Content="刷新" Click="RefreshOverview_Click"/>
                             <Button Content="打开所选 Mod" Click="OpenSelectedOverviewMod_Click"/>
                         </StackPanel>
-                        <ListBox x:Name="ModOverviewList"
-                                 DisplayMemberPath="DisplayName"
-                                 PreviewMouseDown="ModOverviewList_PreviewMouseDown"
-                                 SelectionChanged="ModOverviewList_SelectionChanged"
-                                 MouseDoubleClick="ModOverviewList_DoubleClick"/>
-                    </DockPanel>
-                </Border>
-
-                <Border Grid.Row="1" Style="{StaticResource SectionBorderStyle}" Margin="0,8,0,0">
-                    <DockPanel>
-                        <TextBlock DockPanel.Dock="Top" Text="当前 Mod（Buildings 关联树）" Style="{StaticResource SectionTitleStyle}"/>
                         <TreeView x:Name="ModFileTree"
-                                  SelectedItemChanged="ModFileTree_SelectedItemChanged"/>
+                                  SelectedItemChanged="ModFileTree_SelectedItemChanged"
+                                  PreviewMouseDown="ModFileTree_PreviewMouseDown"
+                                  MouseDoubleClick="ModFileTree_MouseDoubleClick"/>
                     </DockPanel>
                 </Border>
             </Grid>

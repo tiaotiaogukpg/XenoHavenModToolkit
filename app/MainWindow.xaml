@@ -48,8 +48,6 @@
 
                     <!-- 已打开 Mod 后显示（顺序按需求） -->
                     <Button x:Name="ModInfoButton" Content="Mod 信息" Click="ModInfo_Click" Visibility="Collapsed"/>
-                    <Button x:Name="ValidateXmlButton" Content="校验 XML" Click="ValidateXml_Click" Visibility="Collapsed"/>
-                    <Button x:Name="SaveXmlButton" Content="保存 XML" Click="SaveXml_Click" Visibility="Collapsed"/>
                     <Button x:Name="CleanMetaOpenedButton" Content="清理 .meta" Click="CleanMeta_Click" Visibility="Collapsed"/>
                     <Button x:Name="ExportReleaseButton" Content="导出发布版" Click="ExportRelease_Click" Visibility="Collapsed"/>
                 </WrapPanel>
@@ -72,17 +70,13 @@
                 <ColumnDefinition Width="260"/>
                 <ColumnDefinition Width="5"/>
                 <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="5"/>
-                <ColumnDefinition Width="330"/>
             </Grid.ColumnDefinitions>
 
             <Grid Grid.Column="0" Margin="0,0,8,0">
                 <Border Style="{StaticResource SectionBorderStyle}">
                     <DockPanel>
-                        <TextBlock DockPanel.Dock="Top" Text="导航 / 资源树" Style="{StaticResource SectionTitleStyle}"/>
                         <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
                             <Button Content="刷新" Click="RefreshOverview_Click"/>
-                            <Button Content="打开所选 Mod" Click="OpenSelectedOverviewMod_Click"/>
                         </StackPanel>
                         <TreeView x:Name="ModFileTree"
                                   SelectedItemChanged="ModFileTree_SelectedItemChanged"
@@ -98,116 +92,57 @@
                           Background="{DynamicResource Theme.BorderColor}"
                           ResizeBehavior="PreviousAndNext"/>
 
-            <Border Grid.Column="2" Style="{StaticResource SectionBorderStyle}" Padding="0">
-                <TabControl x:Name="XmlTabs" BorderThickness="0">
-                    <TabItem Header="main.xml">
-                        <TextBox x:Name="MainXmlEditor"
-                                 AcceptsReturn="True"
-                                 AcceptsTab="True"
-                                 FontFamily="Consolas"
-                                 FontSize="14"
-                                 BorderThickness="0"
-                                 HorizontalScrollBarVisibility="Auto"
-                                 VerticalScrollBarVisibility="Auto"
-                                 TextWrapping="NoWrap"/>
-                    </TabItem>
-                    <TabItem Header="Thing/Buildings/Buildings.xml">
-                        <TextBox x:Name="BuildingsXmlEditor"
-                                 AcceptsReturn="True"
-                                 AcceptsTab="True"
-                                 FontFamily="Consolas"
-                                 FontSize="14"
-                                 BorderThickness="0"
-                                 HorizontalScrollBarVisibility="Auto"
-                                 VerticalScrollBarVisibility="Auto"
-                                 TextWrapping="NoWrap"/>
-                    </TabItem>
-                </TabControl>
+            <Border Grid.Column="2" Style="{StaticResource SectionBorderStyle}">
+                <DockPanel>
+                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
+                        <Button x:Name="AddBuildingButton" Content="新建 Building" Click="AddBuilding_Click" IsEnabled="False"/>
+                    </StackPanel>
+
+                    <ListBox x:Name="BuildingTiles"
+                             Background="{DynamicResource Theme.PanelBackground}"
+                             BorderThickness="0"
+                             ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             SelectionChanged="BuildingTiles_SelectionChanged"
+                             MouseDoubleClick="BuildingTiles_DoubleClick">
+                        <ListBox.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <WrapPanel IsItemsHost="True"/>
+                            </ItemsPanelTemplate>
+                        </ListBox.ItemsPanel>
+                        <ListBox.ItemContainerStyle>
+                            <Style TargetType="ListBoxItem">
+                                <Setter Property="Padding" Value="8"/>
+                                <Setter Property="Margin" Value="6"/>
+                                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                                <Setter Property="VerticalContentAlignment" Value="Top"/>
+                            </Style>
+                        </ListBox.ItemContainerStyle>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Width="256">
+                                    <Border Width="256"
+                                            Height="256"
+                                            Background="{DynamicResource Theme.EditorBackground}"
+                                            BorderBrush="{DynamicResource Theme.BorderColor}"
+                                            BorderThickness="1"
+                                            SnapsToDevicePixels="True">
+                                        <Image Source="{Binding IconImage}"
+                                               Stretch="Uniform"
+                                               HorizontalAlignment="Center"
+                                               VerticalAlignment="Center"/>
+                                    </Border>
+                                    <TextBlock Text="{Binding TileLabel}"
+                                               Margin="0,6,0,0"
+                                               TextAlignment="Center"
+                                               TextWrapping="Wrap"
+                                               Foreground="{DynamicResource Theme.TextColor}"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                </DockPanel>
             </Border>
-
-            <GridSplitter Grid.Column="3"
-                          Width="5"
-                          HorizontalAlignment="Stretch"
-                          Background="{DynamicResource Theme.BorderColor}"
-                          ResizeBehavior="PreviousAndNext"/>
-
-            <Grid Grid.Column="4" Margin="8,0,0,0">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="220"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-
-                <Border Style="{StaticResource SectionBorderStyle}">
-                    <DockPanel>
-                        <TextBlock DockPanel.Dock="Top" Text="INSPECTOR / Building 条目" Style="{StaticResource SectionTitleStyle}"/>
-                        <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
-                            <Button Content="新增 Building" Click="AddBuilding_Click"/>
-                            <Button Content="从 Buildings.xml 重新解析" Click="ReloadBuildings_Click"/>
-                        </StackPanel>
-                        <ListBox x:Name="BuildingList"
-                                 DisplayMemberPath="DisplayName"
-                                 SelectionChanged="BuildingList_SelectionChanged"/>
-                    </DockPanel>
-                </Border>
-
-                <Border Grid.Row="1" Style="{StaticResource SectionBorderStyle}" Margin="0,8,0,0">
-                    <Grid>
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="*"/>
-                        </Grid.RowDefinitions>
-
-                        <TextBlock Grid.Row="0" Text="图片预览（按 id 映射）" Style="{StaticResource SectionTitleStyle}"/>
-
-                        <WrapPanel Grid.Row="1" HorizontalAlignment="Left" Margin="0,0,0,8">
-                            <Button Content="导入地图图"
-                                    Click="ImportWorldImage_Click"
-                                    Padding="6,2"
-                                    Margin="0,0,8,0"
-                                    MinWidth="92"/>
-                            <Button Content="导入物品图标"
-                                    Click="ImportIconImage_Click"
-                                    Padding="6,2"
-                                    Margin="0,0,0,0"
-                                    MinWidth="108"/>
-                        </WrapPanel>
-
-                        <TextBlock Grid.Row="2" x:Name="WorldImagePathText" Text="地图显示图：未选择建筑"/>
-                        <Border x:Name="WorldImageDropBorder"
-                                Grid.Row="3"
-                                Background="{DynamicResource Theme.EditorBackground}"
-                                BorderBrush="{DynamicResource Theme.BorderColor}"
-                                BorderThickness="1"
-                                Margin="0,4,0,8"
-                                AllowDrop="True"
-                                DragEnter="WorldImage_DragEnter"
-                                DragLeave="WorldImage_DragLeave"
-                                Drop="WorldImage_Drop"
-                                MouseLeftButtonUp="WorldImage_Click">
-                            <Image x:Name="WorldImagePreview" Stretch="Uniform"/>
-                        </Border>
-
-                        <TextBlock Grid.Row="4" x:Name="IconImagePathText" Text="物品图标：未选择建筑"/>
-                        <Border x:Name="IconImageDropBorder"
-                                Grid.Row="5"
-                                Background="{DynamicResource Theme.EditorBackground}"
-                                BorderBrush="{DynamicResource Theme.BorderColor}"
-                                BorderThickness="1"
-                                Margin="0,4,0,0"
-                                AllowDrop="True"
-                                DragEnter="IconImage_DragEnter"
-                                DragLeave="IconImage_DragLeave"
-                                Drop="IconImage_Drop"
-                                MouseLeftButtonUp="IconImage_Click">
-                            <Image x:Name="IconImagePreview" Stretch="Uniform"/>
-                        </Border>
-                    </Grid>
-                </Border>
-            </Grid>
         </Grid>
 
         <Border Grid.Row="2" Style="{StaticResource SectionBorderStyle}" Margin="8,0,8,8">

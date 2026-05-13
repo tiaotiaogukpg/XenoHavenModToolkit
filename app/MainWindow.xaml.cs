@@ -260,6 +260,8 @@ public partial class MainWindow : Window
         CleanMetaOpenedButton.Visibility = opened ? Visibility.Visible : Visibility.Collapsed;
         ExportReleaseButton.Visibility = opened ? Visibility.Visible : Visibility.Collapsed;
         AddBuildingButton.IsEnabled = opened;
+        DeleteBuildingButton.Visibility = opened ? Visibility.Visible : Visibility.Collapsed;
+        DeleteBuildingButton.IsEnabled = opened && BuildingTiles.SelectedItem is BuildingEntry;
     }
 
     private void NewMod_Click(object sender, RoutedEventArgs e)
@@ -485,6 +487,12 @@ public partial class MainWindow : Window
 
     private void BuildingTiles_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (string.IsNullOrWhiteSpace(currentModRoot) || !Directory.Exists(currentModRoot))
+        {
+            return;
+        }
+
+        DeleteBuildingButton.IsEnabled = BuildingTiles.SelectedItem is BuildingEntry;
     }
 
     private void BuildingTiles_DoubleClick(object sender, MouseButtonEventArgs e)
@@ -496,6 +504,53 @@ public partial class MainWindow : Window
         }
 
         OpenBuildingEditor_Click(sender, e);
+    }
+
+    private void DeleteBuilding_Click(object sender, RoutedEventArgs e)
+    {
+        if (!EnsureModOpen())
+        {
+            return;
+        }
+
+        if (BuildingTiles.SelectedItem is not BuildingEntry selected)
+        {
+            System.Windows.MessageBox.Show(this, "请先在磁贴区选中要删除的 Building。", "删除 Building", MessageBoxButton.OK, MessageBoxImage.Information);
+            return;
+        }
+
+        var confirm = System.Windows.MessageBox.Show(
+            $"确定从 Buildings.xml 中删除 Building「{selected.Name}」（id={selected.Id}）吗？\n将同时尝试删除 Thing/Buildings/images 与 icon 下对应的 {selected.Id}.png（若存在）。",
+            "删除 Building",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (confirm != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        try
+        {
+            if (!RemoveBuildingFromBuildingsXml(selected.Id))
+            {
+                System.Windows.MessageBox.Show(this, $"未在 Buildings.xml 中找到 id={selected.Id} 的条目。", "删除 Building", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            TryDeleteBuildingImageFiles(selected.Id);
+            SaveBuildingsXmlToDisk();
+            BuildingTiles.SelectedItem = null;
+            ParseBuildingsFromEditor();
+            LoadTree();
+            UpdateTopBarState();
+            Log($"已删除 Building：id={selected.Id} - {selected.Name}。");
+        }
+        catch (Exception ex)
+        {
+            Log($"删除 Building 失败：{ex.Message}");
+            System.Windows.MessageBox.Show(this, ex.Message, "删除 Building", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private void AddBuilding_Click(object sender, RoutedEventArgs e)
@@ -1197,6 +1252,53 @@ public partial class MainWindow : Window
         catch
         {
             return null;
+        }
+    }
+
+    private bool RemoveBuildingFromBuildingsXml(int id)
+    {
+        var doc = XDocument.Parse(buildingsXmlText, LoadOptions.PreserveWhitespace);
+        if (doc.Root?.Name.LocalName != "ArrayOfModBuildingXML")
+        {
+            throw new InvalidOperationException("Buildings.xml 根节点不是 ArrayOfModBuildingXML。");
+        }
+
+        var existing = doc.Root.Elements().FirstOrDefault(e => e.Name.LocalName == "ModBuildingXML" &&
+                                                               int.TryParse(e.Elements().FirstOrDefault(x => x.Name.LocalName == "id")?.Value, out var elId) &&
+                                                               elId == id);
+
+        if (existing is null)
+        {
+            return false;
+        }
+
+        existing.Remove();
+        buildingsXmlText = doc.Declaration is null
+            ? doc.ToString()
+            : doc.Declaration + Environment.NewLine + doc.ToString();
+        return true;
+    }
+
+    private void TryDeleteBuildingImageFiles(int id)
+    {
+        foreach (var rel in new[]
+                 {
+                     Path.Combine(BuildingImagesRelativePath, $"{id}.png"),
+                     Path.Combine(BuildingIconsRelativePath, $"{id}.png")
+                 })
+        {
+            try
+            {
+                var full = GetFullPath(rel);
+                if (File.Exists(full))
+                {
+                    File.Delete(full);
+                }
+            }
+            catch
+            {
+                // 忽略单文件删除失败，避免阻断 XML 已删后的保存流程
+            }
         }
     }
 

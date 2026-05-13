@@ -7,6 +7,7 @@
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Themes/Light.xaml"/>
                 <ResourceDictionary Source="Styles/ExplorerTreeView.xaml"/>
+                <ResourceDictionary Source="Styles/ThemedScrollBar.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
             <Style TargetType="Button">

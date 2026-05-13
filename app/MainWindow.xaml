@@ -48,6 +48,8 @@
 
                     <!-- 已打开 Mod 后显示（顺序按需求） -->
                     <Button x:Name="ModInfoButton" Content="Mod 信息" Click="ModInfo_Click" Visibility="Collapsed"/>
+                    <Button x:Name="AddBuildingButton" Content="新建 Building" Click="AddBuilding_Click" IsEnabled="False"/>
+                    <Button x:Name="DeleteBuildingButton" Content="删除 Building" Click="DeleteBuilding_Click" Visibility="Collapsed" IsEnabled="False"/>
                     <Button x:Name="CleanMetaOpenedButton" Content="清理 .meta" Click="CleanMeta_Click" Visibility="Collapsed"/>
                     <Button x:Name="ExportReleaseButton" Content="导出发布版" Click="ExportRelease_Click" Visibility="Collapsed"/>
                 </WrapPanel>
@@ -94,10 +96,6 @@
 
             <Border Grid.Column="2" Style="{StaticResource SectionBorderStyle}">
                 <DockPanel>
-                    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Margin="0,0,0,8">
-                        <Button x:Name="AddBuildingButton" Content="新建 Building" Click="AddBuilding_Click" IsEnabled="False"/>
-                    </StackPanel>
-
                     <ListBox x:Name="BuildingTiles"
                              Background="{DynamicResource Theme.PanelBackground}"
                              BorderThickness="0"

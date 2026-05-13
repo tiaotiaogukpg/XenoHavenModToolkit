@@ -34,4 +34,8 @@
     <SolidColorBrush x:Key="Theme.TreeViewLineBrush" Color="#B8B8B8"/>
     <SolidColorBrush x:Key="Theme.TreeViewHoverBackground" Color="#E8F0F8"/>
     <SolidColorBrush x:Key="Theme.TreeViewModValidForeground" Color="#D13438"/>
+    <SolidColorBrush x:Key="Theme.ScrollBarTrackBrush" Color="#E4E4E4"/>
+    <SolidColorBrush x:Key="Theme.ScrollBarThumbBrush" Color="#A8A8A8"/>
+    <SolidColorBrush x:Key="Theme.ScrollBarThumbHoverBrush" Color="#888888"/>
+    <SolidColorBrush x:Key="Theme.ScrollBarThumbPressedBrush" Color="#707070"/>
 </ResourceDictionary>

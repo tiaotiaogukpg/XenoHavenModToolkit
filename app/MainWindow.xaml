@@ -41,8 +41,9 @@
                 </Grid.ColumnDefinitions>
 
                 <WrapPanel Grid.Column="0" VerticalAlignment="Center">
+                    <Button x:Name="OpenModButton" Content="打开 MOD" Click="OpenModFolder_Click"/>
                     <!-- 未打开 Mod 时显示 -->
-                    <Button x:Name="NewModButton" Content="新建 Mod" Click="NewMod_Click"/>
+                    <Button x:Name="NewModButton" Content="新建 MOD" Click="NewMod_Click"/>
                     <Button x:Name="CleanMetaButton" Content="清理 .meta" Click="CleanMeta_Click"/>
 
                     <!-- 已打开 Mod 后显示（顺序按需求） -->

@@ -6,6 +6,7 @@
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Themes/Light.xaml"/>
+                <ResourceDictionary Source="Styles/ExplorerTreeView.xaml"/>
             </ResourceDictionary.MergedDictionaries>
 
             <Style TargetType="Button">
@@ -67,16 +68,6 @@
                         <Setter Property="Background" Value="{DynamicResource Theme.SelectionBackground}"/>
                     </Trigger>
                 </Style.Triggers>
-            </Style>
-
-            <Style TargetType="TreeView">
-                <Setter Property="Background" Value="{DynamicResource Theme.PanelBackground}"/>
-                <Setter Property="Foreground" Value="{DynamicResource Theme.TextColor}"/>
-                <Setter Property="BorderBrush" Value="{DynamicResource Theme.BorderColor}"/>
-            </Style>
-
-            <Style TargetType="TreeViewItem">
-                <Setter Property="Foreground" Value="{DynamicResource Theme.TextColor}"/>
             </Style>
 
             <Style TargetType="TabControl">

@@ -31,4 +31,6 @@
     <SolidColorBrush x:Key="Theme.ConsoleTextColor" Color="{StaticResource Theme.ConsoleTextColorValue}"/>
     <SolidColorBrush x:Key="Theme.SelectionBackground" Color="{StaticResource Theme.SelectionBackgroundColor}"/>
     <SolidColorBrush x:Key="Theme.FocusGlow" Color="{StaticResource Theme.FocusGlowColor}"/>
+    <SolidColorBrush x:Key="Theme.TreeViewLineBrush" Color="#5A5A5A"/>
+    <SolidColorBrush x:Key="Theme.TreeViewHoverBackground" Color="#2D3133"/>
 </ResourceDictionary>

@@ -271,6 +271,7 @@ public partial class MainWindow : Window
     {
         var opened = !string.IsNullOrWhiteSpace(currentModRoot) && Directory.Exists(currentModRoot);
 
+        OpenModButton.Visibility = Visibility.Visible;
         NewModButton.Visibility = opened ? Visibility.Collapsed : Visibility.Visible;
         CleanMetaButton.Visibility = opened ? Visibility.Collapsed : Visibility.Visible;
 
@@ -539,8 +540,15 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (item.Tag is OverviewModDirectoryTag)
+        if (item.Tag is OverviewModDirectoryTag tag)
         {
+            if (Directory.Exists(tag.FullPath) &&
+                !string.Equals(tag.FullPath, currentModRoot, StringComparison.OrdinalIgnoreCase))
+            {
+                OpenModFolder(tag.FullPath);
+                UpdateTopBarState();
+            }
+
             return;
         }
 
@@ -963,25 +971,86 @@ public partial class MainWindow : Window
 
         ModFileTree.Items.Clear();
 
+        // 已打开 Mod 时仍保持「Mod」为总览根，当前 Mod 作为子节点展开其内部结构
+        if (!string.IsNullOrWhiteSpace(settings.ModsOverviewRoot) &&
+            Directory.Exists(settings.ModsOverviewRoot))
+        {
+            RefreshOverviewList();
+            var root = new TreeViewItem
+            {
+                Header = "Mod",
+                Tag = settings.ModsOverviewRoot,
+                IsExpanded = true
+            };
+
+            var matchedOverview = false;
+            foreach (var entry in overviewMods)
+            {
+                var isOpen = string.Equals(entry.FullPath, currentModRoot, StringComparison.OrdinalIgnoreCase);
+                var modNode = new TreeViewItem
+                {
+                    Header = entry.DisplayName,
+                    Tag = new OverviewModDirectoryTag(entry.FullPath),
+                    IsExpanded = isOpen
+                };
+
+                if (isOpen)
+                {
+                    AppendOpenModExplorerChildren(modNode);
+                    matchedOverview = true;
+                }
+
+                root.Items.Add(modNode);
+            }
+
+            if (!matchedOverview && Directory.Exists(currentModRoot!))
+            {
+                var orphan = new TreeViewItem
+                {
+                    Header = new DirectoryInfo(currentModRoot!).Name,
+                    Tag = new OverviewModDirectoryTag(currentModRoot!),
+                    IsExpanded = true
+                };
+                AppendOpenModExplorerChildren(orphan);
+                root.Items.Add(orphan);
+            }
+
+            ModFileTree.Items.Add(root);
+            return;
+        }
+
+        // 未配置总览目录时：退化为单根（当前 Mod 目录名）
         var rootInfo = new DirectoryInfo(currentModRoot!);
-        var root = new TreeViewItem
+        var singleRoot = new TreeViewItem
         {
             Header = rootInfo.Name,
             Tag = rootInfo.FullName,
             IsExpanded = true
         };
+        AppendOpenModExplorerChildren(singleRoot);
+        ModFileTree.Items.Add(singleRoot);
+    }
+
+    /// <summary>
+    /// 在当前已打开的 Mod（<see cref="currentModRoot"/>）下追加 Prefabs / Thing / Buildings.xml 等子节点。
+    /// </summary>
+    private void AppendOpenModExplorerChildren(TreeViewItem modNode)
+    {
+        if (!EnsureModOpen(showMessage: false))
+        {
+            return;
+        }
 
         var prefabsPath = Path.Combine(currentModRoot!, "Prefabs");
         if (Directory.Exists(prefabsPath))
         {
-            root.Items.Add(CreateTreeItem(new DirectoryInfo(prefabsPath)));
+            modNode.Items.Add(CreateTreeItem(new DirectoryInfo(prefabsPath)));
         }
 
         var thingPath = Path.Combine(currentModRoot!, "Thing");
         var buildingsXmlPath = GetFullPath(BuildingsXmlRelativePath);
         if (!Directory.Exists(thingPath) && !File.Exists(buildingsXmlPath))
         {
-            ModFileTree.Items.Add(root);
             return;
         }
 
@@ -1010,9 +1079,7 @@ public partial class MainWindow : Window
         }
 
         thingNode.Items.Add(buildingsXmlNode);
-        root.Items.Add(thingNode);
-
-        ModFileTree.Items.Add(root);
+        modNode.Items.Add(thingNode);
     }
 
     private void BuildOverviewNavigationTree()
@@ -1031,7 +1098,7 @@ public partial class MainWindow : Window
         RefreshOverviewList();
         var root = new TreeViewItem
         {
-            Header = new DirectoryInfo(settings.ModsOverviewRoot).Name,
+            Header = "Mod",
             Tag = settings.ModsOverviewRoot,
             IsExpanded = true
         };

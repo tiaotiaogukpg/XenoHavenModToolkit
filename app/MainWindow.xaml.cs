@@ -677,6 +677,7 @@ public partial class MainWindow : Window
         }
 
         var seenIds = new HashSet<int>();
+        var seenUuids = new HashSet<string>(StringComparer.Ordinal);
         foreach (var element in document.Root.Elements().Where(e => e.Name.LocalName == "ModBuildingXML"))
         {
             var idText = element.Elements().FirstOrDefault(e => e.Name.LocalName == "id")?.Value;
@@ -689,6 +690,16 @@ public partial class MainWindow : Window
             if (!seenIds.Add(id))
             {
                 messages.Add($"[错误] 建筑 id 重复：{id}。");
+            }
+
+            var uuidText = ReadBuildingUuid(element);
+            if (string.IsNullOrWhiteSpace(uuidText))
+            {
+                messages.Add($"[警告] 建筑 {id} 缺少 <uuid>，保存编辑或新建时将自动补全。");
+            }
+            else if (!seenUuids.Add(uuidText.Trim()))
+            {
+                messages.Add($"[警告] 建筑 {id} 的 uuid 与其它条目重复：{uuidText}。");
             }
 
             ValidatePositiveInt(element, "direction", id, messages);
@@ -1121,6 +1132,7 @@ public partial class MainWindow : Window
     internal sealed record EditableBuilding(
         int Id,
         string Name,
+        string Uuid,
         string Type,
         int Direction,
         int Capbility,
@@ -1128,6 +1140,28 @@ public partial class MainWindow : Window
         int Health,
         int SizeX,
         int SizeY);
+
+    private static string EnsureBuildingUuid(string? uuid) =>
+        string.IsNullOrWhiteSpace(uuid) ? GUIDUtils.Generate() : uuid.Trim();
+
+    private static string? ReadBuildingUuid(XElement element) =>
+        element.Elements().FirstOrDefault(x => x.Name.LocalName == "uuid")?.Value;
+
+    private static XElement CreateModBuildingXmlElement(EditableBuilding b) =>
+        new(
+            "ModBuildingXML",
+            new XElement("id", b.Id),
+            new XElement("name", b.Name),
+            new XElement("uuid", b.Uuid),
+            new XElement("type", b.Type),
+            new XElement("direction", b.Direction),
+            new XElement("capbility", b.Capbility),
+            new XElement("workbenchId", b.WorkbenchId),
+            new XElement("health", b.Health),
+            new XElement("size",
+                new XElement("x", b.SizeX),
+                new XElement("y", b.SizeY)),
+            new XElement("materials"));
 
     private (int nextId, string nextName) SuggestNewBuildingDefaults()
     {
@@ -1151,21 +1185,18 @@ public partial class MainWindow : Window
             throw new InvalidOperationException($"Buildings.xml 中已存在相同 id：{b.Id}。");
         }
 
-        var element =
-            new XElement("ModBuildingXML",
-                new XElement("id", b.Id),
-                new XElement("name", b.Name),
-                new XElement("type", b.Type),
-                new XElement("direction", 1),
-                new XElement("capbility", 1),
-                new XElement("workbenchId", 1),
-                new XElement("health", b.Health),
-                new XElement("size",
-                    new XElement("x", b.SizeX),
-                    new XElement("y", b.SizeY)
-                ),
-                new XElement("materials")
-            );
+        var element = CreateModBuildingXmlElement(
+            new EditableBuilding(
+                b.Id,
+                b.Name,
+                GUIDUtils.Generate(),
+                b.Type,
+                1,
+                1,
+                1,
+                b.Health,
+                b.SizeX,
+                b.SizeY));
 
         doc.Root.Add(new XText(Environment.NewLine + "  "));
         doc.Root.Add(element);
@@ -1199,11 +1230,11 @@ public partial class MainWindow : Window
                 ? (string.IsNullOrWhiteSpace(selected.Type) ? $"Building_{selected.Id}" : selected.Type)
                 : selected.Name;
             var typeForEdit = string.IsNullOrWhiteSpace(selected.Type) ? "Building" : selected.Type;
-            return new EditableBuilding(selected.Id, nameForEdit, typeForEdit, 1, 1, 1, 100, 1, 1);
+            return new EditableBuilding(selected.Id, nameForEdit, GUIDUtils.Generate(), typeForEdit, 1, 1, 1, 100, 1, 1);
         }
 
         var (nextId, nextName) = SuggestNewBuildingDefaults();
-        return new EditableBuilding(nextId, nextName, "Building", 1, 1, 1, 100, 1, 1);
+        return new EditableBuilding(nextId, nextName, GUIDUtils.Generate(), "Building", 1, 1, 1, 100, 1, 1);
     }
 
     private EditableBuilding? TryReadEditableBuildingById(int id)
@@ -1241,6 +1272,7 @@ public partial class MainWindow : Window
             return new EditableBuilding(
                 id,
                 nameValue,
+                EnsureBuildingUuid(ReadBuildingUuid(el)),
                 typeValue,
                 ReadInt("direction", 1),
                 ReadInt("capbility", 1),
@@ -1314,21 +1346,7 @@ public partial class MainWindow : Window
                                                                int.TryParse(e.Elements().FirstOrDefault(x => x.Name.LocalName == "id")?.Value, out var id) &&
                                                                id == b.Id);
 
-        var element =
-            new XElement("ModBuildingXML",
-                new XElement("id", b.Id),
-                new XElement("name", b.Name),
-                new XElement("type", b.Type),
-                new XElement("direction", b.Direction),
-                new XElement("capbility", b.Capbility),
-                new XElement("workbenchId", b.WorkbenchId),
-                new XElement("health", b.Health),
-                new XElement("size",
-                    new XElement("x", b.SizeX),
-                    new XElement("y", b.SizeY)
-                ),
-                new XElement("materials")
-            );
+        var element = CreateModBuildingXmlElement(b with { Uuid = EnsureBuildingUuid(b.Uuid) });
 
         if (existing is null)
         {

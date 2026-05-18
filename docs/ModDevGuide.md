@@ -80,6 +80,7 @@ MyBuildingMod/
 <ModBuildingXML>
   <id>1</id>
   <name>Example Box</name>
+  <uuid>a1b2c3d4e5f6478990abcdef12345678</uuid>
   <type>BOX</type>
   <direction>1</direction>
   <capbility>10</capbility>
@@ -102,6 +103,7 @@ MyBuildingMod/
 关键规则：
 
 - `id` 必须唯一。重复 ID 会导致加载冲突或失败。
+- `uuid` 为条目的稳定唯一标识（32 位十六进制 GUID，无连字符）。XenoHaven MOD Toolkit 在新建建筑时自动生成；游戏内 `ModBuildingXML.GetHashId()` 返回 `uuid.GetHashCode()`，工具编辑窗会以只读 **hashId** 展示该值。`uuid` 创建后不应修改。
 - `size.x` 和 `size.y` 表示占地尺寸，应为正整数。
 - `materials` 表示建造材料列表，每个 `ModCraftMaterialData` 包含材料 `id` 与数量 `count`。
 - `barrier` 表示是否作为阻挡/障碍处理。

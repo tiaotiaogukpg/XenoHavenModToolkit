@@ -3,6 +3,7 @@
   <ModBuildingXML>
     <id>1</id>
     <name>Example Box</name>
+    <uuid>a1b2c3d4e5f6478990abcdef12345678</uuid>
     <type>BOX</type>
     <direction>1</direction>
     <capbility>10</capbility>

@@ -28,6 +28,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="id" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
@@ -36,29 +37,34 @@
                 <TextBlock Grid.Row="1" Grid.Column="0" Text="type" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
                 <TextBox Grid.Row="1" Grid.Column="1" x:Name="TypeBox" Margin="0,0,0,8" Text="Building" VerticalContentAlignment="Center" MinHeight="28"/>
 
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="name" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
-                <TextBox Grid.Row="2" Grid.Column="1" x:Name="NameBox" Margin="0,0,0,8" VerticalContentAlignment="Center" MinHeight="28"/>
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="hashId" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
+                <TextBox Grid.Row="2" Grid.Column="1" x:Name="HashIdBox" Margin="0,0,0,8" IsReadOnly="True"
+                         VerticalContentAlignment="Center" MinHeight="28"
+                         Foreground="{DynamicResource Theme.SecondaryTextColor}"/>
 
-                <TextBlock Grid.Row="3" Grid.Column="0" Text="direction" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
-                <TextBox Grid.Row="3" Grid.Column="1" x:Name="DirectionBox" Margin="0,0,0,8" Text="1" VerticalContentAlignment="Center" MinHeight="28"/>
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="name" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
+                <TextBox Grid.Row="3" Grid.Column="1" x:Name="NameBox" Margin="0,0,0,8" VerticalContentAlignment="Center" MinHeight="28"/>
 
-                <TextBlock Grid.Row="4" Grid.Column="0" Text="capbility" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
-                <TextBox Grid.Row="4" Grid.Column="1" x:Name="CapbilityBox" Margin="0,0,0,8" Text="1" VerticalContentAlignment="Center" MinHeight="28"/>
+                <TextBlock Grid.Row="4" Grid.Column="0" Text="direction" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
+                <TextBox Grid.Row="4" Grid.Column="1" x:Name="DirectionBox" Margin="0,0,0,8" Text="1" VerticalContentAlignment="Center" MinHeight="28"/>
 
-                <TextBlock Grid.Row="5" Grid.Column="0" Text="workbenchId" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
-                <TextBox Grid.Row="5" Grid.Column="1" x:Name="WorkbenchIdBox" Margin="0,0,0,8" Text="1" VerticalContentAlignment="Center" MinHeight="28"/>
+                <TextBlock Grid.Row="5" Grid.Column="0" Text="capbility" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
+                <TextBox Grid.Row="5" Grid.Column="1" x:Name="CapbilityBox" Margin="0,0,0,8" Text="1" VerticalContentAlignment="Center" MinHeight="28"/>
 
-                <TextBlock Grid.Row="6" Grid.Column="0" Text="health" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
-                <TextBox Grid.Row="6" Grid.Column="1" x:Name="HealthBox" Margin="0,0,0,8" Text="100" VerticalContentAlignment="Center" MinHeight="28"/>
+                <TextBlock Grid.Row="6" Grid.Column="0" Text="workbenchId" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
+                <TextBox Grid.Row="6" Grid.Column="1" x:Name="WorkbenchIdBox" Margin="0,0,0,8" Text="1" VerticalContentAlignment="Center" MinHeight="28"/>
 
-                <TextBlock Grid.Row="7" Grid.Column="0" Text="size.x" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
-                <TextBox Grid.Row="7" Grid.Column="1" x:Name="SizeXBox" Margin="0,0,0,8" Text="1" VerticalContentAlignment="Center" MinHeight="28"/>
+                <TextBlock Grid.Row="7" Grid.Column="0" Text="health" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
+                <TextBox Grid.Row="7" Grid.Column="1" x:Name="HealthBox" Margin="0,0,0,8" Text="100" VerticalContentAlignment="Center" MinHeight="28"/>
 
-                <TextBlock Grid.Row="8" Grid.Column="0" Text="size.y" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
-                <TextBox Grid.Row="8" Grid.Column="1" x:Name="SizeYBox" Margin="0,0,0,12" Text="1" VerticalContentAlignment="Center" MinHeight="28"/>
+                <TextBlock Grid.Row="8" Grid.Column="0" Text="size.x" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
+                <TextBox Grid.Row="8" Grid.Column="1" x:Name="SizeXBox" Margin="0,0,0,8" Text="1" VerticalContentAlignment="Center" MinHeight="28"/>
 
-                <TextBlock Grid.Row="9" Grid.Column="0" Text="物品图标" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="0,6,10,0"/>
-                <StackPanel Grid.Row="9" Grid.Column="1" Margin="0,0,0,14">
+                <TextBlock Grid.Row="9" Grid.Column="0" Text="size.y" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
+                <TextBox Grid.Row="9" Grid.Column="1" x:Name="SizeYBox" Margin="0,0,0,12" Text="1" VerticalContentAlignment="Center" MinHeight="28"/>
+
+                <TextBlock Grid.Row="10" Grid.Column="0" Text="物品图标" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="0,6,10,0"/>
+                <StackPanel Grid.Row="10" Grid.Column="1" Margin="0,0,0,14">
                     <Grid Margin="0,0,0,6">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
@@ -91,8 +97,8 @@
                     </Border>
                 </StackPanel>
 
-                <TextBlock Grid.Row="10" Grid.Column="0" Text="地图显示图" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="0,6,10,0"/>
-                <StackPanel Grid.Row="10" Grid.Column="1" Margin="0,0,0,0">
+                <TextBlock Grid.Row="11" Grid.Column="0" Text="地图显示图" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="0,6,10,0"/>
+                <StackPanel Grid.Row="11" Grid.Column="1" Margin="0,0,0,0">
                     <Grid Margin="0,0,0,6">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>

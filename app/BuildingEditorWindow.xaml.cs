@@ -16,6 +16,7 @@ public partial class BuildingEditorWindow : Window
     private static readonly string BuildingIconsRelativePath = Path.Combine("Thing", "Buildings", "images", "icon");
 
     private readonly string modRoot;
+    private readonly string uuid;
 
     internal MainWindow.EditableBuilding? Result { get; private set; }
 
@@ -23,7 +24,9 @@ public partial class BuildingEditorWindow : Window
     {
         InitializeComponent();
         this.modRoot = modRoot;
+        uuid = initial.Uuid;
         IdBox.Text = initial.Id.ToString(CultureInfo.InvariantCulture);
+        HashIdBox.Text = ModBuildingHash.GetHashId(uuid).ToString(CultureInfo.InvariantCulture);
         NameBox.Text = initial.Name;
         TypeBox.Text = initial.Type;
         DirectionBox.Text = initial.Direction.ToString(CultureInfo.InvariantCulture);
@@ -68,7 +71,7 @@ public partial class BuildingEditorWindow : Window
             return;
         }
 
-        Result = new MainWindow.EditableBuilding(id, name, type, direction, capbility, workbenchId, health, sx, sy);
+        Result = new MainWindow.EditableBuilding(id, name, uuid, type, direction, capbility, workbenchId, health, sx, sy);
         DialogResult = true;
     }
 

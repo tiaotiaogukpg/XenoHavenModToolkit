@@ -4,6 +4,47 @@
         Title="Building 编辑" Height="760" Width="560"
         WindowStartupLocation="CenterOwner"
         Background="{DynamicResource Theme.WindowBackground}">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+
+        <Style x:Key="ImageSectionFoldToggleStyle" TargetType="ToggleButton">
+            <Setter Property="Width" Value="24"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="Margin" Value="0,0,4,0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border Background="Transparent" Padding="4">
+                            <Path x:Name="Glyph"
+                                  Width="8"
+                                  Height="8"
+                                  Stretch="Uniform"
+                                  Fill="{DynamicResource Theme.SecondaryTextColor}"
+                                  Data="M2,1 L7,5 L2,9 Z"
+                                  RenderTransformOrigin="0.5,0.5">
+                                <Path.RenderTransform>
+                                    <RotateTransform Angle="0"/>
+                                </Path.RenderTransform>
+                            </Path>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Glyph" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <RotateTransform Angle="90"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
     <Grid Margin="12" Background="{DynamicResource Theme.WindowBackground}">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
@@ -17,6 +58,10 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -63,26 +108,35 @@
                 <TextBlock Grid.Row="9" Grid.Column="0" Text="size.y" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
                 <TextBox Grid.Row="9" Grid.Column="1" x:Name="SizeYBox" Margin="0,0,0,12" Text="1" VerticalContentAlignment="Center" MinHeight="28"/>
 
-                <TextBlock Grid.Row="10" Grid.Column="0" Text="物品图标" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="0,6,10,0"/>
-                <StackPanel Grid.Row="10" Grid.Column="1" Margin="0,0,0,14">
-                    <Grid Margin="0,0,0,6">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Button Grid.Column="0"
-                                Content="导入物品图标"
-                                Click="ImportIconImage_Click"
-                                VerticalAlignment="Center"
-                                HorizontalAlignment="Left"
-                                Margin="0,0,8,0"/>
-                        <TextBlock x:Name="IconImagePathText"
-                                   Grid.Column="1"
-                                   VerticalAlignment="Center"
-                                   TextWrapping="Wrap"
-                                   Foreground="{DynamicResource Theme.SecondaryTextColor}"
-                                   FontSize="12"/>
-                    </Grid>
+                <TextBlock Grid.Row="10" Grid.Column="0" Text="物品图标" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,12,10,0"/>
+                <Button Grid.Row="10" Grid.Column="1"
+                        Content="导入物品图标"
+                        Click="ImportIconImage_Click"
+                        HorizontalAlignment="Left"
+                        Margin="0,12,0,4"/>
+
+                <Grid Grid.Row="11" Grid.Column="1" Margin="0,0,0,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <ToggleButton x:Name="IconPreviewExpandToggle"
+                                  Grid.Column="0"
+                                  Style="{StaticResource ImageSectionFoldToggleStyle}"
+                                  IsChecked="False"
+                                  ToolTip="展开/折叠预览"/>
+                    <TextBlock x:Name="IconImagePathText"
+                               Grid.Column="1"
+                               VerticalAlignment="Center"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource Theme.SecondaryTextColor}"
+                               FontSize="12"/>
+                </Grid>
+
+                <Border Grid.Row="12" Grid.Column="1"
+                        x:Name="IconImagePreviewHost"
+                        Margin="0,0,0,8"
+                        Visibility="{Binding IsChecked, ElementName=IconPreviewExpandToggle, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <Border x:Name="IconImageDropBorder"
                             Height="160"
                             Background="{DynamicResource Theme.EditorBackground}"
@@ -95,28 +149,36 @@
                             MouseLeftButtonUp="IconImage_Click">
                         <Image x:Name="IconImagePreview" Stretch="Uniform"/>
                     </Border>
-                </StackPanel>
+                </Border>
 
-                <TextBlock Grid.Row="11" Grid.Column="0" Text="地图显示图" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="0,6,10,0"/>
-                <StackPanel Grid.Row="11" Grid.Column="1" Margin="0,0,0,0">
-                    <Grid Margin="0,0,0,6">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Button Grid.Column="0"
-                                Content="导入地图显示图"
-                                Click="ImportWorldImage_Click"
-                                VerticalAlignment="Center"
-                                HorizontalAlignment="Left"
-                                Margin="0,0,8,0"/>
-                        <TextBlock x:Name="WorldImagePathText"
-                                   Grid.Column="1"
-                                   VerticalAlignment="Center"
-                                   TextWrapping="Wrap"
-                                   Foreground="{DynamicResource Theme.SecondaryTextColor}"
-                                   FontSize="12"/>
-                    </Grid>
+                <TextBlock Grid.Row="13" Grid.Column="0" Text="地图显示图" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,4,10,0"/>
+                <Button Grid.Row="13" Grid.Column="1"
+                        Content="导入地图显示图"
+                        Click="ImportWorldImage_Click"
+                        HorizontalAlignment="Left"
+                        Margin="0,4,0,4"/>
+
+                <Grid Grid.Row="14" Grid.Column="1" Margin="0,0,0,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <ToggleButton x:Name="WorldPreviewExpandToggle"
+                                  Grid.Column="0"
+                                  Style="{StaticResource ImageSectionFoldToggleStyle}"
+                                  IsChecked="False"
+                                  ToolTip="展开/折叠预览"/>
+                    <TextBlock x:Name="WorldImagePathText"
+                               Grid.Column="1"
+                               VerticalAlignment="Center"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource Theme.SecondaryTextColor}"
+                               FontSize="12"/>
+                </Grid>
+
+                <Border Grid.Row="15" Grid.Column="1"
+                        x:Name="WorldImagePreviewHost"
+                        Visibility="{Binding IsChecked, ElementName=WorldPreviewExpandToggle, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <Border x:Name="WorldImageDropBorder"
                             Height="160"
                             Background="{DynamicResource Theme.EditorBackground}"
@@ -129,7 +191,7 @@
                             MouseLeftButtonUp="WorldImage_Click">
                         <Image x:Name="WorldImagePreview" Stretch="Uniform"/>
                     </Border>
-                </StackPanel>
+                </Border>
             </Grid>
         </ScrollViewer>
 

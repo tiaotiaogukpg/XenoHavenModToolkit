@@ -132,8 +132,18 @@ public partial class MainWindow : Window
 
     private void ModFileTree_PreviewMouseDown(object sender, MouseButtonEventArgs e)
     {
-        if (TryGetTreeViewItemFromSource(e.OriginalSource as DependencyObject) is not null)
+        if (e.ChangedButton != MouseButton.Left)
         {
+            return;
+        }
+
+        if (TryGetTreeViewItemFromSource(e.OriginalSource as DependencyObject) is TreeViewItem item)
+        {
+            if (item.HasItems)
+            {
+                item.IsExpanded = !item.IsExpanded;
+            }
+
             return;
         }
 
@@ -155,18 +165,31 @@ public partial class MainWindow : Window
 
     private void ModFileTree_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
-        if (EnsureModOpen(showMessage: false))
-        {
-            return;
-        }
-
         if (TryGetTreeViewItemFromSource(e.OriginalSource as DependencyObject) is not { Tag: OverviewModDirectoryTag tag })
         {
             return;
         }
 
-        OpenModFolder(tag.FullPath);
-        UpdateTopBarState();
+        if (!Directory.Exists(tag.FullPath))
+        {
+            return;
+        }
+
+        if (!EnsureModOpen(showMessage: false))
+        {
+            OpenModFolder(tag.FullPath);
+            UpdateTopBarState();
+            e.Handled = true;
+            return;
+        }
+
+        if (!string.Equals(tag.FullPath, currentModRoot, StringComparison.OrdinalIgnoreCase))
+        {
+            OpenModFolder(tag.FullPath);
+            UpdateTopBarState();
+        }
+
+        e.Handled = true;
     }
 
     private void RefreshOverviewList()
@@ -377,7 +400,7 @@ public partial class MainWindow : Window
             UpsertBuildingToBuildingsXml(dialog.Result);
             SaveBuildingsXmlToDisk();
             ParseBuildingsFromEditor();
-            LoadTree();
+            RefreshBuildingNodesInTree();
             Log($"已更新 Building：{dialog.Result.Id} - {dialog.Result.Name}。");
         }
         catch (Exception ex)
@@ -476,18 +499,6 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (item.Tag is OverviewModDirectoryTag tag)
-        {
-            if (Directory.Exists(tag.FullPath) &&
-                !string.Equals(tag.FullPath, currentModRoot, StringComparison.OrdinalIgnoreCase))
-            {
-                OpenModFolder(tag.FullPath);
-                UpdateTopBarState();
-            }
-
-            return;
-        }
-
         // 点击文件节点（Buildings.xml / 图片等）时
         if (item.Tag is not string path || Directory.Exists(path))
         {
@@ -504,7 +515,6 @@ public partial class MainWindow : Window
                 {
                     buildingsXmlText = text;
                     ParseBuildingsFromEditor();
-                    LoadTree();
                 }
                 else if (relativePath.Equals(MainXmlRelativePath, StringComparison.OrdinalIgnoreCase))
                 {
@@ -581,7 +591,7 @@ public partial class MainWindow : Window
             SaveBuildingsXmlToDisk();
             BuildingTiles.SelectedItem = null;
             ParseBuildingsFromEditor();
-            LoadTree();
+            RefreshBuildingNodesInTree();
             UpdateTopBarState();
             Log($"已删除 Building：id={selected.Id} - {selected.Name}。");
         }
@@ -616,7 +626,7 @@ public partial class MainWindow : Window
             AddBuildingToBuildingsXml(newEntry);
             SaveBuildingsXmlToDisk();
             ParseBuildingsFromEditor();
-            LoadTree();
+            RefreshBuildingNodesInTree();
             Log($"已新增 Building：{newEntry.Id} - {newEntry.Name} ({newEntry.Type})。");
         }
         catch (Exception ex)
@@ -872,6 +882,32 @@ public partial class MainWindow : Window
         return bitmap;
     }
 
+    private void RefreshBuildingNodesInTree()
+    {
+        if (!EnsureModOpen(showMessage: false))
+        {
+            return;
+        }
+
+        var buildingsXmlPath = GetFullPath(BuildingsXmlRelativePath);
+        if (TryFindTreeViewItemByTag(ModFileTree, buildingsXmlPath) is not TreeViewItem buildingsXmlNode)
+        {
+            LoadTree();
+            return;
+        }
+
+        buildingsXmlNode.Items.Clear();
+        foreach (var b in buildings.OrderBy(b => b.Id))
+        {
+            buildingsXmlNode.Items.Add(new TreeViewItem
+            {
+                Header = b.DisplayName,
+                Tag = b.Id,
+                IsExpanded = false
+            });
+        }
+    }
+
     private void LoadTree()
     {
         if (!EnsureModOpen(showMessage: false))
@@ -879,6 +915,9 @@ public partial class MainWindow : Window
             BuildOverviewNavigationTree();
             return;
         }
+
+        var expandedTags = CaptureTreeExpandedTags(ModFileTree);
+        var selectedTag = (ModFileTree.SelectedItem as TreeViewItem)?.Tag;
 
         ModFileTree.Items.Clear();
 
@@ -926,6 +965,7 @@ public partial class MainWindow : Window
             }
 
             ModFileTree.Items.Add(root);
+            RestoreTreeState(ModFileTree, expandedTags, selectedTag);
             return;
         }
 
@@ -939,6 +979,122 @@ public partial class MainWindow : Window
         };
         AppendOpenModExplorerChildren(singleRoot);
         ModFileTree.Items.Add(singleRoot);
+        RestoreTreeState(ModFileTree, expandedTags, selectedTag);
+    }
+
+    private static HashSet<string> CaptureTreeExpandedTags(ItemsControl parent)
+    {
+        var expanded = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        CollectExpandedTags(parent, expanded);
+        return expanded;
+    }
+
+    private static void CollectExpandedTags(ItemsControl parent, HashSet<string> expanded)
+    {
+        foreach (var item in parent.Items)
+        {
+            if (item is not TreeViewItem node)
+            {
+                continue;
+            }
+
+            if (node.IsExpanded && TryGetTreeTagKey(node.Tag, out var key))
+            {
+                expanded.Add(key);
+            }
+
+            CollectExpandedTags(node, expanded);
+        }
+    }
+
+    private static void RestoreTreeState(ItemsControl parent, HashSet<string> expandedTags, object? selectedTag)
+    {
+        foreach (var item in parent.Items)
+        {
+            if (item is not TreeViewItem node)
+            {
+                continue;
+            }
+
+            if (TryGetTreeTagKey(node.Tag, out var key) && expandedTags.Contains(key))
+            {
+                node.IsExpanded = true;
+            }
+
+            RestoreTreeState(node, expandedTags, selectedTag);
+
+            if (TagsMatch(node.Tag, selectedTag))
+            {
+                node.IsSelected = true;
+                node.BringIntoView();
+            }
+        }
+    }
+
+    private static TreeViewItem? TryFindTreeViewItemByTag(ItemsControl parent, object tag)
+    {
+        foreach (var item in parent.Items)
+        {
+            if (item is not TreeViewItem node)
+            {
+                continue;
+            }
+
+            if (TagsMatch(node.Tag, tag))
+            {
+                return node;
+            }
+
+            var found = TryFindTreeViewItemByTag(node, tag);
+            if (found is not null)
+            {
+                return found;
+            }
+        }
+
+        return null;
+    }
+
+    private static bool TagsMatch(object? left, object? right)
+    {
+        if (left is null || right is null)
+        {
+            return false;
+        }
+
+        if (left is OverviewModDirectoryTag leftTag && right is OverviewModDirectoryTag rightTag)
+        {
+            return string.Equals(leftTag.FullPath, rightTag.FullPath, StringComparison.OrdinalIgnoreCase);
+        }
+
+        if (left is string leftPath && right is string rightPath)
+        {
+            return string.Equals(leftPath, rightPath, StringComparison.OrdinalIgnoreCase);
+        }
+
+        return Equals(left, right);
+    }
+
+    private static bool TryGetTreeTagKey(object? tag, out string key)
+    {
+        switch (tag)
+        {
+            case null:
+                key = string.Empty;
+                return false;
+            case string path:
+                key = path;
+                return true;
+            case OverviewModDirectoryTag directoryTag:
+                key = directoryTag.FullPath;
+                return true;
+            case int buildingId:
+                key = $"building:{buildingId}";
+                return true;
+            default:
+                key = tag.ToString() ?? string.Empty;
+                return !string.IsNullOrEmpty(key);
+        }
     }
 
     /// <summary>

@@ -134,16 +134,16 @@
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="id" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
                 <TextBox Grid.Row="0" Grid.Column="1" x:Name="IdBox" Margin="0,0,0,8" VerticalContentAlignment="Center" MinHeight="28"/>
 
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="type" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
-                <TextBox Grid.Row="1" Grid.Column="1" x:Name="TypeBox" Margin="0,0,0,8" Text="Building" VerticalContentAlignment="Center" MinHeight="28"/>
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="name" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
+                <TextBox Grid.Row="1" Grid.Column="1" x:Name="NameBox" Margin="0,0,0,8" VerticalContentAlignment="Center" MinHeight="28"/>
 
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="hashId" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
-                <TextBox Grid.Row="2" Grid.Column="1" x:Name="HashIdBox" Margin="0,0,0,8" IsReadOnly="True"
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="type" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
+                <TextBox Grid.Row="2" Grid.Column="1" x:Name="TypeBox" Margin="0,0,0,8" Text="Building" VerticalContentAlignment="Center" MinHeight="28"/>
+
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="hashId" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
+                <TextBox Grid.Row="3" Grid.Column="1" x:Name="HashIdBox" Margin="0,0,0,8" IsReadOnly="True"
                          VerticalContentAlignment="Center" MinHeight="28"
                          Foreground="{DynamicResource Theme.SecondaryTextColor}"/>
-
-                <TextBlock Grid.Row="3" Grid.Column="0" Text="name" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
-                <TextBox Grid.Row="3" Grid.Column="1" x:Name="NameBox" Margin="0,0,0,8" VerticalContentAlignment="Center" MinHeight="28"/>
 
                 <TextBlock Grid.Row="4" Grid.Column="0" Text="direction" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
                 <TextBox Grid.Row="4" Grid.Column="1" x:Name="DirectionBox" Margin="0,0,0,8" Text="1" VerticalContentAlignment="Center" MinHeight="28"/>
@@ -295,7 +295,7 @@
 
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
             <Button Content="取消" Width="100" IsCancel="True"/>
-            <Button Content="保存到 Buildings.xml" Width="160" IsDefault="True" Click="Save_Click"/>
+            <Button Content="保存" Width="100" IsDefault="True" Click="Save_Click"/>
         </StackPanel>
     </Grid>
 </Window>

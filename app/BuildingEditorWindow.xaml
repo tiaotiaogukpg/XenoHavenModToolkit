@@ -44,6 +44,60 @@
                 </Setter.Value>
             </Setter>
         </Style>
+
+        <Style x:Key="MaterialsGridColumnHeaderStyle" TargetType="DataGridColumnHeader">
+            <Setter Property="Background" Value="{DynamicResource Theme.ButtonBackground}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Theme.SecondaryTextColor}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Theme.BorderColor}"/>
+            <Setter Property="BorderThickness" Value="0,0,1,1"/>
+            <Setter Property="Padding" Value="8,4"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+        </Style>
+
+        <Style x:Key="MaterialsGridCellStyle" TargetType="DataGridCell">
+            <Setter Property="Background" Value="{DynamicResource Theme.EditorBackground}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Theme.TextColor}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Theme.BorderColor}"/>
+            <Setter Property="BorderThickness" Value="0,0,1,1"/>
+            <Setter Property="Padding" Value="8,3"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="DataGridCell">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}">
+                            <ContentPresenter Margin="{TemplateBinding Padding}"
+                                              VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="{DynamicResource Theme.SelectionBackground}"/>
+                    <Setter Property="Foreground" Value="{DynamicResource Theme.TextColor}"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="MaterialsGridRowStyle" TargetType="DataGridRow">
+            <Setter Property="Background" Value="{DynamicResource Theme.EditorBackground}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Theme.TextColor}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Theme.BorderColor}"/>
+        </Style>
+
+        <Style x:Key="MaterialsGridTextStyle" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource Theme.TextColor}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="MaterialsGridEditingTextBoxStyle" TargetType="TextBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="Background" Value="{DynamicResource Theme.EditorBackground}"/>
+            <Setter Property="Foreground" Value="{DynamicResource Theme.TextColor}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource Theme.FocusGlow}"/>
+            <Setter Property="SelectionBrush" Value="{DynamicResource Theme.SelectionBackground}"/>
+            <Setter Property="Padding" Value="6,2"/>
+        </Style>
     </Window.Resources>
     <Grid Margin="12" Background="{DynamicResource Theme.WindowBackground}">
         <Grid.RowDefinitions>
@@ -58,6 +112,7 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -108,14 +163,57 @@
                 <TextBlock Grid.Row="9" Grid.Column="0" Text="size.y" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,0,10,0"/>
                 <TextBox Grid.Row="9" Grid.Column="1" x:Name="SizeYBox" Margin="0,0,0,12" Text="1" VerticalContentAlignment="Center" MinHeight="28"/>
 
-                <TextBlock Grid.Row="10" Grid.Column="0" Text="物品图标" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,12,10,0"/>
-                <Button Grid.Row="10" Grid.Column="1"
+                <TextBlock Grid.Row="10" Grid.Column="0" Text="制造公式" VerticalAlignment="Top" HorizontalAlignment="Right" Margin="0,4,10,0"/>
+                <StackPanel Grid.Row="10" Grid.Column="1" Margin="0,0,0,8">
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                        <Button Content="新增材料" Click="AddMaterial_Click" Margin="0,0,8,0"/>
+                        <Button Content="删除选中" Click="DeleteMaterial_Click"/>
+                    </StackPanel>
+                    <DataGrid x:Name="MaterialsGrid"
+                              AutoGenerateColumns="False"
+                              CanUserAddRows="False"
+                              CanUserDeleteRows="False"
+                              HeadersVisibility="Column"
+                              GridLinesVisibility="Horizontal"
+                              MinHeight="32"
+                              MaxHeight="120"
+                              Background="{DynamicResource Theme.EditorBackground}"
+                              Foreground="{DynamicResource Theme.TextColor}"
+                              BorderBrush="{DynamicResource Theme.BorderColor}"
+                              HorizontalGridLinesBrush="{DynamicResource Theme.BorderColor}"
+                              VerticalGridLinesBrush="{DynamicResource Theme.BorderColor}"
+                              ColumnHeaderStyle="{StaticResource MaterialsGridColumnHeaderStyle}"
+                              CellStyle="{StaticResource MaterialsGridCellStyle}"
+                              RowStyle="{StaticResource MaterialsGridRowStyle}"
+                              RowHeaderWidth="0"
+                              SelectionMode="Single">
+                        <DataGrid.Columns>
+                            <DataGridTextColumn Header="材料 id"
+                                                Binding="{Binding Id, UpdateSourceTrigger=PropertyChanged}"
+                                                ElementStyle="{StaticResource MaterialsGridTextStyle}"
+                                                EditingElementStyle="{StaticResource MaterialsGridEditingTextBoxStyle}"
+                                                Width="*"/>
+                            <DataGridTextColumn Header="数量"
+                                                Binding="{Binding Count, UpdateSourceTrigger=PropertyChanged}"
+                                                ElementStyle="{StaticResource MaterialsGridTextStyle}"
+                                                EditingElementStyle="{StaticResource MaterialsGridEditingTextBoxStyle}"
+                                                Width="*"/>
+                        </DataGrid.Columns>
+                    </DataGrid>
+                    <TextBlock x:Name="NoMaterialsText"
+                               Text="（无材料要求）"
+                               Margin="0,4,0,0"
+                               Foreground="{DynamicResource Theme.SecondaryTextColor}"/>
+                </StackPanel>
+
+                <TextBlock Grid.Row="11" Grid.Column="0" Text="物品图标" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,12,10,0"/>
+                <Button Grid.Row="11" Grid.Column="1"
                         Content="导入物品图标"
                         Click="ImportIconImage_Click"
                         HorizontalAlignment="Left"
                         Margin="0,12,0,4"/>
 
-                <Grid Grid.Row="11" Grid.Column="1" Margin="0,0,0,4">
+                <Grid Grid.Row="12" Grid.Column="1" Margin="0,0,0,4">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
@@ -133,7 +231,7 @@
                                FontSize="12"/>
                 </Grid>
 
-                <Border Grid.Row="12" Grid.Column="1"
+                <Border Grid.Row="13" Grid.Column="1"
                         x:Name="IconImagePreviewHost"
                         Margin="0,0,0,8"
                         Visibility="{Binding IsChecked, ElementName=IconPreviewExpandToggle, Converter={StaticResource BooleanToVisibilityConverter}}">
@@ -151,14 +249,14 @@
                     </Border>
                 </Border>
 
-                <TextBlock Grid.Row="13" Grid.Column="0" Text="地图显示图" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,4,10,0"/>
-                <Button Grid.Row="13" Grid.Column="1"
+                <TextBlock Grid.Row="14" Grid.Column="0" Text="地图显示图" VerticalAlignment="Center" HorizontalAlignment="Right" Margin="0,4,10,0"/>
+                <Button Grid.Row="14" Grid.Column="1"
                         Content="导入地图显示图"
                         Click="ImportWorldImage_Click"
                         HorizontalAlignment="Left"
                         Margin="0,4,0,4"/>
 
-                <Grid Grid.Row="14" Grid.Column="1" Margin="0,0,0,4">
+                <Grid Grid.Row="15" Grid.Column="1" Margin="0,0,0,4">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
@@ -176,7 +274,7 @@
                                FontSize="12"/>
                 </Grid>
 
-                <Border Grid.Row="15" Grid.Column="1"
+                <Border Grid.Row="16" Grid.Column="1"
                         x:Name="WorldImagePreviewHost"
                         Visibility="{Binding IsChecked, ElementName=WorldPreviewExpandToggle, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <Border x:Name="WorldImageDropBorder"

@@ -106,6 +106,7 @@ MyBuildingMod/
 - `uuid` 为条目的稳定唯一标识（32 位十六进制 GUID，无连字符）。XenoHaven MOD Toolkit 在新建建筑时自动生成；游戏内 `ModBuildingXML.GetHashId()` 返回 `uuid.GetHashCode()`，工具编辑窗会以只读 **hashId** 展示该值。`uuid` 创建后不应修改。
 - `size.x` 和 `size.y` 表示占地尺寸，应为正整数。
 - `materials` 表示建造材料列表，每个 `ModCraftMaterialData` 包含材料 `id` 与数量 `count`。
+  XenoHaven MOD Toolkit 会在 Building 编辑窗中展示并编辑材料 `id` 与数量；合并显示时格式为 `<id>x<数量>`，例如 `100055x20` 仅表示 `id=100055`、`count=20`。
 - `barrier` 表示是否作为阻挡/障碍处理。
 
 注意：字段名 `capbility` 按当前可行样例保留拼写，不要自行改成 `capability`，否则游戏端可能无法反序列化。

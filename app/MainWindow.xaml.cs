@@ -1129,6 +1129,19 @@ public partial class MainWindow : Window
     private sealed record OverviewModDirectoryTag(string FullPath);
 
     internal sealed record NewBuilding(int Id, string Name, string Type, int SizeX, int SizeY, int Health);
+    internal sealed class CraftMaterial
+    {
+        public CraftMaterial(int id, int count)
+        {
+            Id = id;
+            Count = count;
+        }
+
+        public int Id { get; set; }
+        public int Count { get; set; }
+        public string DisplayText => FormattableString.Invariant($"{Id}x{Count}");
+    }
+
     internal sealed record EditableBuilding(
         int Id,
         string Name,
@@ -1139,13 +1152,22 @@ public partial class MainWindow : Window
         int WorkbenchId,
         int Health,
         int SizeX,
-        int SizeY);
+        int SizeY,
+        IReadOnlyList<CraftMaterial> Materials);
 
     private static string EnsureBuildingUuid(string? uuid) =>
         string.IsNullOrWhiteSpace(uuid) ? GUIDUtils.Generate() : uuid.Trim();
 
     private static string? ReadBuildingUuid(XElement element) =>
         element.Elements().FirstOrDefault(x => x.Name.LocalName == "uuid")?.Value;
+
+    private static XElement CreateMaterialsElement(IReadOnlyList<CraftMaterial> materials) =>
+        new(
+            "materials",
+            materials.Select(m =>
+                new XElement("ModCraftMaterialData",
+                    new XElement("id", m.Id),
+                    new XElement("count", m.Count))));
 
     private static XElement CreateModBuildingXmlElement(EditableBuilding b) =>
         new(
@@ -1161,7 +1183,31 @@ public partial class MainWindow : Window
             new XElement("size",
                 new XElement("x", b.SizeX),
                 new XElement("y", b.SizeY)),
-            new XElement("materials"));
+            CreateMaterialsElement(b.Materials));
+
+    private static IReadOnlyList<CraftMaterial> ReadMaterials(XElement element)
+    {
+        var materials = element.Elements().FirstOrDefault(x => x.Name.LocalName == "materials");
+        if (materials is null)
+        {
+            return [];
+        }
+
+        return materials
+            .Elements()
+            .Where(x => x.Name.LocalName == "ModCraftMaterialData")
+            .Select(x =>
+            {
+                var idText = x.Elements().FirstOrDefault(e => e.Name.LocalName == "id")?.Value;
+                var countText = x.Elements().FirstOrDefault(e => e.Name.LocalName == "count")?.Value;
+                return int.TryParse(idText, out var id) && int.TryParse(countText, out var count)
+                    ? new CraftMaterial(id, count)
+                    : null;
+            })
+            .Where(x => x is not null)
+            .Cast<CraftMaterial>()
+            .ToArray();
+    }
 
     private (int nextId, string nextName) SuggestNewBuildingDefaults()
     {
@@ -1196,14 +1242,11 @@ public partial class MainWindow : Window
                 1,
                 b.Health,
                 b.SizeX,
-                b.SizeY));
+                b.SizeY,
+                []));
 
-        doc.Root.Add(new XText(Environment.NewLine + "  "));
         doc.Root.Add(element);
-        doc.Root.Add(new XText(Environment.NewLine));
-        buildingsXmlText = doc.Declaration is null
-            ? doc.ToString()
-            : doc.Declaration + Environment.NewLine + doc.ToString();
+        buildingsXmlText = BuildingsXmlFormatter.Serialize(doc);
 
         // 确保图片目录存在（具体图片由用户导入）
         Directory.CreateDirectory(GetFullPath(BuildingImagesRelativePath));
@@ -1230,11 +1273,11 @@ public partial class MainWindow : Window
                 ? (string.IsNullOrWhiteSpace(selected.Type) ? $"Building_{selected.Id}" : selected.Type)
                 : selected.Name;
             var typeForEdit = string.IsNullOrWhiteSpace(selected.Type) ? "Building" : selected.Type;
-            return new EditableBuilding(selected.Id, nameForEdit, GUIDUtils.Generate(), typeForEdit, 1, 1, 1, 100, 1, 1);
+            return new EditableBuilding(selected.Id, nameForEdit, GUIDUtils.Generate(), typeForEdit, 1, 1, 1, 100, 1, 1, []);
         }
 
         var (nextId, nextName) = SuggestNewBuildingDefaults();
-        return new EditableBuilding(nextId, nextName, GUIDUtils.Generate(), "Building", 1, 1, 1, 100, 1, 1);
+        return new EditableBuilding(nextId, nextName, GUIDUtils.Generate(), "Building", 1, 1, 1, 100, 1, 1, []);
     }
 
     private EditableBuilding? TryReadEditableBuildingById(int id)
@@ -1279,7 +1322,8 @@ public partial class MainWindow : Window
                 ReadInt("workbenchId", 1),
                 ReadInt("health", 100),
                 sx,
-                sy);
+                sy,
+                ReadMaterials(el));
         }
         catch
         {
@@ -1305,9 +1349,7 @@ public partial class MainWindow : Window
         }
 
         existing.Remove();
-        buildingsXmlText = doc.Declaration is null
-            ? doc.ToString()
-            : doc.Declaration + Environment.NewLine + doc.ToString();
+        buildingsXmlText = BuildingsXmlFormatter.Serialize(doc);
         return true;
     }
 
@@ -1346,22 +1388,22 @@ public partial class MainWindow : Window
                                                                int.TryParse(e.Elements().FirstOrDefault(x => x.Name.LocalName == "id")?.Value, out var id) &&
                                                                id == b.Id);
 
-        var element = CreateModBuildingXmlElement(b with { Uuid = EnsureBuildingUuid(b.Uuid) });
+        var element = CreateModBuildingXmlElement(b with
+        {
+            Uuid = EnsureBuildingUuid(b.Uuid),
+            Materials = b.Materials
+        });
 
         if (existing is null)
         {
-            doc.Root.Add(new XText(Environment.NewLine + "  "));
             doc.Root.Add(element);
-            doc.Root.Add(new XText(Environment.NewLine));
         }
         else
         {
             existing.ReplaceWith(element);
         }
 
-        buildingsXmlText = doc.Declaration is null
-            ? doc.ToString()
-            : doc.Declaration + Environment.NewLine + doc.ToString();
+        buildingsXmlText = BuildingsXmlFormatter.Serialize(doc);
 
         Directory.CreateDirectory(GetFullPath(BuildingImagesRelativePath));
         Directory.CreateDirectory(GetFullPath(BuildingIconsRelativePath));

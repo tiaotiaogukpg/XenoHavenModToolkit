@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Globalization;
 using System.IO;
 using System.Windows;
@@ -17,6 +18,7 @@ public partial class BuildingEditorWindow : Window
 
     private readonly string modRoot;
     private readonly string uuid;
+    private readonly ObservableCollection<MainWindow.CraftMaterial> materials;
 
     internal MainWindow.EditableBuilding? Result { get; private set; }
 
@@ -25,6 +27,8 @@ public partial class BuildingEditorWindow : Window
         InitializeComponent();
         this.modRoot = modRoot;
         uuid = initial.Uuid;
+        materials = new ObservableCollection<MainWindow.CraftMaterial>(
+            initial.Materials.Select(m => new MainWindow.CraftMaterial(m.Id, m.Count)));
         IdBox.Text = initial.Id.ToString(CultureInfo.InvariantCulture);
         HashIdBox.Text = ModBuildingHash.GetHashId(uuid).ToString(CultureInfo.InvariantCulture);
         NameBox.Text = initial.Name;
@@ -35,6 +39,8 @@ public partial class BuildingEditorWindow : Window
         HealthBox.Text = initial.Health.ToString(CultureInfo.InvariantCulture);
         SizeXBox.Text = initial.SizeX.ToString(CultureInfo.InvariantCulture);
         SizeYBox.Text = initial.SizeY.ToString(CultureInfo.InvariantCulture);
+        MaterialsGrid.ItemsSource = materials;
+        RefreshMaterialsEmptyState();
         RefreshImagePreview();
         NameBox.SelectAll();
         NameBox.Focus();
@@ -66,13 +72,31 @@ public partial class BuildingEditorWindow : Window
             !TryReadPositiveInt(WorkbenchIdBox.Text, out var workbenchId, "workbenchId") ||
             !TryReadPositiveInt(HealthBox.Text, out var health, "health") ||
             !TryReadPositiveInt(SizeXBox.Text, out var sx, "size.x") ||
-            !TryReadPositiveInt(SizeYBox.Text, out var sy, "size.y"))
+            !TryReadPositiveInt(SizeYBox.Text, out var sy, "size.y") ||
+            !TryReadMaterials(out var materialSnapshot))
         {
             return;
         }
 
-        Result = new MainWindow.EditableBuilding(id, name, uuid, type, direction, capbility, workbenchId, health, sx, sy);
+        Result = new MainWindow.EditableBuilding(id, name, uuid, type, direction, capbility, workbenchId, health, sx, sy, materialSnapshot);
         DialogResult = true;
+    }
+
+    private void AddMaterial_Click(object sender, RoutedEventArgs e)
+    {
+        var material = new MainWindow.CraftMaterial(1, 1);
+        materials.Add(material);
+        MaterialsGrid.SelectedItem = material;
+        RefreshMaterialsEmptyState();
+    }
+
+    private void DeleteMaterial_Click(object sender, RoutedEventArgs e)
+    {
+        if (MaterialsGrid.SelectedItem is MainWindow.CraftMaterial material)
+        {
+            materials.Remove(material);
+            RefreshMaterialsEmptyState();
+        }
     }
 
     private void ImportWorldImage_Click(object sender, RoutedEventArgs e)
@@ -236,6 +260,33 @@ public partial class BuildingEditorWindow : Window
         IconImagePathText.Text = $"物品图标：{Path.GetRelativePath(modRoot, iconPath)}";
         WorldImagePreview.Source = LoadBitmapIfExists(worldPath);
         IconImagePreview.Source = LoadBitmapIfExists(iconPath);
+    }
+
+    private void RefreshMaterialsEmptyState()
+    {
+        NoMaterialsText.Visibility = materials.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    private bool TryReadMaterials(out IReadOnlyList<MainWindow.CraftMaterial> result)
+    {
+        MaterialsGrid.CommitEdit(DataGridEditingUnit.Cell, true);
+        MaterialsGrid.CommitEdit(DataGridEditingUnit.Row, true);
+
+        var snapshot = new List<MainWindow.CraftMaterial>();
+        foreach (var material in materials)
+        {
+            if (material.Id <= 0 || material.Count <= 0)
+            {
+                System.Windows.MessageBox.Show(this, "制造公式里的材料 id 和数量都必须是正整数。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+                result = [];
+                return false;
+            }
+
+            snapshot.Add(new MainWindow.CraftMaterial(material.Id, material.Count));
+        }
+
+        result = snapshot;
+        return true;
     }
 
     private static BitmapImage? LoadBitmapIfExists(string path)

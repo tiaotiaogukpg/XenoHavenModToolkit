@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows;
 using System.Xml.Linq;
 
@@ -5,6 +6,9 @@ namespace XenoHavenModToolkit;
 
 public partial class NewModWindow : Window
 {
+    private string? iconSourcePath;
+    private string? screenshotSourcePath;
+
     internal NewModResult? Result { get; private set; }
 
     public NewModWindow()
@@ -17,7 +21,29 @@ public partial class NewModWindow : Window
         FolderNameBox.Focus();
     }
 
-    internal sealed record NewModResult(string FolderName, string MainXml, string BuildingsXml);
+    internal sealed record NewModResult(string FolderName, string MainXml, string BuildingsXml, string IconSourcePath, string ScreenshotSourcePath);
+
+    private void ImportIcon_Click(object sender, RoutedEventArgs e)
+    {
+        if (TryChooseImage("选择 MOD 图标") is not { } path)
+        {
+            return;
+        }
+
+        iconSourcePath = path;
+        IconPathText.Text = path;
+    }
+
+    private void ImportScreenshot_Click(object sender, RoutedEventArgs e)
+    {
+        if (TryChooseImage("选择 MOD 截图") is not { } path)
+        {
+            return;
+        }
+
+        screenshotSourcePath = path;
+        ScreenshotPathText.Text = path;
+    }
 
     private void Create_Click(object sender, RoutedEventArgs e)
     {
@@ -52,6 +78,18 @@ public partial class NewModWindow : Window
             return;
         }
 
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            System.Windows.MessageBox.Show(this, "description 不能为空。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        if (!ValidateSelectedImage(iconSourcePath, "MOD 图标 icon.png") ||
+            !ValidateSelectedImage(screenshotSourcePath, "MOD 截图 screenshot.png"))
+        {
+            return;
+        }
+
         var mainDoc = new XDocument(
             new XDeclaration("1.0", "utf-8", null),
             new XElement("defs",
@@ -62,19 +100,57 @@ public partial class NewModWindow : Window
                 new XElement("auth", author),
                 new XElement("version", version),
                 new XElement("specifications", spec),
-                new XElement("description", description ?? string.Empty)
+                new XElement("description", description.Trim())
             )
         );
 
-        var buildingsXml =
-            """
-            <?xml version="1.0" encoding="utf-8"?>
-            <ArrayOfModBuildingXML xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-            </ArrayOfModBuildingXML>
-            """;
+        var buildingsDoc = new XDocument(
+            new XDeclaration("1.0", "utf-8", null),
+            new XElement("ArrayOfModBuildingXML",
+                new XAttribute(XNamespace.Xmlns + "xsd", "http://www.w3.org/2001/XMLSchema"),
+                new XAttribute(XNamespace.Xmlns + "xsi", "http://www.w3.org/2001/XMLSchema-instance")));
 
-        Result = new NewModResult(folderName, mainDoc.ToString(), buildingsXml);
+        Result = new NewModResult(
+            folderName,
+            ModXmlFormatter.Serialize(mainDoc),
+            ModXmlFormatter.Serialize(buildingsDoc),
+            iconSourcePath!,
+            screenshotSourcePath!);
         DialogResult = true;
+    }
+
+    private string? TryChooseImage(string title)
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = title,
+            Filter = ModRootAssets.ImageDialogFilter
+        };
+
+        return dialog.ShowDialog(this) == true ? dialog.FileName : null;
+    }
+
+    private bool ValidateSelectedImage(string? path, string label)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            System.Windows.MessageBox.Show(this, $"请导入{label}。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return false;
+        }
+
+        if (!File.Exists(path))
+        {
+            System.Windows.MessageBox.Show(this, $"{label}不存在：{path}", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return false;
+        }
+
+        if (!ModRootAssets.IsSupportedImage(path))
+        {
+            System.Windows.MessageBox.Show(this, $"{label}只支持 png、jpg、jpeg、bmp、webp。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return false;
+        }
+
+        return true;
     }
 }
 

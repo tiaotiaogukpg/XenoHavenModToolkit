@@ -26,6 +26,8 @@ XenoHaven 当前的 Mod 系统属于“文件夹扫描 + XML 定义 + 启动时�
 ```text
 MyBuildingMod/
   main.xml
+  icon.png
+  screenshot.png
   Thing/
     Buildings/
       Buildings.xml
@@ -38,6 +40,8 @@ MyBuildingMod/
 说明：
 
 - `main.xml`：Mod 的元信息。
+- `icon.png`：Mod 在列表中的图标，固定放在 Mod 根目录。
+- `screenshot.png`：Mod 在详情/对话框中的截图，固定放在 Mod 根目录。
 - `Thing/Buildings/Buildings.xml`：建筑/物体定义列表。
 - `Thing/Buildings/images/<id>.png`：该 Thing 在地图上的显示图片。
 - `Thing/Buildings/images/icon/<id>.png`：该 Thing 在背包、拆除后物品等场景中的图标。
@@ -64,7 +68,9 @@ MyBuildingMod/
 - `auth`：作者。
 - `version`：Mod 版本。
 - `specifications`：规格/兼容版本字段，当前样例中为 `0.0.1`。
-- `description`：描述。
+- `description`：描述，必填。
+
+XenoHaven MOD Toolkit 会以 UTF-8（无 BOM）写回 XML，并保持多行缩进，避免中文内容或外部工具处理时出现编码问题。
 
 ## 4. Buildings.xml
 
@@ -114,6 +120,17 @@ MyBuildingMod/
 ## 5. 图片命名规则
 
 图片不写入 `Buildings.xml` 字段，而是通过 `id` 与文件名约定对应。
+
+Mod 自身还有两张根目录图片，文件名固定：
+
+```text
+icon.png
+screenshot.png
+```
+
+- `icon.png`：Mod 列表图标。
+- `screenshot.png`：Mod 详情截图。
+- 新建、保存 Mod 信息、导出发布版时，XenoHaven MOD Toolkit 会校验这两个文件是否存在。
 
 对于 `ModBuildingXML.id = 1`：
 

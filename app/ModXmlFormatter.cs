@@ -5,7 +5,7 @@ using System.Xml.Linq;
 
 namespace XenoHavenModToolkit;
 
-internal static class BuildingsXmlFormatter
+internal static class ModXmlFormatter
 {
     public static string Serialize(XDocument document)
     {
@@ -21,15 +21,20 @@ internal static class BuildingsXmlFormatter
             NewLineChars = "\n",
             NewLineHandling = NewLineHandling.Replace,
             OmitXmlDeclaration = false,
-            Encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)
+            Encoding = ModXmlIO.Utf8NoBom
         };
 
-        using var stringWriter = new StringWriter();
+        using var stringWriter = new Utf8StringWriter();
         using (var writer = XmlWriter.Create(stringWriter, settings))
         {
             document.Save(writer);
         }
 
         return stringWriter.ToString();
+    }
+
+    private sealed class Utf8StringWriter : StringWriter
+    {
+        public override Encoding Encoding => ModXmlIO.Utf8NoBom;
     }
 }

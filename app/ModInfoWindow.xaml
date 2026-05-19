@@ -1,7 +1,7 @@
 <Window x:Class="XenoHavenModToolkit.ModInfoWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Mod 信息" Height="520" Width="720"
+        Title="Mod 信息" Height="660" Width="720"
         WindowStartupLocation="CenterOwner"
         Background="{DynamicResource Theme.WindowBackground}">
     <Grid Margin="16" Background="{DynamicResource Theme.WindowBackground}">
@@ -30,12 +30,31 @@
                 <TextBlock Text="specifications" Margin="0,0,0,6"/>
                 <TextBox x:Name="SpecBox" Text="0.0.1" Margin="0,0,0,14"/>
 
-                <TextBlock Text="description" Margin="0,0,0,6"/>
+                <TextBlock Text="description（必填）" Margin="0,0,0,6"/>
                 <TextBox x:Name="DescriptionBox"
                          AcceptsReturn="True"
                          VerticalScrollBarVisibility="Auto"
                          TextWrapping="Wrap"
-                         MinHeight="220"/>
+                         MinHeight="160"
+                         Margin="0,0,0,14"/>
+
+                <TextBlock Text="MOD 图标 icon.png（必填，固定保存到 MOD 根目录）" Margin="0,0,0,6"/>
+                <DockPanel Margin="0,0,0,14">
+                    <TextBlock x:Name="IconPathText"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource Theme.SecondaryTextColor}"
+                               TextTrimming="CharacterEllipsis"/>
+                    <Button Content="导入/替换" Width="100" Margin="8,0,0,0" DockPanel.Dock="Right" Click="ImportIcon_Click"/>
+                </DockPanel>
+
+                <TextBlock Text="MOD 截图 screenshot.png（必填，固定保存到 MOD 根目录）" Margin="0,0,0,6"/>
+                <DockPanel>
+                    <TextBlock x:Name="ScreenshotPathText"
+                               VerticalAlignment="Center"
+                               Foreground="{DynamicResource Theme.SecondaryTextColor}"
+                               TextTrimming="CharacterEllipsis"/>
+                    <Button Content="导入/替换" Width="100" Margin="8,0,0,0" DockPanel.Dock="Right" Click="ImportScreenshot_Click"/>
+                </DockPanel>
             </StackPanel>
         </ScrollViewer>
 

@@ -289,11 +289,13 @@ public partial class MainWindow : Window
             Directory.CreateDirectory(targetFolder);
             Directory.CreateDirectory(Path.Combine(targetFolder, "Thing", "Buildings", "images", "icon"));
 
-            File.WriteAllText(Path.Combine(targetFolder, MainXmlRelativePath), dialog.Result.MainXml);
+            ModXmlIO.WriteAllText(Path.Combine(targetFolder, MainXmlRelativePath), dialog.Result.MainXml);
+            ModRootAssets.CopyToRoot(dialog.Result.IconSourcePath, targetFolder, ModRootAssets.IconRelativePath);
+            ModRootAssets.CopyToRoot(dialog.Result.ScreenshotSourcePath, targetFolder, ModRootAssets.ScreenshotRelativePath);
 
             var buildingsXmlFolder = Path.Combine(targetFolder, "Thing", "Buildings");
             Directory.CreateDirectory(buildingsXmlFolder);
-            File.WriteAllText(Path.Combine(buildingsXmlFolder, "Buildings.xml"), dialog.Result.BuildingsXml);
+            ModXmlIO.WriteAllText(Path.Combine(buildingsXmlFolder, "Buildings.xml"), dialog.Result.BuildingsXml);
 
             RefreshOverviewList();
             OpenModFolder(targetFolder);
@@ -312,7 +314,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        var dialog = new ModInfoWindow(mainXmlText)
+        var dialog = new ModInfoWindow(currentModRoot!, mainXmlText)
         {
             Owner = this
         };
@@ -322,10 +324,38 @@ public partial class MainWindow : Window
             return;
         }
 
-        mainXmlText = dialog.GeneratedXml;
-        File.WriteAllText(GetFullPath(MainXmlRelativePath), mainXmlText);
-        LoadTree();
-        Log("main.xml 已更新。");
+        try
+        {
+            var generatedXml = dialog.GeneratedXml;
+            if (!string.IsNullOrWhiteSpace(dialog.IconSourcePath))
+            {
+                ModRootAssets.CopyToRoot(dialog.IconSourcePath, currentModRoot!, ModRootAssets.IconRelativePath);
+            }
+
+            if (!string.IsNullOrWhiteSpace(dialog.ScreenshotSourcePath))
+            {
+                ModRootAssets.CopyToRoot(dialog.ScreenshotSourcePath, currentModRoot!, ModRootAssets.ScreenshotRelativePath);
+            }
+
+            var messages = new List<string>();
+            ValidateModMetadata(currentModRoot!, generatedXml, messages);
+            if (messages.Any(message => message.StartsWith("[错误]", StringComparison.Ordinal)))
+            {
+                Log("main.xml 保存前校验失败：" + Environment.NewLine + string.Join(Environment.NewLine, messages));
+                System.Windows.MessageBox.Show(this, string.Join(Environment.NewLine, messages), "Mod 信息校验失败", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            mainXmlText = generatedXml;
+            ModXmlIO.WriteAllText(GetFullPath(MainXmlRelativePath), mainXmlText);
+            LoadTree();
+            Log("main.xml 已更新。");
+        }
+        catch (Exception ex)
+        {
+            Log($"main.xml 更新失败：{ex.Message}");
+            System.Windows.MessageBox.Show(this, ex.Message, "Mod 信息", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private void OpenBuildingEditor_Click(object sender, RoutedEventArgs e)
@@ -390,6 +420,15 @@ public partial class MainWindow : Window
     {
         if (!EnsureModOpen())
         {
+            return;
+        }
+
+        var messages = new List<string>();
+        ValidateModMetadata(currentModRoot!, mainXmlText, messages);
+        if (messages.Any(message => message.StartsWith("[错误]", StringComparison.Ordinal)))
+        {
+            Log("导出发布版前校验失败：" + Environment.NewLine + string.Join(Environment.NewLine, messages));
+            System.Windows.MessageBox.Show(this, string.Join(Environment.NewLine, messages), "导出发布版", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -459,7 +498,7 @@ public partial class MainWindow : Window
         {
             try
             {
-                var text = File.ReadAllText(path);
+                var text = ModXmlIO.ReadAllText(path);
                 var relativePath = Path.GetRelativePath(currentModRoot!, path);
                 if (relativePath.Equals(BuildingsXmlRelativePath, StringComparison.OrdinalIgnoreCase))
                 {
@@ -602,7 +641,7 @@ public partial class MainWindow : Window
               <auth>Author</auth>
               <version>1.0.0</version>
               <specifications>0.0.1</specifications>
-              <description></description>
+              <description>Mod description</description>
             </defs>
             """);
 
@@ -618,7 +657,7 @@ public partial class MainWindow : Window
     private string ReadTextOrTemplate(string relativePath, string template)
     {
         var path = GetFullPath(relativePath);
-        return File.Exists(path) ? File.ReadAllText(path) : template;
+        return File.Exists(path) ? ModXmlIO.ReadAllText(path) : template;
     }
 
     private void ReloadBuildingsXmlFromDisk()
@@ -654,7 +693,45 @@ public partial class MainWindow : Window
 
         var path = GetFullPath(BuildingsXmlRelativePath);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-        File.WriteAllText(path, buildingsXmlText);
+        ModXmlIO.WriteAllText(path, buildingsXmlText);
+    }
+
+    private static void ValidateModMetadata(string modRoot, string mainXml, List<string> messages)
+    {
+        XDocument document;
+        try
+        {
+            document = XDocument.Parse(mainXml, LoadOptions.SetLineInfo);
+        }
+        catch (Exception ex) when (ex is XmlException or InvalidOperationException)
+        {
+            messages.Add($"[错误] main.xml 不是合法 XML：{ex.Message}");
+            return;
+        }
+
+        if (document.Root?.Name.LocalName != "defs")
+        {
+            messages.Add($"[错误] main.xml 根节点应为 <defs>，当前为 <{document.Root?.Name.LocalName ?? "空"}>。");
+            return;
+        }
+
+        var description = document.Root.Elements().FirstOrDefault(e => e.Name.LocalName == "description")?.Value;
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            messages.Add("[错误] main.xml 的 <description> 为必填项。");
+        }
+
+        ValidateRequiredRootImage(modRoot, ModRootAssets.IconRelativePath, "MOD 图标 icon.png", messages);
+        ValidateRequiredRootImage(modRoot, ModRootAssets.ScreenshotRelativePath, "MOD 截图 screenshot.png", messages);
+    }
+
+    private static void ValidateRequiredRootImage(string modRoot, string relativePath, string label, List<string> messages)
+    {
+        var path = Path.Combine(modRoot, relativePath);
+        if (!File.Exists(path))
+        {
+            messages.Add($"[错误] 缺少{label}：{relativePath}。");
+        }
     }
 
     private void ValidateBuildingsXml(List<string> messages)
@@ -872,6 +949,17 @@ public partial class MainWindow : Window
         if (!EnsureModOpen(showMessage: false))
         {
             return;
+        }
+
+        foreach (var relativePath in new[] { MainXmlRelativePath, ModRootAssets.IconRelativePath, ModRootAssets.ScreenshotRelativePath })
+        {
+            var path = GetFullPath(relativePath);
+            modNode.Items.Add(new TreeViewItem
+            {
+                Header = File.Exists(path) ? relativePath : $"{relativePath}（缺失）",
+                Tag = path,
+                IsExpanded = false
+            });
         }
 
         var prefabsPath = Path.Combine(currentModRoot!, "Prefabs");
@@ -1246,7 +1334,7 @@ public partial class MainWindow : Window
                 []));
 
         doc.Root.Add(element);
-        buildingsXmlText = BuildingsXmlFormatter.Serialize(doc);
+        buildingsXmlText = ModXmlFormatter.Serialize(doc);
 
         // 确保图片目录存在（具体图片由用户导入）
         Directory.CreateDirectory(GetFullPath(BuildingImagesRelativePath));
@@ -1349,7 +1437,7 @@ public partial class MainWindow : Window
         }
 
         existing.Remove();
-        buildingsXmlText = BuildingsXmlFormatter.Serialize(doc);
+        buildingsXmlText = ModXmlFormatter.Serialize(doc);
         return true;
     }
 
@@ -1403,7 +1491,7 @@ public partial class MainWindow : Window
             existing.ReplaceWith(element);
         }
 
-        buildingsXmlText = BuildingsXmlFormatter.Serialize(doc);
+        buildingsXmlText = ModXmlFormatter.Serialize(doc);
 
         Directory.CreateDirectory(GetFullPath(BuildingImagesRelativePath));
         Directory.CreateDirectory(GetFullPath(BuildingIconsRelativePath));

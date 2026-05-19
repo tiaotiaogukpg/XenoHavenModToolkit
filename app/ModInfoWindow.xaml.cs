@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows;
 using System.Xml.Linq;
 
@@ -5,13 +6,19 @@ namespace XenoHavenModToolkit;
 
 public partial class ModInfoWindow : Window
 {
-    internal string? GeneratedXml { get; private set; }
+    private readonly string modRoot;
 
-    public ModInfoWindow(string existingMainXml)
+    internal string? GeneratedXml { get; private set; }
+    internal string? IconSourcePath { get; private set; }
+    internal string? ScreenshotSourcePath { get; private set; }
+
+    public ModInfoWindow(string modRoot, string existingMainXml)
     {
         InitializeComponent();
+        this.modRoot = modRoot;
         TryPrefill(existingMainXml);
         EnsureGuidInitialized();
+        RefreshRootImageStatus();
     }
 
     private void EnsureGuidInitialized()
@@ -50,6 +57,28 @@ public partial class ModInfoWindow : Window
     private void RegenerateGuid_Click(object sender, RoutedEventArgs e)
     {
         GuidBox.Text = Guid.NewGuid().ToString("D");
+    }
+
+    private void ImportIcon_Click(object sender, RoutedEventArgs e)
+    {
+        if (TryChooseImage("选择 MOD 图标") is not { } path)
+        {
+            return;
+        }
+
+        IconSourcePath = path;
+        RefreshRootImageStatus();
+    }
+
+    private void ImportScreenshot_Click(object sender, RoutedEventArgs e)
+    {
+        if (TryChooseImage("选择 MOD 截图") is not { } path)
+        {
+            return;
+        }
+
+        ScreenshotSourcePath = path;
+        RefreshRootImageStatus();
     }
 
     private void Generate_Click(object sender, RoutedEventArgs e)
@@ -91,6 +120,18 @@ public partial class ModInfoWindow : Window
             return;
         }
 
+        if (string.IsNullOrWhiteSpace(description))
+        {
+            System.Windows.MessageBox.Show(this, "description 不能为空。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        if (!HasExistingOrSelectedImage(ModRootAssets.IconRelativePath, IconSourcePath, "MOD 图标 icon.png") ||
+            !HasExistingOrSelectedImage(ModRootAssets.ScreenshotRelativePath, ScreenshotSourcePath, "MOD 截图 screenshot.png"))
+        {
+            return;
+        }
+
         var doc = new XDocument(
             new XDeclaration("1.0", "utf-8", null),
             new XElement("defs",
@@ -101,12 +142,70 @@ public partial class ModInfoWindow : Window
                 new XElement("auth", author),
                 new XElement("version", version),
                 new XElement("specifications", spec),
-                new XElement("description", description ?? string.Empty)
+                new XElement("description", description.Trim())
             )
         );
 
-        GeneratedXml = doc.ToString();
+        GeneratedXml = ModXmlFormatter.Serialize(doc);
         DialogResult = true;
+    }
+
+    private string? TryChooseImage(string title)
+    {
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = title,
+            Filter = ModRootAssets.ImageDialogFilter
+        };
+
+        return dialog.ShowDialog(this) == true ? dialog.FileName : null;
+    }
+
+    private void RefreshRootImageStatus()
+    {
+        IconPathText.Text = FormatRootImageStatus(ModRootAssets.IconRelativePath, IconSourcePath);
+        ScreenshotPathText.Text = FormatRootImageStatus(ModRootAssets.ScreenshotRelativePath, ScreenshotSourcePath);
+    }
+
+    private string FormatRootImageStatus(string relativePath, string? selectedPath)
+    {
+        if (!string.IsNullOrWhiteSpace(selectedPath))
+        {
+            return $"已选择：{selectedPath}";
+        }
+
+        var targetPath = Path.Combine(modRoot, relativePath);
+        return File.Exists(targetPath)
+            ? $"当前：{relativePath}"
+            : $"缺失：{relativePath}";
+    }
+
+    private bool HasExistingOrSelectedImage(string relativePath, string? selectedPath, string label)
+    {
+        if (!string.IsNullOrWhiteSpace(selectedPath))
+        {
+            if (!File.Exists(selectedPath))
+            {
+                System.Windows.MessageBox.Show(this, $"{label}不存在：{selectedPath}", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
+
+            if (!ModRootAssets.IsSupportedImage(selectedPath))
+            {
+                System.Windows.MessageBox.Show(this, $"{label}只支持 png、jpg、jpeg、bmp、webp。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return false;
+            }
+
+            return true;
+        }
+
+        if (!File.Exists(Path.Combine(modRoot, relativePath)))
+        {
+            System.Windows.MessageBox.Show(this, $"请导入{label}。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return false;
+        }
+
+        return true;
     }
 }
 

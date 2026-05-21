@@ -15,6 +15,7 @@
     <Color x:Key="Theme.ConsoleTextColorValue">#1F1F1F</Color>
     <Color x:Key="Theme.SelectionBackgroundColor">#CFE8FF</Color>
     <Color x:Key="Theme.FocusGlowColor">#8CC8FF</Color>
+    <Color x:Key="Theme.OptionPillBackgroundColor">#E6E6E6</Color>
 
     <SolidColorBrush x:Key="Theme.WindowBackground" Color="{StaticResource Theme.WindowBackgroundColor}"/>
     <SolidColorBrush x:Key="Theme.PanelBackground" Color="{StaticResource Theme.PanelBackgroundColor}"/>
@@ -31,6 +32,8 @@
     <SolidColorBrush x:Key="Theme.ConsoleTextColor" Color="{StaticResource Theme.ConsoleTextColorValue}"/>
     <SolidColorBrush x:Key="Theme.SelectionBackground" Color="{StaticResource Theme.SelectionBackgroundColor}"/>
     <SolidColorBrush x:Key="Theme.FocusGlow" Color="{StaticResource Theme.FocusGlowColor}"/>
+    <SolidColorBrush x:Key="Theme.OptionPillBackground" Color="{StaticResource Theme.OptionPillBackgroundColor}"/>
+    <SolidColorBrush x:Key="Theme.OptionSelectedForeground" Color="#D13438"/>
     <SolidColorBrush x:Key="Theme.TreeViewLineBrush" Color="#B8B8B8"/>
     <SolidColorBrush x:Key="Theme.TreeViewHoverBackground" Color="#E8F0F8"/>
     <SolidColorBrush x:Key="Theme.TreeViewModValidForeground" Color="#D13438"/>

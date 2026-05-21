@@ -5,6 +5,8 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media.Imaging;
 
+using WpfBinding = System.Windows.Data.Binding;
+using WpfUpdateSourceTrigger = System.Windows.Data.UpdateSourceTrigger;
 using WpfDataFormats = System.Windows.DataFormats;
 using WpfDragDropEffects = System.Windows.DragDropEffects;
 using WpfDragEventArgs = System.Windows.DragEventArgs;
@@ -13,37 +15,89 @@ namespace XenoHavenModToolkit;
 
 public partial class BuildingEditorWindow : Window
 {
+    private const int MaxMaterialCount = 200;
+
     private static readonly string BuildingImagesRelativePath = Path.Combine("Thing", "Buildings", "images");
     private static readonly string BuildingIconsRelativePath = Path.Combine("Thing", "Buildings", "images", "icon");
 
     private readonly string modRoot;
     private readonly string uuid;
+    private readonly GameDataCatalog gameData;
     private readonly ObservableCollection<MainWindow.CraftMaterial> materials;
+    private readonly List<LabeledIdOption> materialOptions;
 
     internal MainWindow.EditableBuilding? Result { get; private set; }
 
-    internal BuildingEditorWindow(MainWindow.EditableBuilding initial, string modRoot)
+    internal BuildingEditorWindow(MainWindow.EditableBuilding initial, string modRoot, GameDataCatalog gameData)
     {
         InitializeComponent();
         this.modRoot = modRoot;
+        this.gameData = gameData;
         uuid = initial.Uuid;
+        materialOptions = BuildMaterialOptions(initial.Materials);
         materials = new ObservableCollection<MainWindow.CraftMaterial>(
             initial.Materials.Select(m => new MainWindow.CraftMaterial(m.Id, m.Count)));
         IdBox.Text = initial.Id.ToString(CultureInfo.InvariantCulture);
         HashIdBox.Text = ModBuildingHash.GetHashId(uuid).ToString(CultureInfo.InvariantCulture);
         NameBox.Text = initial.Name;
-        TypeBox.Text = initial.Type;
-        DirectionBox.Text = initial.Direction.ToString(CultureInfo.InvariantCulture);
+        FieldPicker.InitializeWorkbenches(gameData);
+        FieldPicker.SetValues(initial.Type, initial.Direction, initial.WorkbenchId);
         CapbilityBox.Text = initial.Capbility.ToString(CultureInfo.InvariantCulture);
-        WorkbenchIdBox.Text = initial.WorkbenchId.ToString(CultureInfo.InvariantCulture);
         HealthBox.Text = initial.Health.ToString(CultureInfo.InvariantCulture);
         SizeXBox.Text = initial.SizeX.ToString(CultureInfo.InvariantCulture);
         SizeYBox.Text = initial.SizeY.ToString(CultureInfo.InvariantCulture);
+        ConfigureMaterialsGrid();
         MaterialsGrid.ItemsSource = materials;
         RefreshMaterialsEmptyState();
         RefreshImagePreview();
         NameBox.SelectAll();
         NameBox.Focus();
+    }
+
+    private void ConfigureMaterialsGrid()
+    {
+        var materialColumn = new DataGridComboBoxColumn
+        {
+            Header = "材料",
+            Width = new DataGridLength(1, DataGridLengthUnitType.Star),
+            ItemsSource = materialOptions,
+            DisplayMemberPath = nameof(LabeledIdOption.Display),
+            SelectedValuePath = nameof(LabeledIdOption.Id),
+            SelectedValueBinding = new WpfBinding(nameof(MainWindow.CraftMaterial.Id))
+            {
+                UpdateSourceTrigger = WpfUpdateSourceTrigger.PropertyChanged
+            }
+        };
+
+        var countColumn = new DataGridTextColumn
+        {
+            Header = "数量",
+            Width = new DataGridLength(1, DataGridLengthUnitType.Star),
+            Binding = new WpfBinding(nameof(MainWindow.CraftMaterial.Count))
+            {
+                UpdateSourceTrigger = WpfUpdateSourceTrigger.PropertyChanged
+            },
+            ElementStyle = (Style)FindResource("MaterialsGridTextStyle"),
+            EditingElementStyle = (Style)FindResource("MaterialsGridEditingTextBoxStyle")
+        };
+
+        MaterialsGrid.Columns.Clear();
+        MaterialsGrid.Columns.Add(materialColumn);
+        MaterialsGrid.Columns.Add(countColumn);
+    }
+
+    private List<LabeledIdOption> BuildMaterialOptions(IReadOnlyList<MainWindow.CraftMaterial> existing)
+    {
+        var options = gameData.Materials.ToList();
+        foreach (var material in existing)
+        {
+            if (options.All(option => option.Id != material.Id))
+            {
+                options.Insert(0, new LabeledIdOption($"未知({material.Id})", material.Id, isKnown: false));
+            }
+        }
+
+        return options;
     }
 
     private void Save_Click(object sender, RoutedEventArgs e)
@@ -60,16 +114,17 @@ public partial class BuildingEditorWindow : Window
             return;
         }
 
-        var type = TypeBox.Text.Trim();
-        if (string.IsNullOrWhiteSpace(type))
+        if (!FieldPicker.TryValidate(out var fieldError))
         {
-            System.Windows.MessageBox.Show(this, "type 不能为空。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(this, fieldError, "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
-        if (!TryReadPositiveInt(DirectionBox.Text, out var direction, "direction") ||
-            !TryReadPositiveInt(CapbilityBox.Text, out var capbility, "capbility") ||
-            !TryReadPositiveInt(WorkbenchIdBox.Text, out var workbenchId, "workbenchId") ||
+        var type = FieldPicker.SelectedType;
+        var direction = FieldPicker.SelectedDirection;
+        var workbenchId = FieldPicker.SelectedWorkbenchId;
+
+        if (!TryReadPositiveInt(CapbilityBox.Text, out var capbility, "capbility") ||
             !TryReadPositiveInt(HealthBox.Text, out var health, "health") ||
             !TryReadPositiveInt(SizeXBox.Text, out var sx, "size.x") ||
             !TryReadPositiveInt(SizeYBox.Text, out var sy, "size.y") ||
@@ -84,7 +139,14 @@ public partial class BuildingEditorWindow : Window
 
     private void AddMaterial_Click(object sender, RoutedEventArgs e)
     {
-        var material = new MainWindow.CraftMaterial(1, 1);
+        if (gameData.Materials.Count == 0)
+        {
+            System.Windows.MessageBox.Show(this, "材料表为空，无法新增材料。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
+        var defaultId = gameData.Materials[0].Id;
+        var material = new MainWindow.CraftMaterial(defaultId, 1);
         materials.Add(material);
         MaterialsGrid.SelectedItem = material;
         RefreshMaterialsEmptyState();
@@ -275,9 +337,23 @@ public partial class BuildingEditorWindow : Window
         var snapshot = new List<MainWindow.CraftMaterial>();
         foreach (var material in materials)
         {
-            if (material.Id <= 0 || material.Count <= 0)
+            if (material.Id <= 0)
             {
-                System.Windows.MessageBox.Show(this, "制造公式里的材料 id 和数量都必须是正整数。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+                System.Windows.MessageBox.Show(this, "制造公式里的材料必须从列表中选择。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+                result = [];
+                return false;
+            }
+
+            if (gameData.FindMaterial(material.Id) is null)
+            {
+                System.Windows.MessageBox.Show(this, $"材料 {material.Id} 不在可用材料表中，请重新选择。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+                result = [];
+                return false;
+            }
+
+            if (material.Count <= 0 || material.Count > MaxMaterialCount)
+            {
+                System.Windows.MessageBox.Show(this, $"制造公式里的材料数量必须是 1 到 {MaxMaterialCount} 之间的整数。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
                 result = [];
                 return false;
             }
@@ -316,4 +392,3 @@ public partial class BuildingEditorWindow : Window
         return true;
     }
 }
-

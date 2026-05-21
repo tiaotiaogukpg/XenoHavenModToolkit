@@ -112,7 +112,8 @@ XenoHaven MOD Toolkit 会以 UTF-8（无 BOM）写回 XML，并保持多行缩�
 - `uuid` 为条目的稳定唯一标识（32 位十六进制 GUID，无连字符）。XenoHaven MOD Toolkit 在新建建筑时自动生成；游戏内 `ModBuildingXML.GetHashId()` 返回 `uuid.GetHashCode()`，工具编辑窗会以只读 **hashId** 展示该值。`uuid` 创建后不应修改。
 - `size.x` 和 `size.y` 表示占地尺寸，应为正整数。
 - `materials` 表示建造材料列表，每个 `ModCraftMaterialData` 包含材料 `id` 与数量 `count`。
-  XenoHaven MOD Toolkit 会在 Building 编辑窗中展示并编辑材料 `id` 与数量；合并显示时格式为 `<id>x<数量>`，例如 `100055x20` 仅表示 `id=100055`、`count=20`。
+  XenoHaven MOD Toolkit 会在 Building 编辑窗中从 `DOC/K-可用材料表.xlsx` 加载材料下拉（界面显示 `木头-100055`，保存 XML 时写入 `100055`）；数量必须为 1–200 的正整数。
+- `workbenchId` 必须从 `DOC/K-可用工作台.xlsx` 中选择（界面显示 `木工桌-100083`，保存 XML 时写入 `100083`）。
 - `barrier` 表示是否作为阻挡/障碍处理。
 
 注意：字段名 `capbility` 按当前可行样例保留拼写，不要自行改成 `capability`，否则游戏端可能无法反序列化。
@@ -157,27 +158,42 @@ XenoHaven MOD Toolkit 提供：
 - 一键清理当前 Mod 内的 `.meta` 文件。
 - 导出发布版 Mod：复制目录时自动跳过 `.meta`。
 
-## 7. 使用 XenoHaven MOD Toolkit
+## 7. 游戏数据表（DOC）
+
+工具从仓库根目录 `DOC/` 读取两份 Excel（构建/发布时会复制到程序目录下的 `DOC/`）：
+
+| 文件 | 用途 |
+|------|------|
+| `K-可用材料表.xlsx` | 制造公式材料下拉 |
+| `K-可用工作台.xlsx` | `workbenchId` 下拉 |
+
+表头需包含「名称」与「ID」列（也支持 `name`/`id` 等别名）。界面统一显示为 `名称-ID`，写入 XML 的仍是数字 ID。
+
+## 8. 使用 XenoHaven MOD Toolkit
 
 基本流程：
 
 1. 打开工具。
 2. 选择一个 Mod 根目录，例如 `MyBuildingMod/`。
-3. 编辑 `main.xml` 和 `Thing/Buildings/Buildings.xml`。
-4. 在右侧选择一个建筑条目。
-5. 导入“地图显示图”或“物品图标”，工具会自动保存为 `<id>.png`。
-6. 点击“校验 XML”检查基础结构。
+3. 在左侧树中选中对应节点后，顶栏按钮才会启用（类似资源管理器）：
+   - 选中当前 Mod 根或 `main.xml` → **Mod 信息**
+   - 选中 `Buildings.xml` → **新建 Building**
+   - 选中某个 Building 节点（或右侧磁贴）→ **编辑 Building** / **删除 Building**
+   - 选中当前 Mod 根 → **导出发布版** / **清理 .meta**
+4. 编辑 `main.xml` 和 `Thing/Buildings/Buildings.xml`（双击 Building 节点可打开编辑窗）。
+5. 在右侧选择一个建筑条目可同步树选中并预览图片。
+6. 导入“地图显示图”或“物品图标”，工具会自动保存为 `<id>.png`。
 7. 保存 XML。
 8. 导出发布版 Mod 或清理 `.meta`。
 
-## 8. 当前限制
+## 9. 当前限制
 
 - 当前游戏端大概率不支持热重载。修改 Mod 后通常需要重启游戏或重新进入存档。
 - 当前工具第一版优先支持 `Thing/Buildings`。
 - 工具只做基础静态校验，不能完全替代游戏内实测。
 - 物品 ID、工作台 ID、材料 ID 是否真实存在，仍需要结合游戏数据验证。
 
-## 9. 建议的开发习惯
+## 10. 建议的开发习惯
 
 - 每个 Mod 使用唯一目录名。
 - 每个 Thing 使用唯一 `id`。

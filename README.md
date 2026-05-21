@@ -19,6 +19,9 @@ XenoHaven MOD Toolkit 是一个用于制作异星家园（XenoHaven）基础 MOD
   - 地图显示图：`Thing/Buildings/images/<id>.png`
   - 背包/拆除后物品图标：`Thing/Buildings/images/icon/<id>.png`
 - 选中建筑条目时自动预览两类图片。
+- 顶栏按钮随左侧树节点选中状态启用（类似 Windows 资源管理器）。
+- Building 编辑窗从 `DOC/` 下的 Excel 加载材料与工作台列表（显示 `名称-ID`，XML 写入数字 ID）。
+- 制造公式材料只能从材料表下拉选择，单条数量上限 200。
 - 一键删除当前 Mod 内所有 `.meta` 文件。
 - 导出发布版 Mod（复制目录并跳过 `.meta`）。
 
@@ -32,6 +35,9 @@ XenoHavenModToolkit/
     App.xaml
     MainWindow.xaml
     MainWindow.xaml.cs
+  DOC/
+    K-可用材料表.xlsx
+    K-可用工作台.xlsx
   docs/
     ModDevGuide.md
   samples/

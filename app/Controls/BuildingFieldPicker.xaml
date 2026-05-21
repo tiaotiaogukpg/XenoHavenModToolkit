@@ -1,0 +1,26 @@
+<UserControl x:Class="XenoHavenModToolkit.Controls.BuildingFieldPicker"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             HorizontalAlignment="Stretch"
+             HorizontalContentAlignment="Stretch">
+    <Grid Margin="0,0,0,8">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" SharedSizeGroup="BuildingEditorLabelCol"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <TextBlock Grid.Row="0" Grid.Column="0" Text="type" Style="{DynamicResource BuildingEditorLabelStyle}"/>
+        <ComboBox Grid.Row="0" Grid.Column="1" x:Name="TypeCombo" MinHeight="28" VerticalContentAlignment="Center" Margin="0,0,0,8"/>
+
+        <TextBlock Grid.Row="1" Grid.Column="0" Text="direction" Style="{DynamicResource BuildingEditorLabelStyle}"/>
+        <ComboBox Grid.Row="1" Grid.Column="1" x:Name="DirectionCombo" MinHeight="28" VerticalContentAlignment="Center" Margin="0,0,0,8"/>
+
+        <TextBlock Grid.Row="2" Grid.Column="0" Text="workbenchId" Style="{DynamicResource BuildingEditorLabelStyle}"/>
+        <ComboBox Grid.Row="2" Grid.Column="1" x:Name="WorkbenchIdCombo" MinHeight="28" VerticalContentAlignment="Center"/>
+    </Grid>
+</UserControl>

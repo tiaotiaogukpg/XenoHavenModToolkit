@@ -24,6 +24,7 @@ public partial class MainWindow : Window
 
     private readonly ObservableCollection<BuildingEntry> buildings = [];
     private readonly ObservableCollection<OverviewModEntry> overviewMods = [];
+    private readonly GameDataCatalog gameData = GameDataCatalog.Load();
     private string mainXmlText = string.Empty;
     private string buildingsXmlText = string.Empty;
     private string? currentModRoot;
@@ -39,6 +40,11 @@ public partial class MainWindow : Window
     public void InitializeOnStartup()
     {
         settings = AppSettings.Load();
+        if (!gameData.IsReady && !string.IsNullOrWhiteSpace(gameData.LoadError))
+        {
+            Log(gameData.LoadError);
+        }
+
         UpdateTopBarState();
 
         if (EnsureOverviewRootConfigured())
@@ -165,7 +171,23 @@ public partial class MainWindow : Window
 
     private void ModFileTree_MouseDoubleClick(object sender, MouseButtonEventArgs e)
     {
-        if (TryGetTreeViewItemFromSource(e.OriginalSource as DependencyObject) is not { Tag: OverviewModDirectoryTag tag })
+        if (TryGetTreeViewItemFromSource(e.OriginalSource as DependencyObject) is not TreeViewItem item)
+        {
+            return;
+        }
+
+        if (item.Tag is int)
+        {
+            if (EnsureModOpen() && EnsureGameDataReady())
+            {
+                OpenBuildingEditor_Click(sender, e);
+            }
+
+            e.Handled = true;
+            return;
+        }
+
+        if (item.Tag is not OverviewModDirectoryTag tag)
         {
             return;
         }
@@ -280,12 +302,105 @@ public partial class MainWindow : Window
         CleanMetaButton.Visibility = opened ? Visibility.Collapsed : Visibility.Visible;
 
         ModInfoButton.Visibility = opened ? Visibility.Visible : Visibility.Collapsed;
+        AddBuildingButton.Visibility = opened ? Visibility.Visible : Visibility.Collapsed;
+        EditBuildingButton.Visibility = opened ? Visibility.Visible : Visibility.Collapsed;
+        DeleteBuildingButton.Visibility = opened ? Visibility.Visible : Visibility.Collapsed;
         CleanMetaOpenedButton.Visibility = opened ? Visibility.Visible : Visibility.Collapsed;
         ExportReleaseButton.Visibility = opened ? Visibility.Visible : Visibility.Collapsed;
-        AddBuildingButton.IsEnabled = opened;
-        DeleteBuildingButton.Visibility = opened ? Visibility.Visible : Visibility.Collapsed;
-        DeleteBuildingButton.IsEnabled = opened && BuildingTiles.SelectedItem is BuildingEntry;
+
+        UpdateToolbarForSelection();
     }
+
+    private void UpdateToolbarForSelection()
+    {
+        var opened = !string.IsNullOrWhiteSpace(currentModRoot) && Directory.Exists(currentModRoot);
+        var selection = ClassifyCurrentSelection();
+
+        OpenModButton.IsEnabled = !opened;
+        NewModButton.IsEnabled = !opened;
+        CleanMetaButton.IsEnabled = !opened;
+
+        ModInfoButton.IsEnabled = opened && selection is TreeSelectionKind.ModRoot or TreeSelectionKind.MainXml;
+        AddBuildingButton.IsEnabled = opened && selection == TreeSelectionKind.BuildingsXml;
+        EditBuildingButton.IsEnabled = opened && selection == TreeSelectionKind.BuildingNode;
+        DeleteBuildingButton.IsEnabled = opened && selection == TreeSelectionKind.BuildingNode;
+        ExportReleaseButton.IsEnabled = opened && selection == TreeSelectionKind.ModRoot;
+        CleanMetaOpenedButton.IsEnabled = opened && selection == TreeSelectionKind.ModRoot;
+    }
+
+    private TreeSelectionKind ClassifyCurrentSelection()
+    {
+        if (ModFileTree.SelectedItem is TreeViewItem treeItem)
+        {
+            return ClassifyTreeItem(treeItem);
+        }
+
+        if (BuildingTiles.SelectedItem is BuildingEntry)
+        {
+            return TreeSelectionKind.BuildingNode;
+        }
+
+        return TreeSelectionKind.None;
+    }
+
+    private TreeSelectionKind ClassifyTreeItem(TreeViewItem item)
+    {
+        switch (item.Tag)
+        {
+            case OverviewModDirectoryTag directoryTag:
+                if (!string.IsNullOrWhiteSpace(currentModRoot) &&
+                    string.Equals(directoryTag.FullPath, currentModRoot, StringComparison.OrdinalIgnoreCase))
+                {
+                    return TreeSelectionKind.ModRoot;
+                }
+
+                return TreeSelectionKind.OverviewModFolder;
+            case int:
+                return TreeSelectionKind.BuildingNode;
+            case string path when !string.IsNullOrWhiteSpace(currentModRoot):
+                if (string.Equals(path, currentModRoot, StringComparison.OrdinalIgnoreCase))
+                {
+                    return TreeSelectionKind.ModRoot;
+                }
+
+                if (File.Exists(path))
+                {
+                    var relativePath = Path.GetRelativePath(currentModRoot, path);
+                    if (relativePath.Equals(MainXmlRelativePath, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return TreeSelectionKind.MainXml;
+                    }
+
+                    if (relativePath.Equals(BuildingsXmlRelativePath, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return TreeSelectionKind.BuildingsXml;
+                    }
+                }
+
+                return TreeSelectionKind.ModOther;
+            default:
+                return TreeSelectionKind.None;
+        }
+    }
+
+    private bool EnsureGameDataReady()
+    {
+        if (gameData.IsReady)
+        {
+            return true;
+        }
+
+        System.Windows.MessageBox.Show(
+            this,
+            gameData.LoadError ?? "游戏数据表未就绪。",
+            "游戏数据",
+            MessageBoxButton.OK,
+            MessageBoxImage.Warning);
+        return false;
+    }
+
+    private int NormalizeWorkbenchId(int raw)
+        => gameData.FindWorkbench(raw)?.Id ?? gameData.DefaultWorkbenchId;
 
     private void NewMod_Click(object sender, RoutedEventArgs e)
     {
@@ -383,7 +498,7 @@ public partial class MainWindow : Window
 
     private void OpenBuildingEditor_Click(object sender, RoutedEventArgs e)
     {
-        if (!EnsureModOpen())
+        if (!EnsureModOpen() || !EnsureGameDataReady())
         {
             return;
         }
@@ -391,7 +506,7 @@ public partial class MainWindow : Window
         try
         {
             var initial = GetEditableBuildingFromSelectionOrDefaults();
-            var dialog = new BuildingEditorWindow(initial, currentModRoot!) { Owner = this };
+            var dialog = new BuildingEditorWindow(initial, currentModRoot!, gameData) { Owner = this };
             if (dialog.ShowDialog() != true || dialog.Result is null)
             {
                 return;
@@ -496,12 +611,14 @@ public partial class MainWindow : Window
                 BuildingTiles.ScrollIntoView(match);
             }
 
+            UpdateToolbarForSelection();
             return;
         }
 
         // 点击文件节点（Buildings.xml / 图片等）时
         if (item.Tag is not string path || Directory.Exists(path))
         {
+            UpdateToolbarForSelection();
             return;
         }
 
@@ -532,6 +649,8 @@ public partial class MainWindow : Window
                 Log($"载入 XML 失败：{ex.Message}");
             }
         }
+
+        UpdateToolbarForSelection();
     }
 
     private void BuildingTiles_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -541,7 +660,14 @@ public partial class MainWindow : Window
             return;
         }
 
-        DeleteBuildingButton.IsEnabled = BuildingTiles.SelectedItem is BuildingEntry;
+        if (BuildingTiles.SelectedItem is BuildingEntry entry &&
+            TryFindTreeViewItemByTag(ModFileTree, entry.Id) is TreeViewItem treeItem)
+        {
+            treeItem.IsSelected = true;
+            treeItem.BringIntoView();
+        }
+
+        UpdateToolbarForSelection();
     }
 
     private void BuildingTiles_DoubleClick(object sender, MouseButtonEventArgs e)
@@ -604,7 +730,7 @@ public partial class MainWindow : Window
 
     private void AddBuilding_Click(object sender, RoutedEventArgs e)
     {
-        if (!EnsureModOpen())
+        if (!EnsureModOpen() || !EnsureGameDataReady())
         {
             return;
         }
@@ -966,6 +1092,7 @@ public partial class MainWindow : Window
 
             ModFileTree.Items.Add(root);
             RestoreTreeState(ModFileTree, expandedTags, selectedTag);
+            UpdateToolbarForSelection();
             return;
         }
 
@@ -980,6 +1107,7 @@ public partial class MainWindow : Window
         AppendOpenModExplorerChildren(singleRoot);
         ModFileTree.Items.Add(singleRoot);
         RestoreTreeState(ModFileTree, expandedTags, selectedTag);
+        UpdateToolbarForSelection();
     }
 
     private static HashSet<string> CaptureTreeExpandedTags(ItemsControl parent)
@@ -1517,11 +1645,11 @@ public partial class MainWindow : Window
                 ? (string.IsNullOrWhiteSpace(selected.Type) ? $"Building_{selected.Id}" : selected.Type)
                 : selected.Name;
             var typeForEdit = string.IsNullOrWhiteSpace(selected.Type) ? "Building" : selected.Type;
-            return new EditableBuilding(selected.Id, nameForEdit, GUIDUtils.Generate(), typeForEdit, 1, 1, 1, 100, 1, 1, []);
+            return new EditableBuilding(selected.Id, nameForEdit, GUIDUtils.Generate(), typeForEdit, 1, 1, gameData.DefaultWorkbenchId, 100, 1, 1, []);
         }
 
         var (nextId, nextName) = SuggestNewBuildingDefaults();
-        return new EditableBuilding(nextId, nextName, GUIDUtils.Generate(), "Building", 1, 1, 1, 100, 1, 1, []);
+        return new EditableBuilding(nextId, nextName, GUIDUtils.Generate(), "Building", 1, 1, gameData.DefaultWorkbenchId, 100, 1, 1, []);
     }
 
     private EditableBuilding? TryReadEditableBuildingById(int id)
@@ -1563,7 +1691,7 @@ public partial class MainWindow : Window
                 typeValue,
                 ReadInt("direction", 1),
                 ReadInt("capbility", 1),
-                ReadInt("workbenchId", 1),
+                NormalizeWorkbenchId(ReadInt("workbenchId", gameData.DefaultWorkbenchId)),
                 ReadInt("health", 100),
                 sx,
                 sy,

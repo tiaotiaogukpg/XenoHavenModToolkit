@@ -41,18 +41,16 @@
                 </Grid.ColumnDefinitions>
 
                 <WrapPanel Grid.Column="0" VerticalAlignment="Center">
-                    <Button x:Name="OpenModButton" Content="打开 MOD" Click="OpenModFolder_Click"/>
-                    <!-- 未打开 Mod 时显示 -->
-                    <Button x:Name="NewModButton" Content="新建 MOD" Click="NewMod_Click"/>
-                    <Button x:Name="CleanMetaButton" Content="清理 .meta" Click="CleanMeta_Click"/>
+                    <Button x:Name="OpenModButton" Content="打开工程" Click="OpenModFolder_Click"/>
+                    <Button x:Name="NewModButton" Content="新建MOD" Click="NewMod_Click"/>
+                    <Button x:Name="CleanMetaButton" Content="清理 .meta" Click="CleanMeta_Click" Visibility="Collapsed"/>
 
-                    <!-- 已打开 Mod 后显示（顺序按需求） -->
-                    <Button x:Name="ModInfoButton" Content="Mod 信息" Click="ModInfo_Click" Visibility="Collapsed"/>
-                    <Button x:Name="AddBuildingButton" Content="新建 Building" Click="AddBuilding_Click" Visibility="Collapsed" IsEnabled="False"/>
-                    <Button x:Name="EditBuildingButton" Content="编辑 Building" Click="OpenBuildingEditor_Click" Visibility="Collapsed" IsEnabled="False"/>
-                    <Button x:Name="DeleteBuildingButton" Content="删除 Building" Click="DeleteBuilding_Click" Visibility="Collapsed" IsEnabled="False"/>
+                    <Button x:Name="ModInfoButton" Content="编辑MOD" Click="ModInfo_Click" IsEnabled="False"/>
+                    <Button x:Name="AddBuildingButton" Content="新建组件" Click="AddBuilding_Click" IsEnabled="False"/>
+                    <Button x:Name="EditBuildingButton" Content="编辑组件" Click="OpenBuildingEditor_Click" IsEnabled="False"/>
+                    <Button x:Name="DeleteBuildingButton" Content="删除组件" Click="DeleteBuilding_Click" IsEnabled="False"/>
                     <Button x:Name="CleanMetaOpenedButton" Content="清理 .meta" Click="CleanMeta_Click" Visibility="Collapsed"/>
-                    <Button x:Name="ExportReleaseButton" Content="导出发布版" Click="ExportRelease_Click" Visibility="Collapsed"/>
+                    <Button x:Name="ExportReleaseButton" Content="导出" Click="ExportRelease_Click" IsEnabled="False"/>
                 </WrapPanel>
 
             <TextBlock x:Name="CurrentModPathText"

@@ -50,18 +50,12 @@ public partial class MainWindow : Window
         if (EnsureOverviewRootConfigured())
         {
             RefreshOverviewList();
-            var openedLast = false;
+            BuildOverviewNavigationTree();
             if (settings.OpenLastModOnStartup &&
                 !string.IsNullOrWhiteSpace(settings.LastModPath) &&
                 Directory.Exists(settings.LastModPath))
             {
-                OpenModFolder(settings.LastModPath);
-                openedLast = true;
-            }
-
-            if (!openedLast)
-            {
-                BuildOverviewNavigationTree();
+                TrySelectModInTree(settings.LastModPath);
             }
 
             return;
@@ -121,15 +115,12 @@ public partial class MainWindow : Window
         if (EnsureOverviewRootConfigured())
         {
             RefreshOverviewList();
-            if (!EnsureModOpen(showMessage: false))
-            {
-                BuildOverviewNavigationTree();
-            }
-            else
+            BuildOverviewNavigationTree();
+            if (EnsureModOpen(showMessage: false))
             {
                 ReloadBuildingsXmlFromDisk();
                 ParseBuildingsFromEditor();
-                LoadTree();
+                RefreshBuildingNodesInTree();
             }
 
             Log("已刷新 Mod 总览列表。");
@@ -143,13 +134,8 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (TryGetTreeViewItemFromSource(e.OriginalSource as DependencyObject) is TreeViewItem item)
+        if (TryGetTreeViewItemFromSource(e.OriginalSource as DependencyObject) is TreeViewItem)
         {
-            if (item.HasItems)
-            {
-                item.IsExpanded = !item.IsExpanded;
-            }
-
             return;
         }
 
@@ -176,7 +162,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (item.Tag is int)
+        if (item.Tag is BuildingTreeTag buildingTag)
         {
             if (EnsureModOpen() && EnsureGameDataReady())
             {
@@ -184,34 +170,7 @@ public partial class MainWindow : Window
             }
 
             e.Handled = true;
-            return;
         }
-
-        if (item.Tag is not OverviewModDirectoryTag tag)
-        {
-            return;
-        }
-
-        if (!Directory.Exists(tag.FullPath))
-        {
-            return;
-        }
-
-        if (!EnsureModOpen(showMessage: false))
-        {
-            OpenModFolder(tag.FullPath);
-            UpdateTopBarState();
-            e.Handled = true;
-            return;
-        }
-
-        if (!string.Equals(tag.FullPath, currentModRoot, StringComparison.OrdinalIgnoreCase))
-        {
-            OpenModFolder(tag.FullPath);
-            UpdateTopBarState();
-        }
-
-        e.Handled = true;
     }
 
     private void RefreshOverviewList()
@@ -250,9 +209,10 @@ public partial class MainWindow : Window
         settings = dialog.Settings;
         settings.Save();
         RefreshOverviewList();
-        if (!EnsureModOpen(showMessage: false))
+        BuildOverviewNavigationTree();
+        if (EnsureModOpen(showMessage: false))
         {
-            BuildOverviewNavigationTree();
+            TrySelectModInTree(currentModRoot!);
         }
 
         Log("设置已保存。");
@@ -266,7 +226,6 @@ public partial class MainWindow : Window
         settings.Save();
         LoadKnownXmlFiles();
         ParseBuildingsFromEditor();
-        LoadTree();
         Log($"已打开 Mod：{folder}");
         UpdateTopBarState();
     }
@@ -284,30 +243,16 @@ public partial class MainWindow : Window
         buildings.Clear();
         BuildingTiles.SelectedItem = null;
 
-        ModFileTree.Items.Clear();
         mainXmlText = string.Empty;
         buildingsXmlText = string.Empty;
 
-        UpdateTopBarState();
         BuildOverviewNavigationTree();
+        UpdateTopBarState();
         Log("已返回总览状态。");
     }
 
     private void UpdateTopBarState()
     {
-        var opened = !string.IsNullOrWhiteSpace(currentModRoot) && Directory.Exists(currentModRoot);
-
-        OpenModButton.Visibility = Visibility.Visible;
-        NewModButton.Visibility = opened ? Visibility.Collapsed : Visibility.Visible;
-        CleanMetaButton.Visibility = opened ? Visibility.Collapsed : Visibility.Visible;
-
-        ModInfoButton.Visibility = opened ? Visibility.Visible : Visibility.Collapsed;
-        AddBuildingButton.Visibility = opened ? Visibility.Visible : Visibility.Collapsed;
-        EditBuildingButton.Visibility = opened ? Visibility.Visible : Visibility.Collapsed;
-        DeleteBuildingButton.Visibility = opened ? Visibility.Visible : Visibility.Collapsed;
-        CleanMetaOpenedButton.Visibility = opened ? Visibility.Visible : Visibility.Collapsed;
-        ExportReleaseButton.Visibility = opened ? Visibility.Visible : Visibility.Collapsed;
-
         UpdateToolbarForSelection();
     }
 
@@ -318,14 +263,12 @@ public partial class MainWindow : Window
 
         OpenModButton.IsEnabled = !opened;
         NewModButton.IsEnabled = !opened;
-        CleanMetaButton.IsEnabled = !opened;
 
         ModInfoButton.IsEnabled = opened && selection is TreeSelectionKind.ModRoot or TreeSelectionKind.MainXml;
         AddBuildingButton.IsEnabled = opened && selection == TreeSelectionKind.BuildingsXml;
         EditBuildingButton.IsEnabled = opened && selection == TreeSelectionKind.BuildingNode;
         DeleteBuildingButton.IsEnabled = opened && selection == TreeSelectionKind.BuildingNode;
         ExportReleaseButton.IsEnabled = opened && selection == TreeSelectionKind.ModRoot;
-        CleanMetaOpenedButton.IsEnabled = opened && selection == TreeSelectionKind.ModRoot;
     }
 
     private TreeSelectionKind ClassifyCurrentSelection()
@@ -355,7 +298,8 @@ public partial class MainWindow : Window
                 }
 
                 return TreeSelectionKind.OverviewModFolder;
-            case int:
+            case BuildingTreeTag buildingTag when !string.IsNullOrWhiteSpace(currentModRoot) &&
+                string.Equals(buildingTag.ModRoot, currentModRoot, StringComparison.OrdinalIgnoreCase):
                 return TreeSelectionKind.BuildingNode;
             case string path when !string.IsNullOrWhiteSpace(currentModRoot):
                 if (string.Equals(path, currentModRoot, StringComparison.OrdinalIgnoreCase))
@@ -402,6 +346,16 @@ public partial class MainWindow : Window
     private int NormalizeWorkbenchId(int raw)
         => gameData.FindWorkbench(raw)?.Id ?? gameData.DefaultWorkbenchId;
 
+    private static int NormalizeCapbility(int raw)
+    {
+        if (raw < BuildingFieldOptions.MinCapbility)
+        {
+            return BuildingFieldOptions.DefaultCapbility;
+        }
+
+        return raw > BuildingFieldOptions.MaxCapbility ? BuildingFieldOptions.MaxCapbility : raw;
+    }
+
     private void NewMod_Click(object sender, RoutedEventArgs e)
     {
         try
@@ -436,7 +390,8 @@ public partial class MainWindow : Window
             ModXmlIO.WriteAllText(Path.Combine(buildingsXmlFolder, "Buildings.xml"), dialog.Result.BuildingsXml);
 
             RefreshOverviewList();
-            OpenModFolder(targetFolder);
+            BuildOverviewNavigationTree();
+            TrySelectModInTree(targetFolder);
             Log($"已新建 Mod：{dialog.Result.FolderName}");
         }
         catch (Exception ex)
@@ -486,7 +441,7 @@ public partial class MainWindow : Window
 
             mainXmlText = generatedXml;
             ModXmlIO.WriteAllText(GetFullPath(MainXmlRelativePath), mainXmlText);
-            LoadTree();
+            BuildOverviewNavigationTree();
             Log("main.xml 已更新。");
         }
         catch (Exception ex)
@@ -545,7 +500,7 @@ public partial class MainWindow : Window
         try
         {
             var deleted = DeleteMetaFiles(currentModRoot!);
-            LoadTree();
+            BuildOverviewNavigationTree();
             Log($"已删除 {deleted} 个 .meta 文件。");
         }
         catch (Exception ex)
@@ -601,53 +556,56 @@ public partial class MainWindow : Window
             return;
         }
 
-        // 点击 Building 节点时，同步磁贴选择
-        if (item.Tag is int buildingId)
+        switch (item.Tag)
         {
-            var match = buildings.FirstOrDefault(b => b.Id == buildingId);
-            if (match is not null)
-            {
-                BuildingTiles.SelectedItem = match;
-                BuildingTiles.ScrollIntoView(match);
-            }
-
-            UpdateToolbarForSelection();
-            return;
-        }
-
-        // 点击文件节点（Buildings.xml / 图片等）时
-        if (item.Tag is not string path || Directory.Exists(path))
-        {
-            UpdateToolbarForSelection();
-            return;
-        }
-
-        if (Path.GetExtension(path).Equals(".xml", StringComparison.OrdinalIgnoreCase))
-        {
-            try
-            {
-                var text = ModXmlIO.ReadAllText(path);
-                var relativePath = Path.GetRelativePath(currentModRoot!, path);
-                if (relativePath.Equals(BuildingsXmlRelativePath, StringComparison.OrdinalIgnoreCase))
+            case OverviewModDirectoryTag directoryTag:
+                EnsureModActivated(directoryTag.FullPath);
+                break;
+            case BuildingTreeTag buildingTag:
+                EnsureModActivated(buildingTag.ModRoot);
+                SyncBuildingTileSelection(buildingTag.BuildingId);
+                break;
+            case string path:
+                if (TryResolveModRootFromPath(path) is { } modRoot)
                 {
-                    buildingsXmlText = text;
-                    ParseBuildingsFromEditor();
-                }
-                else if (relativePath.Equals(MainXmlRelativePath, StringComparison.OrdinalIgnoreCase))
-                {
-                    mainXmlText = text;
-                }
-                else
-                {
-                    buildingsXmlText = text;
+                    EnsureModActivated(modRoot);
                 }
 
-                Log($"已载入 XML：{relativePath}");
-            }
-            catch (Exception ex)
-            {
-                Log($"载入 XML 失败：{ex.Message}");
-            }
+                if (!File.Exists(path))
+                {
+                    break;
+                }
+
+                if (EnsureModOpen(showMessage: false) &&
+                    Path.GetExtension(path).Equals(".xml", StringComparison.OrdinalIgnoreCase))
+                {
+                    try
+                    {
+                        var text = ModXmlIO.ReadAllText(path);
+                        var relativePath = Path.GetRelativePath(currentModRoot!, path);
+                        if (relativePath.Equals(BuildingsXmlRelativePath, StringComparison.OrdinalIgnoreCase))
+                        {
+                            buildingsXmlText = text;
+                            ParseBuildingsFromEditor();
+                        }
+                        else if (relativePath.Equals(MainXmlRelativePath, StringComparison.OrdinalIgnoreCase))
+                        {
+                            mainXmlText = text;
+                        }
+                        else
+                        {
+                            buildingsXmlText = text;
+                        }
+
+                        Log($"已载入 XML：{relativePath}");
+                    }
+                    catch (Exception ex)
+                    {
+                        Log($"载入 XML 失败：{ex.Message}");
+                    }
+                }
+
+                break;
         }
 
         UpdateToolbarForSelection();
@@ -661,7 +619,7 @@ public partial class MainWindow : Window
         }
 
         if (BuildingTiles.SelectedItem is BuildingEntry entry &&
-            TryFindTreeViewItemByTag(ModFileTree, entry.Id) is TreeViewItem treeItem)
+            TryFindBuildingTreeItem(ModFileTree, currentModRoot, entry.Id) is TreeViewItem treeItem)
         {
             treeItem.IsSelected = true;
             treeItem.BringIntoView();
@@ -1018,7 +976,7 @@ public partial class MainWindow : Window
         var buildingsXmlPath = GetFullPath(BuildingsXmlRelativePath);
         if (TryFindTreeViewItemByTag(ModFileTree, buildingsXmlPath) is not TreeViewItem buildingsXmlNode)
         {
-            LoadTree();
+            BuildOverviewNavigationTree();
             return;
         }
 
@@ -1028,87 +986,13 @@ public partial class MainWindow : Window
             buildingsXmlNode.Items.Add(new TreeViewItem
             {
                 Header = b.DisplayName,
-                Tag = b.Id,
+                Tag = new BuildingTreeTag(currentModRoot!, b.Id),
                 IsExpanded = false
             });
         }
     }
 
-    private void LoadTree()
-    {
-        if (!EnsureModOpen(showMessage: false))
-        {
-            BuildOverviewNavigationTree();
-            return;
-        }
-
-        var expandedTags = CaptureTreeExpandedTags(ModFileTree);
-        var selectedTag = (ModFileTree.SelectedItem as TreeViewItem)?.Tag;
-
-        ModFileTree.Items.Clear();
-
-        // 已打开 Mod 时仍保持「Mod」为总览根，当前 Mod 作为子节点展开其内部结构
-        if (!string.IsNullOrWhiteSpace(settings.ModsOverviewRoot) &&
-            Directory.Exists(settings.ModsOverviewRoot))
-        {
-            RefreshOverviewList();
-            var root = new TreeViewItem
-            {
-                Header = "Mod",
-                Tag = settings.ModsOverviewRoot,
-                IsExpanded = true
-            };
-
-            var matchedOverview = false;
-            foreach (var entry in OrderedOverviewMods())
-            {
-                var isOpen = string.Equals(entry.FullPath, currentModRoot, StringComparison.OrdinalIgnoreCase);
-                var modNode = CreateOverviewModTreeItem(entry, isOpen);
-
-                if (isOpen)
-                {
-                    AppendOpenModExplorerChildren(modNode);
-                    matchedOverview = true;
-                }
-
-                root.Items.Add(modNode);
-            }
-
-            if (!matchedOverview && Directory.Exists(currentModRoot!))
-            {
-                var orphan = new TreeViewItem
-                {
-                    Header = new DirectoryInfo(currentModRoot!).Name,
-                    Tag = new OverviewModDirectoryTag(currentModRoot!),
-                    IsExpanded = true
-                };
-                if (File.Exists(Path.Combine(currentModRoot!, MainXmlRelativePath)))
-                {
-                    orphan.Foreground = (System.Windows.Media.Brush)FindResource("Theme.TreeViewModValidForeground");
-                }
-                AppendOpenModExplorerChildren(orphan);
-                root.Items.Add(orphan);
-            }
-
-            ModFileTree.Items.Add(root);
-            RestoreTreeState(ModFileTree, expandedTags, selectedTag);
-            UpdateToolbarForSelection();
-            return;
-        }
-
-        // 未配置总览目录时：退化为单根（当前 Mod 目录名）
-        var rootInfo = new DirectoryInfo(currentModRoot!);
-        var singleRoot = new TreeViewItem
-        {
-            Header = rootInfo.Name,
-            Tag = rootInfo.FullName,
-            IsExpanded = true
-        };
-        AppendOpenModExplorerChildren(singleRoot);
-        ModFileTree.Items.Add(singleRoot);
-        RestoreTreeState(ModFileTree, expandedTags, selectedTag);
-        UpdateToolbarForSelection();
-    }
+    private void LoadTree() => BuildOverviewNavigationTree();
 
     private static HashSet<string> CaptureTreeExpandedTags(ItemsControl parent)
     {
@@ -1200,6 +1084,12 @@ public partial class MainWindow : Window
             return string.Equals(leftPath, rightPath, StringComparison.OrdinalIgnoreCase);
         }
 
+        if (left is BuildingTreeTag leftBuilding && right is BuildingTreeTag rightBuilding)
+        {
+            return leftBuilding.BuildingId == rightBuilding.BuildingId &&
+                   string.Equals(leftBuilding.ModRoot, rightBuilding.ModRoot, StringComparison.OrdinalIgnoreCase);
+        }
+
         return Equals(left, right);
     }
 
@@ -1216,8 +1106,8 @@ public partial class MainWindow : Window
             case OverviewModDirectoryTag directoryTag:
                 key = directoryTag.FullPath;
                 return true;
-            case int buildingId:
-                key = $"building:{buildingId}";
+            case BuildingTreeTag buildingTag:
+                key = $"building:{buildingTag.ModRoot}:{buildingTag.BuildingId}";
                 return true;
             default:
                 key = tag.ToString() ?? string.Empty;
@@ -1225,19 +1115,131 @@ public partial class MainWindow : Window
         }
     }
 
-    /// <summary>
-    /// 在当前已打开的 Mod（<see cref="currentModRoot"/>）下追加 Prefabs / Thing / Buildings.xml 等子节点。
-    /// </summary>
-    private void AppendOpenModExplorerChildren(TreeViewItem modNode)
+    private static TreeViewItem? TryFindBuildingTreeItem(ItemsControl parent, string? modRoot, int buildingId)
     {
-        if (!EnsureModOpen(showMessage: false))
+        if (string.IsNullOrWhiteSpace(modRoot))
+        {
+            return null;
+        }
+
+        return TryFindTreeViewItemByTag(parent, new BuildingTreeTag(modRoot, buildingId));
+    }
+
+    private void EnsureModActivated(string modRoot)
+    {
+        if (!Directory.Exists(modRoot))
         {
             return;
         }
 
+        if (string.Equals(currentModRoot, modRoot, StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        OpenModFolder(modRoot);
+    }
+
+    private void SyncBuildingTileSelection(int buildingId)
+    {
+        var match = buildings.FirstOrDefault(b => b.Id == buildingId);
+        if (match is not null)
+        {
+            BuildingTiles.SelectedItem = match;
+            BuildingTiles.ScrollIntoView(match);
+        }
+    }
+
+    private bool TrySelectModInTree(string modRoot)
+    {
+        var tag = new OverviewModDirectoryTag(modRoot);
+        if (TryFindTreeViewItemByTag(ModFileTree, tag) is not TreeViewItem node)
+        {
+            return false;
+        }
+
+        node.IsSelected = true;
+        node.BringIntoView();
+        return true;
+    }
+
+    private static string? TryResolveModRootFromPath(string path)
+    {
+        if (Directory.Exists(path))
+        {
+            if (File.Exists(Path.Combine(path, MainXmlRelativePath)))
+            {
+                return path;
+            }
+
+            path = path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        }
+
+        var directory = File.Exists(path) ? Path.GetDirectoryName(path) : path;
+        while (!string.IsNullOrWhiteSpace(directory))
+        {
+            if (File.Exists(Path.Combine(directory, MainXmlRelativePath)))
+            {
+                return directory;
+            }
+
+            directory = Directory.GetParent(directory)?.FullName;
+        }
+
+        return null;
+    }
+
+    private static IReadOnlyList<BuildingEntry> ReadBuildingEntriesFromMod(string modRoot)
+    {
+        var buildingsXmlPath = Path.Combine(modRoot, BuildingsXmlRelativePath);
+        if (!File.Exists(buildingsXmlPath))
+        {
+            return [];
+        }
+
+        var entries = new List<BuildingEntry>();
+        try
+        {
+            var document = XDocument.Parse(ModXmlIO.ReadAllText(buildingsXmlPath));
+            if (document.Root?.Name.LocalName != "ArrayOfModBuildingXML")
+            {
+                return entries;
+            }
+
+            foreach (var element in document.Root.Elements().Where(e => e.Name.LocalName == "ModBuildingXML"))
+            {
+                var idText = element.Elements().FirstOrDefault(e => e.Name.LocalName == "id")?.Value;
+                if (!int.TryParse(idText, out var id))
+                {
+                    continue;
+                }
+
+                var nameRaw = element.Elements().FirstOrDefault(e => e.Name.LocalName == "name")?.Value;
+                var typeRaw = element.Elements().FirstOrDefault(e => e.Name.LocalName == "type")?.Value;
+                var categoryRaw = element.Elements().FirstOrDefault(e => e.Name.LocalName == "category")?.Value;
+                var nameStored = nameRaw ?? string.Empty;
+                var typeStored = typeRaw ?? string.Empty;
+                var categoryStored = string.IsNullOrWhiteSpace(categoryRaw) ? "UNKNOWN" : categoryRaw!;
+                var iconPath = Path.Combine(modRoot, BuildingIconsRelativePath, $"{id}.png");
+                entries.Add(new BuildingEntry(id, nameStored, typeStored, categoryStored, iconPath));
+            }
+        }
+        catch
+        {
+            // 外部编辑可能导致暂时无效，树仍显示空建筑列表。
+        }
+
+        return entries;
+    }
+
+    private static void AppendModExplorerChildren(
+        TreeViewItem modNode,
+        string modRoot,
+        IReadOnlyList<BuildingEntry> buildingEntries)
+    {
         foreach (var relativePath in new[] { MainXmlRelativePath, ModRootAssets.IconRelativePath, ModRootAssets.ScreenshotRelativePath })
         {
-            var path = GetFullPath(relativePath);
+            var path = Path.Combine(modRoot, relativePath);
             modNode.Items.Add(new TreeViewItem
             {
                 Header = File.Exists(path) ? relativePath : $"{relativePath}（缺失）",
@@ -1246,14 +1248,14 @@ public partial class MainWindow : Window
             });
         }
 
-        var prefabsPath = Path.Combine(currentModRoot!, "Prefabs");
+        var prefabsPath = Path.Combine(modRoot, "Prefabs");
         if (Directory.Exists(prefabsPath))
         {
             modNode.Items.Add(CreateTreeItem(new DirectoryInfo(prefabsPath)));
         }
 
-        var thingPath = Path.Combine(currentModRoot!, "Thing");
-        var buildingsXmlPath = GetFullPath(BuildingsXmlRelativePath);
+        var thingPath = Path.Combine(modRoot, "Thing");
+        var buildingsXmlPath = Path.Combine(modRoot, BuildingsXmlRelativePath);
         if (!Directory.Exists(thingPath) && !File.Exists(buildingsXmlPath))
         {
             return;
@@ -1263,22 +1265,22 @@ public partial class MainWindow : Window
         {
             Header = "Thing",
             Tag = thingPath,
-            IsExpanded = true
+            IsExpanded = false
         };
 
         var buildingsXmlNode = new TreeViewItem
         {
             Header = File.Exists(buildingsXmlPath) ? "Buildings.xml" : "Buildings.xml（未创建）",
             Tag = buildingsXmlPath,
-            IsExpanded = true
+            IsExpanded = false
         };
 
-        foreach (var b in buildings.OrderBy(b => b.Id))
+        foreach (var b in buildingEntries.OrderBy(b => b.Id))
         {
             buildingsXmlNode.Items.Add(new TreeViewItem
             {
                 Header = b.DisplayName,
-                Tag = b.Id,
+                Tag = new BuildingTreeTag(modRoot, b.Id),
                 IsExpanded = false
             });
         }
@@ -1289,6 +1291,9 @@ public partial class MainWindow : Window
 
     private void BuildOverviewNavigationTree()
     {
+        var expandedTags = CaptureTreeExpandedTags(ModFileTree);
+        var selectedTag = (ModFileTree.SelectedItem as TreeViewItem)?.Tag;
+
         ModFileTree.Items.Clear();
         if (string.IsNullOrWhiteSpace(settings.ModsOverviewRoot) || !Directory.Exists(settings.ModsOverviewRoot))
         {
@@ -1310,10 +1315,15 @@ public partial class MainWindow : Window
 
         foreach (var entry in OrderedOverviewMods())
         {
-            root.Items.Add(CreateOverviewModTreeItem(entry, isExpanded: false));
+            var modNode = CreateOverviewModTreeItem(entry, isExpanded: false);
+            var buildingEntries = ReadBuildingEntriesFromMod(entry.FullPath);
+            AppendModExplorerChildren(modNode, entry.FullPath, buildingEntries);
+            root.Items.Add(modNode);
         }
 
         ModFileTree.Items.Add(root);
+        RestoreTreeState(ModFileTree, expandedTags, selectedTag);
+        UpdateToolbarForSelection();
     }
 
     private IEnumerable<OverviewModEntry> OrderedOverviewMods()
@@ -1610,9 +1620,9 @@ public partial class MainWindow : Window
                 GUIDUtils.Generate(),
                 b.Type,
                 1,
-                1,
-                1,
-                b.Health,
+                BuildingFieldOptions.DefaultCapbility,
+                gameData.DefaultWorkbenchId,
+                BuildingFieldOptions.FixedHealth,
                 b.SizeX,
                 b.SizeY,
                 []));
@@ -1645,11 +1655,11 @@ public partial class MainWindow : Window
                 ? (string.IsNullOrWhiteSpace(selected.Type) ? $"Building_{selected.Id}" : selected.Type)
                 : selected.Name;
             var typeForEdit = string.IsNullOrWhiteSpace(selected.Type) ? "Building" : selected.Type;
-            return new EditableBuilding(selected.Id, nameForEdit, GUIDUtils.Generate(), typeForEdit, 1, 1, gameData.DefaultWorkbenchId, 100, 1, 1, []);
+            return new EditableBuilding(selected.Id, nameForEdit, GUIDUtils.Generate(), typeForEdit, 1, BuildingFieldOptions.DefaultCapbility, gameData.DefaultWorkbenchId, BuildingFieldOptions.FixedHealth, 1, 1, []);
         }
 
         var (nextId, nextName) = SuggestNewBuildingDefaults();
-        return new EditableBuilding(nextId, nextName, GUIDUtils.Generate(), "Building", 1, 1, gameData.DefaultWorkbenchId, 100, 1, 1, []);
+        return new EditableBuilding(nextId, nextName, GUIDUtils.Generate(), "Building", 1, BuildingFieldOptions.DefaultCapbility, gameData.DefaultWorkbenchId, BuildingFieldOptions.FixedHealth, 1, 1, []);
     }
 
     private EditableBuilding? TryReadEditableBuildingById(int id)
@@ -1690,9 +1700,9 @@ public partial class MainWindow : Window
                 EnsureBuildingUuid(ReadBuildingUuid(el)),
                 typeValue,
                 ReadInt("direction", 1),
-                ReadInt("capbility", 1),
+                NormalizeCapbility(ReadInt("capbility", BuildingFieldOptions.DefaultCapbility)),
                 NormalizeWorkbenchId(ReadInt("workbenchId", gameData.DefaultWorkbenchId)),
-                ReadInt("health", 100),
+                BuildingFieldOptions.FixedHealth,
                 sx,
                 sy,
                 ReadMaterials(el));

@@ -14,4 +14,9 @@ internal static class BuildingFieldOptions
         1,
         3
     ];
+
+    internal const int MinCapbility = 16;
+    internal const int MaxCapbility = 96;
+    internal const int DefaultCapbility = 16;
+    internal const int FixedHealth = 10;
 }

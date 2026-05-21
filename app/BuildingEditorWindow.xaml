@@ -144,10 +144,12 @@
                 <controls:BuildingFieldPicker Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" x:Name="FieldPicker" HorizontalAlignment="Stretch"/>
 
                 <TextBlock Grid.Row="4" Grid.Column="0" Text="capbility" Style="{DynamicResource BuildingEditorLabelStyle}"/>
-                <TextBox Grid.Row="4" Grid.Column="1" x:Name="CapbilityBox" Margin="0,0,0,8" Text="1" VerticalContentAlignment="Center" MinHeight="28"/>
+                <TextBox Grid.Row="4" Grid.Column="1" x:Name="CapbilityBox" Margin="0,0,0,8" Text="16" VerticalContentAlignment="Center" MinHeight="28"
+                         ToolTip="容量范围：16–96"/>
 
                 <TextBlock Grid.Row="5" Grid.Column="0" Text="health" Style="{DynamicResource BuildingEditorLabelStyle}"/>
-                <TextBox Grid.Row="5" Grid.Column="1" x:Name="HealthBox" Margin="0,0,0,8" Text="100" VerticalContentAlignment="Center" MinHeight="28"/>
+                <TextBox Grid.Row="5" Grid.Column="1" x:Name="HealthBox" Margin="0,0,0,8" Text="10" IsReadOnly="True" VerticalContentAlignment="Center" MinHeight="28"
+                         ToolTip="生命值固定为 10"/>
 
                 <TextBlock Grid.Row="6" Grid.Column="0" Text="size.x" Style="{DynamicResource BuildingEditorLabelStyle}"/>
                 <TextBox Grid.Row="6" Grid.Column="1" x:Name="SizeXBox" Margin="0,0,0,8" Text="1" VerticalContentAlignment="Center" MinHeight="28"/>

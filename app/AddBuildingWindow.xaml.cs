@@ -51,13 +51,7 @@ public partial class AddBuildingWindow : Window
             return;
         }
 
-        if (!int.TryParse(HealthBox.Text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var health) || health <= 0)
-        {
-            WpfMessageBox.Show(this, "health 必须是正整数。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
-            return;
-        }
-
-        Result = new MainWindow.NewBuilding(id, name, type, sx, sy, health);
+        Result = new MainWindow.NewBuilding(id, name, type, sx, sy, BuildingFieldOptions.FixedHealth);
         DialogResult = true;
     }
 }

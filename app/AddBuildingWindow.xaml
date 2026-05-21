@@ -1,7 +1,7 @@
 <Window x:Class="XenoHavenModToolkit.AddBuildingWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="新增 Building" Height="360" Width="520"
+        Title="新建组件" Height="360" Width="520"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         Background="{DynamicResource Theme.WindowBackground}">
@@ -42,7 +42,7 @@
             <TextBox x:Name="SizeYBox" Grid.Row="4" Grid.Column="1" Margin="0,0,0,8" Text="1"/>
 
             <TextBlock Text="health" Grid.Row="5" Grid.Column="0" Margin="0,0,8,8"/>
-            <TextBox x:Name="HealthBox" Grid.Row="5" Grid.Column="1" Margin="0,0,0,8" Text="100"/>
+            <TextBox x:Name="HealthBox" Grid.Row="5" Grid.Column="1" Margin="0,0,0,8" Text="10" IsReadOnly="True"/>
 
             <TextBlock Grid.Row="6" Grid.ColumnSpan="2" Foreground="{DynamicResource Theme.SecondaryTextColor}" TextWrapping="Wrap">
                 创建后只会把条目写入编辑器里的 Buildings.xml（不会立刻写磁盘），请再点击主界面的“保存 XML”。

@@ -42,8 +42,8 @@ public partial class BuildingEditorWindow : Window
         NameBox.Text = initial.Name;
         FieldPicker.InitializeWorkbenches(gameData);
         FieldPicker.SetValues(initial.Type, initial.Direction, initial.WorkbenchId);
-        CapbilityBox.Text = initial.Capbility.ToString(CultureInfo.InvariantCulture);
-        HealthBox.Text = initial.Health.ToString(CultureInfo.InvariantCulture);
+        CapbilityBox.Text = ClampCapbility(initial.Capbility).ToString(CultureInfo.InvariantCulture);
+        HealthBox.Text = BuildingFieldOptions.FixedHealth.ToString(CultureInfo.InvariantCulture);
         SizeXBox.Text = initial.SizeX.ToString(CultureInfo.InvariantCulture);
         SizeYBox.Text = initial.SizeY.ToString(CultureInfo.InvariantCulture);
         ConfigureMaterialsGrid();
@@ -124,8 +124,7 @@ public partial class BuildingEditorWindow : Window
         var direction = FieldPicker.SelectedDirection;
         var workbenchId = FieldPicker.SelectedWorkbenchId;
 
-        if (!TryReadPositiveInt(CapbilityBox.Text, out var capbility, "capbility") ||
-            !TryReadPositiveInt(HealthBox.Text, out var health, "health") ||
+        if (!TryReadCapbility(CapbilityBox.Text, out var capbility, "capbility") ||
             !TryReadPositiveInt(SizeXBox.Text, out var sx, "size.x") ||
             !TryReadPositiveInt(SizeYBox.Text, out var sy, "size.y") ||
             !TryReadMaterials(out var materialSnapshot))
@@ -133,7 +132,8 @@ public partial class BuildingEditorWindow : Window
             return;
         }
 
-        Result = new MainWindow.EditableBuilding(id, name, uuid, type, direction, capbility, workbenchId, health, sx, sy, materialSnapshot);
+        Result = new MainWindow.EditableBuilding(
+            id, name, uuid, type, direction, capbility, workbenchId, BuildingFieldOptions.FixedHealth, sx, sy, materialSnapshot);
         DialogResult = true;
     }
 
@@ -390,5 +390,47 @@ public partial class BuildingEditorWindow : Window
         }
 
         return true;
+    }
+
+    private bool TryReadCapbility(string text, out int value, string field)
+    {
+        if (!int.TryParse(text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out value))
+        {
+            System.Windows.MessageBox.Show(
+                this,
+                $"{field}（容量）必须是 {BuildingFieldOptions.MinCapbility}–{BuildingFieldOptions.MaxCapbility} 之间的整数。",
+                "输入错误",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return false;
+        }
+
+        if (value < BuildingFieldOptions.MinCapbility || value > BuildingFieldOptions.MaxCapbility)
+        {
+            System.Windows.MessageBox.Show(
+                this,
+                $"{field}（容量）必须在 {BuildingFieldOptions.MinCapbility}–{BuildingFieldOptions.MaxCapbility} 之间。",
+                "输入错误",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return false;
+        }
+
+        return true;
+    }
+
+    private static int ClampCapbility(int value)
+    {
+        if (value < BuildingFieldOptions.MinCapbility)
+        {
+            return BuildingFieldOptions.DefaultCapbility;
+        }
+
+        if (value > BuildingFieldOptions.MaxCapbility)
+        {
+            return BuildingFieldOptions.MaxCapbility;
+        }
+
+        return value;
     }
 }

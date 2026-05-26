@@ -131,7 +131,7 @@
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="id" Style="{DynamicResource BuildingEditorLabelStyle}"/>
-                <TextBox Grid.Row="0" Grid.Column="1" x:Name="IdBox" Margin="0,0,0,8" VerticalContentAlignment="Center" MinHeight="28"/>
+                <TextBox Grid.Row="0" Grid.Column="1" x:Name="IdBox" Margin="0,0,0,8" VerticalContentAlignment="Center" MinHeight="28" IsReadOnly="True"/>
 
                 <TextBlock Grid.Row="1" Grid.Column="0" Text="name" Style="{DynamicResource BuildingEditorLabelStyle}"/>
                 <TextBox Grid.Row="1" Grid.Column="1" x:Name="NameBox" Margin="0,0,0,8" VerticalContentAlignment="Center" MinHeight="28"/>

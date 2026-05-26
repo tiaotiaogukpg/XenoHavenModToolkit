@@ -8,12 +8,16 @@ public partial class NewModWindow : Window
 {
     private string? iconSourcePath;
     private string? screenshotSourcePath;
+    private readonly int modBaseId;
 
     internal NewModResult? Result { get; private set; }
 
     public NewModWindow()
     {
         InitializeComponent();
+        modBaseId = Random.Shared.Next(100000, 900001) * 100;
+        IdBox.Text = modBaseId.ToString();
+        SupportVersionBox.Text = "1";
         NameBox.Text = "New Mod";
         AuthorBox.Text = "Author";
         FolderNameBox.Text = "mod_new_01";
@@ -52,6 +56,7 @@ public partial class NewModWindow : Window
         var author = AuthorBox.Text.Trim();
         var version = VersionBox.Text.Trim();
         var spec = SpecBox.Text.Trim();
+        var category = CategoryBox.Text.Trim();
         var description = DescriptionBox.Text;
 
         if (string.IsNullOrWhiteSpace(folderName))
@@ -84,6 +89,12 @@ public partial class NewModWindow : Window
             return;
         }
 
+        if (string.IsNullOrWhiteSpace(category))
+        {
+            System.Windows.MessageBox.Show(this, "Category 不能为空。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
         if (!ValidateSelectedImage(iconSourcePath, "MOD 图标 icon.png") ||
             !ValidateSelectedImage(screenshotSourcePath, "MOD 截图 screenshot.png"))
         {
@@ -95,6 +106,10 @@ public partial class NewModWindow : Window
             new XElement("defs",
                 new XAttribute(XNamespace.Xmlns + "xsd", "http://www.w3.org/2001/XMLSchema"),
                 new XAttribute(XNamespace.Xmlns + "xsi", "http://www.w3.org/2001/XMLSchema-instance"),
+                new XElement("id", modBaseId),
+                new XElement("steamPublishedFileId", 0),
+                new XElement("SupportVersion", 1),
+                new XElement("Category", category),
                 new XElement("guid", Guid.NewGuid().ToString("D")),
                 new XElement("name", name),
                 new XElement("auth", author),

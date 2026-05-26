@@ -26,8 +26,8 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <TextBlock Text="id（整数且不重复）" Grid.Row="0" Grid.Column="0" Margin="0,0,8,8"/>
-            <TextBox x:Name="IdBox" Grid.Row="0" Grid.Column="1" Margin="0,0,0,8"/>
+            <TextBlock Text="id（自动生成）" Grid.Row="0" Grid.Column="0" Margin="0,0,8,8"/>
+            <TextBox x:Name="IdBox" Grid.Row="0" Grid.Column="1" Margin="0,0,0,8" IsReadOnly="True"/>
 
             <TextBlock Text="name" Grid.Row="1" Grid.Column="0" Margin="0,0,8,8"/>
             <TextBox x:Name="NameBox" Grid.Row="1" Grid.Column="1" Margin="0,0,0,8"/>

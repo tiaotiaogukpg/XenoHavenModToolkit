@@ -28,6 +28,7 @@ public partial class MainWindow : Window
     private string mainXmlText = string.Empty;
     private string buildingsXmlText = string.Empty;
     private string? currentModRoot;
+    private int? currentModBaseId;
     private AppSettings settings = new();
 
     public MainWindow()
@@ -183,10 +184,19 @@ public partial class MainWindow : Window
 
         foreach (var dir in new DirectoryInfo(settings.ModsOverviewRoot).GetDirectories().OrderBy(d => d.Name))
         {
+            var mainXmlPath = Path.Combine(dir.FullName, MainXmlRelativePath);
+            var hasMainXml = File.Exists(mainXmlPath);
+            var category = string.Empty;
+            if (hasMainXml)
+            {
+                category = TryReadMainXmlRootValue(mainXmlPath, "Category") ?? string.Empty;
+            }
+
             overviewMods.Add(new OverviewModEntry(
                 dir.FullName,
                 dir.Name,
-                File.Exists(Path.Combine(dir.FullName, MainXmlRelativePath))));
+                hasMainXml,
+                category));
         }
     }
 
@@ -226,6 +236,7 @@ public partial class MainWindow : Window
         settings.Save();
         LoadKnownXmlFiles();
         ParseBuildingsFromEditor();
+        currentModBaseId = TryDetermineCurrentModBaseId();
         Log($"已打开 Mod：{folder}");
         UpdateTopBarState();
     }
@@ -238,6 +249,7 @@ public partial class MainWindow : Window
         }
 
         currentModRoot = null;
+        currentModBaseId = null;
         CurrentModPathText.Text = "未打开 Mod 文件夹";
 
         buildings.Clear();
@@ -441,6 +453,8 @@ public partial class MainWindow : Window
 
             mainXmlText = generatedXml;
             ModXmlIO.WriteAllText(GetFullPath(MainXmlRelativePath), mainXmlText);
+            currentModBaseId = TryDetermineCurrentModBaseId();
+            RefreshOverviewList();
             BuildOverviewNavigationTree();
             Log("main.xml 已更新。");
         }
@@ -695,7 +709,30 @@ public partial class MainWindow : Window
 
         try
         {
+            if (currentModBaseId is null)
+            {
+                System.Windows.MessageBox.Show(
+                    this,
+                    "当前 Mod 缺少有效的 main.xml <id>（或现有 Building id 不符合规则）。\n" +
+                    "请先在“编辑MOD”中生成/保存一次 main.xml，确保写入 8 位 MOD id（例如 70000000）。",
+                    "新建组件",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return;
+            }
+
             var (nextId, nextName) = SuggestNewBuildingDefaults();
+            if (nextId <= 0)
+            {
+                System.Windows.MessageBox.Show(
+                    this,
+                    "localBuildingId（1-99）已用尽，无法继续新增组件。",
+                    "新建组件",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+                return;
+            }
+
             var dialog = new AddBuildingWindow(nextId, nextName)
             {
                 Owner = this
@@ -731,6 +768,10 @@ public partial class MainWindow : Window
             """
             <?xml version="1.0" encoding="utf-8"?>
             <defs xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+              <id>70000000</id>
+              <steamPublishedFileId>0</steamPublishedFileId>
+              <SupportVersion>1</SupportVersion>
+              <Category>Building</Category>
               <name>New Mod</name>
               <auth>Author</auth>
               <version>1.0.0</version>
@@ -1593,8 +1634,29 @@ public partial class MainWindow : Window
 
     private (int nextId, string nextName) SuggestNewBuildingDefaults()
     {
-        var nextId = buildings.Count == 0 ? 1 : buildings.Max(b => b.Id) + 1;
-        return (nextId, $"NewBuilding_{nextId}");
+        if (currentModBaseId is null)
+        {
+            return (-1, "NewBuilding");
+        }
+
+        var usedLocals = new HashSet<int>();
+        foreach (var b in buildings)
+        {
+            var local = b.Id - currentModBaseId.Value;
+            if (local is >= 1 and <= 99)
+            {
+                usedLocals.Add(local);
+            }
+        }
+
+        var nextLocal = Enumerable.Range(1, 99).FirstOrDefault(x => !usedLocals.Contains(x));
+        if (nextLocal <= 0)
+        {
+            return (-1, "NewBuilding");
+        }
+
+        var nextId = currentModBaseId.Value + nextLocal;
+        return (nextId, $"NewBuilding_{nextLocal}");
     }
 
     private void AddBuildingToBuildingsXml(NewBuilding b)
@@ -1635,9 +1697,17 @@ public partial class MainWindow : Window
         Directory.CreateDirectory(GetFullPath(BuildingIconsRelativePath));
     }
 
-    private sealed record OverviewModEntry(string FullPath, string FolderName, bool HasMainXml)
+    private sealed record OverviewModEntry(string FullPath, string FolderName, bool HasMainXml, string Category)
     {
-        public string DisplayName => HasMainXml ? FolderName : $"{FolderName}（未创建 main.xml）";
+        public string DisplayName
+        {
+            get
+            {
+                var baseName = HasMainXml ? FolderName : $"{FolderName}（未创建 main.xml）";
+                var category = Category?.Trim();
+                return string.IsNullOrWhiteSpace(category) ? baseName : $"{category} - {baseName}";
+            }
+        }
     }
 
     private EditableBuilding GetEditableBuildingFromSelectionOrDefaults()
@@ -1789,5 +1859,82 @@ public partial class MainWindow : Window
 
         Directory.CreateDirectory(GetFullPath(BuildingImagesRelativePath));
         Directory.CreateDirectory(GetFullPath(BuildingIconsRelativePath));
+    }
+
+    private static string? TryReadMainXmlRootValue(string mainXmlPath, string elementName)
+    {
+        try
+        {
+            if (!File.Exists(mainXmlPath))
+            {
+                return null;
+            }
+
+            var doc = XDocument.Parse(ModXmlIO.ReadAllText(mainXmlPath));
+            if (doc.Root?.Name.LocalName != "defs")
+            {
+                return null;
+            }
+
+            return doc.Root.Elements().FirstOrDefault(e => e.Name.LocalName == elementName)?.Value;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private int? TryDetermineCurrentModBaseId()
+    {
+        var baseIdFromMain = TryReadMainXmlRootValue(GetFullPath(MainXmlRelativePath), "id");
+        if (int.TryParse(baseIdFromMain?.Trim(), out var baseId) &&
+            baseId is >= 10000000 and <= 90000000 &&
+            baseId % 100 == 0)
+        {
+            return BuildingsMatchBaseId(baseId) ? baseId : null;
+        }
+
+        var inferred = TryInferBaseIdFromBuildings();
+        return inferred is not null && BuildingsMatchBaseId(inferred.Value) ? inferred : null;
+    }
+
+    private bool BuildingsMatchBaseId(int baseId)
+    {
+        foreach (var b in buildings)
+        {
+            var local = b.Id - baseId;
+            if (local is < 1 or > 99)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private int? TryInferBaseIdFromBuildings()
+    {
+        if (buildings.Count == 0)
+        {
+            return null;
+        }
+
+        int? inferred = null;
+        foreach (var b in buildings)
+        {
+            if (b.Id <= 0)
+            {
+                return null;
+            }
+
+            var candidate = (b.Id / 100) * 100;
+            inferred ??= candidate;
+            if (inferred.Value != candidate)
+            {
+                return null;
+            }
+        }
+
+        return inferred;
     }
 }

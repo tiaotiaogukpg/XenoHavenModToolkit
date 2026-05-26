@@ -21,6 +21,7 @@ public partial class BuildingEditorWindow : Window
     private static readonly string BuildingIconsRelativePath = Path.Combine("Thing", "Buildings", "images", "icon");
 
     private readonly string modRoot;
+    private readonly int buildingId;
     private readonly string uuid;
     private readonly GameDataCatalog gameData;
     private readonly ObservableCollection<MainWindow.CraftMaterial> materials;
@@ -33,11 +34,12 @@ public partial class BuildingEditorWindow : Window
         InitializeComponent();
         this.modRoot = modRoot;
         this.gameData = gameData;
+        buildingId = initial.Id;
         uuid = initial.Uuid;
         materialOptions = BuildMaterialOptions(initial.Materials);
         materials = new ObservableCollection<MainWindow.CraftMaterial>(
             initial.Materials.Select(m => new MainWindow.CraftMaterial(m.Id, m.Count)));
-        IdBox.Text = initial.Id.ToString(CultureInfo.InvariantCulture);
+        IdBox.Text = buildingId.ToString(CultureInfo.InvariantCulture);
         HashIdBox.Text = ModBuildingHash.GetHashId(uuid).ToString(CultureInfo.InvariantCulture);
         NameBox.Text = initial.Name;
         FieldPicker.InitializeWorkbenches(gameData);
@@ -102,11 +104,6 @@ public partial class BuildingEditorWindow : Window
 
     private void Save_Click(object sender, RoutedEventArgs e)
     {
-        if (!TryReadPositiveInt(IdBox.Text, out var id, "id"))
-        {
-            return;
-        }
-
         var name = NameBox.Text.Trim();
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -133,7 +130,7 @@ public partial class BuildingEditorWindow : Window
         }
 
         Result = new MainWindow.EditableBuilding(
-            id, name, uuid, type, direction, capbility, workbenchId, BuildingFieldOptions.FixedHealth, sx, sy, materialSnapshot);
+            buildingId, name, uuid, type, direction, capbility, workbenchId, BuildingFieldOptions.FixedHealth, sx, sy, materialSnapshot);
         DialogResult = true;
     }
 
@@ -213,11 +210,6 @@ public partial class BuildingEditorWindow : Window
 
     private void ImportImageToCurrentBuilding(string targetRelativeFolder, string slotName, string? sourceImagePath = null)
     {
-        if (!TryReadPositiveInt(IdBox.Text, out var id, "id"))
-        {
-            return;
-        }
-
         if (string.IsNullOrWhiteSpace(sourceImagePath))
         {
             var dialog = new Microsoft.Win32.OpenFileDialog
@@ -244,7 +236,7 @@ public partial class BuildingEditorWindow : Window
 
             var targetFolder = Path.Combine(modRoot, targetRelativeFolder);
             Directory.CreateDirectory(targetFolder);
-            File.Copy(sourceImagePath, Path.Combine(targetFolder, $"{id}.png"), overwrite: true);
+            File.Copy(sourceImagePath, Path.Combine(targetFolder, $"{buildingId}.png"), overwrite: true);
             RefreshImagePreview();
         }
         catch (Exception ex)
@@ -311,13 +303,8 @@ public partial class BuildingEditorWindow : Window
 
     private void RefreshImagePreview()
     {
-        if (!int.TryParse(IdBox.Text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var id) || id <= 0)
-        {
-            return;
-        }
-
-        var worldPath = Path.Combine(modRoot, BuildingImagesRelativePath, $"{id}.png");
-        var iconPath = Path.Combine(modRoot, BuildingIconsRelativePath, $"{id}.png");
+        var worldPath = Path.Combine(modRoot, BuildingImagesRelativePath, $"{buildingId}.png");
+        var iconPath = Path.Combine(modRoot, BuildingIconsRelativePath, $"{buildingId}.png");
         WorldImagePathText.Text = $"地图显示图：{Path.GetRelativePath(modRoot, worldPath)}";
         IconImagePathText.Text = $"物品图标：{Path.GetRelativePath(modRoot, iconPath)}";
         WorldImagePreview.Source = LoadBitmapIfExists(worldPath);

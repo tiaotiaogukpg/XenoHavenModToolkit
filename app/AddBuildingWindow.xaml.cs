@@ -11,11 +11,13 @@ public partial class AddBuildingWindow : Window
             => System.Windows.MessageBox.Show(owner, messageBoxText, caption, button, icon);
     }
 
+    private readonly int suggestedId;
     internal MainWindow.NewBuilding? Result { get; private set; }
 
     public AddBuildingWindow(int suggestedId, string suggestedName)
     {
         InitializeComponent();
+        this.suggestedId = suggestedId;
         IdBox.Text = suggestedId.ToString(CultureInfo.InvariantCulture);
         NameBox.Text = suggestedName;
         NameBox.SelectAll();
@@ -24,12 +26,6 @@ public partial class AddBuildingWindow : Window
 
     private void Create_Click(object sender, RoutedEventArgs e)
     {
-        if (!int.TryParse(IdBox.Text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var id) || id <= 0)
-        {
-            WpfMessageBox.Show(this, "id 必须是正整数。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
-            return;
-        }
-
         var name = NameBox.Text.Trim();
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -51,7 +47,7 @@ public partial class AddBuildingWindow : Window
             return;
         }
 
-        Result = new MainWindow.NewBuilding(id, name, type, sx, sy, BuildingFieldOptions.FixedHealth);
+        Result = new MainWindow.NewBuilding(suggestedId, name, type, sx, sy, BuildingFieldOptions.FixedHealth);
         DialogResult = true;
     }
 }

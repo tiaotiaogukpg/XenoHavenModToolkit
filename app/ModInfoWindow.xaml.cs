@@ -7,6 +7,7 @@ namespace XenoHavenModToolkit;
 public partial class ModInfoWindow : Window
 {
     private readonly string modRoot;
+    private readonly int modBaseId;
 
     internal string? GeneratedXml { get; private set; }
     internal string? IconSourcePath { get; private set; }
@@ -16,7 +17,11 @@ public partial class ModInfoWindow : Window
     {
         InitializeComponent();
         this.modRoot = modRoot;
-        TryPrefill(existingMainXml);
+        var (baseId, steamId) = TryPrefill(existingMainXml);
+        modBaseId = baseId;
+        IdBox.Text = modBaseId.ToString();
+        SteamPublishedFileIdBox.Text = steamId.ToString();
+        SupportVersionBox.Text = "1";
         EnsureGuidInitialized();
         RefreshRootImageStatus();
     }
@@ -31,14 +36,31 @@ public partial class ModInfoWindow : Window
         GuidBox.Text = Guid.NewGuid().ToString("D");
     }
 
-    private void TryPrefill(string existingMainXml)
+    private (int modBaseId, long steamPublishedFileId) TryPrefill(string existingMainXml)
     {
+        var baseId = Random.Shared.Next(100000, 900001) * 100;
+        long steamId = 0;
+
         try
         {
             var doc = XDocument.Parse(existingMainXml);
             if (doc.Root?.Name.LocalName != "defs")
             {
-                return;
+                return (baseId, steamId);
+            }
+
+            var idText = doc.Root.Elements().FirstOrDefault(e => e.Name.LocalName == "id")?.Value;
+            if (int.TryParse(idText?.Trim(), out var parsedBaseId) &&
+                parsedBaseId is >= 10000000 and <= 90000000 &&
+                parsedBaseId % 100 == 0)
+            {
+                baseId = parsedBaseId;
+            }
+
+            var steamText = doc.Root.Elements().FirstOrDefault(e => e.Name.LocalName == "steamPublishedFileId")?.Value;
+            if (long.TryParse(steamText?.Trim(), out var parsedSteamId) && parsedSteamId >= 0)
+            {
+                steamId = parsedSteamId;
             }
 
             GuidBox.Text = doc.Root.Element("guid")?.Value ?? GuidBox.Text;
@@ -47,11 +69,14 @@ public partial class ModInfoWindow : Window
             VersionBox.Text = doc.Root.Element("version")?.Value ?? VersionBox.Text;
             SpecBox.Text = doc.Root.Element("specifications")?.Value ?? SpecBox.Text;
             DescriptionBox.Text = doc.Root.Element("description")?.Value ?? DescriptionBox.Text;
+            CategoryBox.Text = doc.Root.Elements().FirstOrDefault(e => e.Name.LocalName == "Category")?.Value ?? CategoryBox.Text;
         }
         catch
         {
             // ignore invalid xml while user is editing
         }
+
+        return (baseId, steamId);
     }
 
     private void RegenerateGuid_Click(object sender, RoutedEventArgs e)
@@ -88,6 +113,7 @@ public partial class ModInfoWindow : Window
         var author = AuthorBox.Text.Trim();
         var version = VersionBox.Text.Trim();
         var spec = SpecBox.Text.Trim();
+        var category = CategoryBox.Text.Trim();
         var description = DescriptionBox.Text;
 
         if (!Guid.TryParse(guidText, out var guid) || guid == Guid.Empty)
@@ -120,6 +146,12 @@ public partial class ModInfoWindow : Window
             return;
         }
 
+        if (string.IsNullOrWhiteSpace(category))
+        {
+            System.Windows.MessageBox.Show(this, "Category 不能为空。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            return;
+        }
+
         if (string.IsNullOrWhiteSpace(description))
         {
             System.Windows.MessageBox.Show(this, "description 不能为空。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -132,11 +164,20 @@ public partial class ModInfoWindow : Window
             return;
         }
 
+        if (!long.TryParse(SteamPublishedFileIdBox.Text.Trim(), out var steamPublishedFileId))
+        {
+            steamPublishedFileId = 0;
+        }
+
         var doc = new XDocument(
             new XDeclaration("1.0", "utf-8", null),
             new XElement("defs",
                 new XAttribute(XNamespace.Xmlns + "xsd", "http://www.w3.org/2001/XMLSchema"),
                 new XAttribute(XNamespace.Xmlns + "xsi", "http://www.w3.org/2001/XMLSchema-instance"),
+                new XElement("id", modBaseId),
+                new XElement("steamPublishedFileId", steamPublishedFileId),
+                new XElement("SupportVersion", 1),
+                new XElement("Category", category),
                 new XElement("guid", guid.ToString("D")),
                 new XElement("name", name),
                 new XElement("auth", author),

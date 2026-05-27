@@ -22,18 +22,7 @@ public partial class ModInfoWindow : Window
         IdBox.Text = modBaseId.ToString();
         SteamPublishedFileIdBox.Text = steamId.ToString();
         SupportVersionBox.Text = "1";
-        EnsureGuidInitialized();
         RefreshRootImageStatus();
-    }
-
-    private void EnsureGuidInitialized()
-    {
-        if (Guid.TryParse(GuidBox.Text?.Trim(), out var guid) && guid != Guid.Empty)
-        {
-            return;
-        }
-
-        GuidBox.Text = Guid.NewGuid().ToString("D");
     }
 
     private (int modBaseId, long steamPublishedFileId) TryPrefill(string existingMainXml)
@@ -63,7 +52,6 @@ public partial class ModInfoWindow : Window
                 steamId = parsedSteamId;
             }
 
-            GuidBox.Text = doc.Root.Element("guid")?.Value ?? GuidBox.Text;
             NameBox.Text = doc.Root.Element("name")?.Value ?? NameBox.Text;
             AuthorBox.Text = doc.Root.Element("auth")?.Value ?? AuthorBox.Text;
             VersionBox.Text = doc.Root.Element("version")?.Value ?? VersionBox.Text;
@@ -77,11 +65,6 @@ public partial class ModInfoWindow : Window
         }
 
         return (baseId, steamId);
-    }
-
-    private void RegenerateGuid_Click(object sender, RoutedEventArgs e)
-    {
-        GuidBox.Text = Guid.NewGuid().ToString("D");
     }
 
     private void ImportIcon_Click(object sender, RoutedEventArgs e)
@@ -108,19 +91,12 @@ public partial class ModInfoWindow : Window
 
     private void Generate_Click(object sender, RoutedEventArgs e)
     {
-        var guidText = GuidBox.Text.Trim();
         var name = NameBox.Text.Trim();
         var author = AuthorBox.Text.Trim();
         var version = VersionBox.Text.Trim();
         var spec = SpecBox.Text.Trim();
         var category = CategoryBox.Text.Trim();
         var description = DescriptionBox.Text;
-
-        if (!Guid.TryParse(guidText, out var guid) || guid == Guid.Empty)
-        {
-            System.Windows.MessageBox.Show(this, "guid 不合法。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
-            return;
-        }
 
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -178,7 +154,6 @@ public partial class ModInfoWindow : Window
                 new XElement("steamPublishedFileId", steamPublishedFileId),
                 new XElement("SupportVersion", 1),
                 new XElement("Category", category),
-                new XElement("guid", guid.ToString("D")),
                 new XElement("name", name),
                 new XElement("auth", author),
                 new XElement("version", version),
@@ -249,4 +224,3 @@ public partial class ModInfoWindow : Window
         return true;
     }
 }
-

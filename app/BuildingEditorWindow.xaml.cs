@@ -22,7 +22,6 @@ public partial class BuildingEditorWindow : Window
 
     private readonly string modRoot;
     private readonly int buildingId;
-    private readonly string uuid;
     private readonly GameDataCatalog gameData;
     private readonly ObservableCollection<MainWindow.CraftMaterial> materials;
     private readonly List<LabeledIdOption> materialOptions;
@@ -35,12 +34,10 @@ public partial class BuildingEditorWindow : Window
         this.modRoot = modRoot;
         this.gameData = gameData;
         buildingId = initial.Id;
-        uuid = initial.Uuid;
         materialOptions = BuildMaterialOptions(initial.Materials);
         materials = new ObservableCollection<MainWindow.CraftMaterial>(
             initial.Materials.Select(m => new MainWindow.CraftMaterial(m.Id, m.Count)));
         IdBox.Text = buildingId.ToString(CultureInfo.InvariantCulture);
-        HashIdBox.Text = ModBuildingHash.GetHashId(uuid).ToString(CultureInfo.InvariantCulture);
         NameBox.Text = initial.Name;
         FieldPicker.InitializeWorkbenches(gameData);
         FieldPicker.SetValues(initial.Type, initial.Direction, initial.WorkbenchId);
@@ -58,6 +55,7 @@ public partial class BuildingEditorWindow : Window
 
     private void ConfigureMaterialsGrid()
     {
+        var comboBoxStyle = (Style)FindResource("Theme.ComboBox");
         var materialColumn = new DataGridComboBoxColumn
         {
             Header = "材料",
@@ -68,7 +66,9 @@ public partial class BuildingEditorWindow : Window
             SelectedValueBinding = new WpfBinding(nameof(MainWindow.CraftMaterial.Id))
             {
                 UpdateSourceTrigger = WpfUpdateSourceTrigger.PropertyChanged
-            }
+            },
+            ElementStyle = comboBoxStyle,
+            EditingElementStyle = comboBoxStyle
         };
 
         var countColumn = new DataGridTextColumn
@@ -130,7 +130,7 @@ public partial class BuildingEditorWindow : Window
         }
 
         Result = new MainWindow.EditableBuilding(
-            buildingId, name, uuid, type, direction, capbility, workbenchId, BuildingFieldOptions.FixedHealth, sx, sy, materialSnapshot);
+            buildingId, name, type, direction, capbility, workbenchId, BuildingFieldOptions.FixedHealth, sx, sy, materialSnapshot);
         DialogResult = true;
     }
 

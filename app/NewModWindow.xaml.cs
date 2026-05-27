@@ -110,7 +110,6 @@ public partial class NewModWindow : Window
                 new XElement("steamPublishedFileId", 0),
                 new XElement("SupportVersion", 1),
                 new XElement("Category", category),
-                new XElement("guid", Guid.NewGuid().ToString("D")),
                 new XElement("name", name),
                 new XElement("auth", author),
                 new XElement("version", version),

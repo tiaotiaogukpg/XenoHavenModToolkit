@@ -1,6 +1,6 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <Style TargetType="ComboBoxItem">
+    <Style x:Key="Theme.ComboBoxItem" TargetType="ComboBoxItem">
         <Setter Property="SnapsToDevicePixels" Value="True"/>
         <Setter Property="Padding" Value="8,6"/>
         <Setter Property="Foreground" Value="{DynamicResource Theme.TextColor}"/>
@@ -13,11 +13,16 @@
                     <Border x:Name="ItemBorder"
                             Background="{TemplateBinding Background}"
                             Padding="{TemplateBinding Padding}">
-                        <ContentPresenter/>
+                        <ContentPresenter TextElement.Foreground="{TemplateBinding Foreground}"/>
                     </Border>
                     <ControlTemplate.Triggers>
                         <Trigger Property="IsHighlighted" Value="True">
                             <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource Theme.SelectionBackground}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Theme.TextColor}"/>
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="ItemBorder" Property="Background" Value="{DynamicResource Theme.SelectionBackground}"/>
+                            <Setter Property="Foreground" Value="{DynamicResource Theme.TextColor}"/>
                         </Trigger>
                         <Trigger Property="IsEnabled" Value="False">
                             <Setter Property="Foreground" Value="{DynamicResource Theme.SecondaryTextColor}"/>
@@ -28,8 +33,11 @@
         </Setter>
     </Style>
 
-    <Style TargetType="ComboBox">
+    <Style TargetType="ComboBoxItem" BasedOn="{StaticResource Theme.ComboBoxItem}"/>
+
+    <Style x:Key="Theme.ComboBox" TargetType="{x:Type ComboBox}">
         <Setter Property="SnapsToDevicePixels" Value="True"/>
+        <Setter Property="ItemContainerStyle" Value="{StaticResource Theme.ComboBoxItem}"/>
         <Setter Property="OverridesDefaultStyle" Value="True"/>
         <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Auto"/>
         <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto"/>
@@ -79,7 +87,8 @@
                                           ContentStringFormat="{TemplateBinding SelectionBoxItemStringFormat}"
                                           Margin="{TemplateBinding Padding}"
                                           VerticalAlignment="Center"
-                                          HorizontalAlignment="Left"/>
+                                          HorizontalAlignment="Left"
+                                          TextElement.Foreground="{TemplateBinding Foreground}"/>
                         <Popup x:Name="Popup"
                                Placement="Bottom"
                                IsOpen="{TemplateBinding IsDropDownOpen}"
@@ -121,4 +130,6 @@
             </Setter.Value>
         </Setter>
     </Style>
+
+    <Style TargetType="ComboBox" BasedOn="{StaticResource Theme.ComboBox}"/>
 </ResourceDictionary>

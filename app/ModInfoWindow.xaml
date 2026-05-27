@@ -1,7 +1,7 @@
 <Window x:Class="XenoHavenModToolkit.ModInfoWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="编辑MOD" Height="760" Width="720"
+        Title="编辑MOD" Height="700" Width="720"
         WindowStartupLocation="CenterOwner"
         Background="{DynamicResource Theme.WindowBackground}">
     <Grid Margin="16" Background="{DynamicResource Theme.WindowBackground}">
@@ -11,66 +11,89 @@
         </Grid.RowDefinitions>
 
         <ScrollViewer Grid.Row="0" VerticalScrollBarVisibility="Auto">
-            <StackPanel>
-                <TextBlock Text="id（MOD 基础值，创建后不可改）" Margin="0,0,0,6"/>
-                <TextBox x:Name="IdBox" Margin="0,0,0,14" IsReadOnly="True"
+            <Grid Grid.IsSharedSizeScope="True">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" SharedSizeGroup="ModFormLabelCol" MaxWidth="200"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="id" Style="{DynamicResource BuildingEditorLabelStyle}"
+                           ToolTip="MOD 基础值，创建后不可改"/>
+                <TextBox Grid.Row="0" Grid.Column="1" x:Name="IdBox" Margin="0,0,0,8" MinHeight="32" IsReadOnly="True"
+                         VerticalContentAlignment="Center"
                          Foreground="{DynamicResource Theme.SecondaryTextColor}"/>
 
-                <TextBlock Text="steamPublishedFileId（Steam 创意工坊 ID，无则为 0）" Margin="0,0,0,6"/>
-                <TextBox x:Name="SteamPublishedFileIdBox" Margin="0,0,0,14" Text="0" IsReadOnly="True"
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="steamPublishedFileId" Style="{DynamicResource BuildingEditorLabelStyle}"
+                           ToolTip="Steam 创意工坊 ID，无则为 0"/>
+                <TextBox Grid.Row="1" Grid.Column="1" x:Name="SteamPublishedFileIdBox" Margin="0,0,0,8" MinHeight="32"
+                         Text="0" IsReadOnly="True" VerticalContentAlignment="Center"
                          Foreground="{DynamicResource Theme.SecondaryTextColor}"/>
 
-                <TextBlock Text="SupportVersion（固定，不可改）" Margin="0,0,0,6"/>
-                <TextBox x:Name="SupportVersionBox" Text="1" Margin="0,0,0,14" IsReadOnly="True"
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="SupportVersion" Style="{DynamicResource BuildingEditorLabelStyle}"
+                           ToolTip="固定为 1，不可改"/>
+                <TextBox Grid.Row="2" Grid.Column="1" x:Name="SupportVersionBox" Text="1" Margin="0,0,0,8" MinHeight="32"
+                         IsReadOnly="True" VerticalContentAlignment="Center"
                          Foreground="{DynamicResource Theme.SecondaryTextColor}"/>
 
-                <TextBlock Text="guid（用于唯一标识 Mod）" Margin="0,0,0,6"/>
-                <DockPanel Margin="0,0,0,14">
-                    <TextBox x:Name="GuidBox" Margin="0,0,8,0" IsReadOnly="True"/>
-                    <Button Content="重新生成" Width="100" Click="RegenerateGuid_Click"/>
-                </DockPanel>
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="name" Style="{DynamicResource BuildingEditorLabelStyle}"/>
+                <TextBox Grid.Row="3" Grid.Column="1" x:Name="NameBox" Margin="0,0,0,8" MinHeight="32" VerticalContentAlignment="Center"/>
 
-                <TextBlock Text="name" Margin="0,0,0,6"/>
-                <TextBox x:Name="NameBox" Margin="0,0,0,14"/>
+                <TextBlock Grid.Row="4" Grid.Column="0" Text="auth" Style="{DynamicResource BuildingEditorLabelStyle}"/>
+                <TextBox Grid.Row="4" Grid.Column="1" x:Name="AuthorBox" Margin="0,0,0,8" MinHeight="32" VerticalContentAlignment="Center"/>
 
-                <TextBlock Text="auth" Margin="0,0,0,6"/>
-                <TextBox x:Name="AuthorBox" Margin="0,0,0,14"/>
+                <TextBlock Grid.Row="5" Grid.Column="0" Text="version" Style="{DynamicResource BuildingEditorLabelStyle}"/>
+                <TextBox Grid.Row="5" Grid.Column="1" x:Name="VersionBox" Text="1.0.0" Margin="0,0,0,8" MinHeight="32" VerticalContentAlignment="Center"/>
 
-                <TextBlock Text="version" Margin="0,0,0,6"/>
-                <TextBox x:Name="VersionBox" Text="1.0.0" Margin="0,0,0,14"/>
+                <TextBlock Grid.Row="6" Grid.Column="0" Text="specifications" Style="{DynamicResource BuildingEditorLabelStyle}"/>
+                <TextBox Grid.Row="6" Grid.Column="1" x:Name="SpecBox" Text="0.0.1" Margin="0,0,0,8" MinHeight="32" VerticalContentAlignment="Center"/>
 
-                <TextBlock Text="specifications" Margin="0,0,0,6"/>
-                <TextBox x:Name="SpecBox" Text="0.0.1" Margin="0,0,0,14"/>
+                <TextBlock Grid.Row="7" Grid.Column="0" Text="Category" Style="{DynamicResource BuildingEditorLabelStyle}"
+                           ToolTip="用于总览树分类显示"/>
+                <TextBox Grid.Row="7" Grid.Column="1" x:Name="CategoryBox" Text="Building" Margin="0,0,0,8" MinHeight="32" VerticalContentAlignment="Center"/>
 
-                <TextBlock Text="Category（用于分类显示）" Margin="0,0,0,6"/>
-                <TextBox x:Name="CategoryBox" Margin="0,0,0,14" Text="Building"/>
-
-                <TextBlock Text="description（必填）" Margin="0,0,0,6"/>
-                <TextBox x:Name="DescriptionBox"
+                <TextBlock Grid.Row="8" Grid.Column="0" Text="description" Style="{DynamicResource BuildingEditorLabelStyle}"
+                           VerticalAlignment="Top" Margin="0,6,10,0" ToolTip="必填"/>
+                <TextBox Grid.Row="8" Grid.Column="1" x:Name="DescriptionBox"
                          AcceptsReturn="True"
                          VerticalScrollBarVisibility="Auto"
                          TextWrapping="Wrap"
-                         MinHeight="160"
-                         Margin="0,0,0,14"/>
+                         MinHeight="120"
+                         Margin="0,0,0,8"/>
 
-                <TextBlock Text="MOD 图标 icon.png（必填，固定保存到 MOD 根目录）" Margin="0,0,0,6"/>
-                <DockPanel Margin="0,0,0,14">
+                <TextBlock Grid.Row="9" Grid.Column="0" Text="icon.png" Style="{DynamicResource BuildingEditorLabelStyle}"
+                           VerticalAlignment="Center" ToolTip="MOD 图标，保存到 MOD 根目录"/>
+                <DockPanel Grid.Row="9" Grid.Column="1" Margin="0,0,0,8" MinHeight="32">
+                    <Button Content="导入/替换" Width="100" Margin="8,0,0,0" DockPanel.Dock="Right" Click="ImportIcon_Click"/>
                     <TextBlock x:Name="IconPathText"
                                VerticalAlignment="Center"
                                Foreground="{DynamicResource Theme.SecondaryTextColor}"
                                TextTrimming="CharacterEllipsis"/>
-                    <Button Content="导入/替换" Width="100" Margin="8,0,0,0" DockPanel.Dock="Right" Click="ImportIcon_Click"/>
                 </DockPanel>
 
-                <TextBlock Text="MOD 截图 screenshot.png（必填，固定保存到 MOD 根目录）" Margin="0,0,0,6"/>
-                <DockPanel>
+                <TextBlock Grid.Row="10" Grid.Column="0" Text="screenshot.png" Style="{DynamicResource BuildingEditorLabelStyle}"
+                           VerticalAlignment="Center" ToolTip="MOD 截图，保存到 MOD 根目录"/>
+                <DockPanel Grid.Row="10" Grid.Column="1" MinHeight="32">
+                    <Button Content="导入/替换" Width="100" Margin="8,0,0,0" DockPanel.Dock="Right" Click="ImportScreenshot_Click"/>
                     <TextBlock x:Name="ScreenshotPathText"
                                VerticalAlignment="Center"
                                Foreground="{DynamicResource Theme.SecondaryTextColor}"
                                TextTrimming="CharacterEllipsis"/>
-                    <Button Content="导入/替换" Width="100" Margin="8,0,0,0" DockPanel.Dock="Right" Click="ImportScreenshot_Click"/>
                 </DockPanel>
-            </StackPanel>
+            </Grid>
         </ScrollViewer>
 
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
@@ -79,4 +102,3 @@
         </StackPanel>
     </Grid>
 </Window>
-

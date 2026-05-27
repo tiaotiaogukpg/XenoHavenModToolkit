@@ -86,7 +86,6 @@ XenoHaven MOD Toolkit 会以 UTF-8（无 BOM）写回 XML，并保持多行缩�
 <ModBuildingXML>
   <id>1</id>
   <name>Example Box</name>
-  <uuid>a1b2c3d4e5f6478990abcdef12345678</uuid>
   <type>BOX</type>
   <direction>1</direction>
   <capbility>10</capbility>
@@ -109,7 +108,6 @@ XenoHaven MOD Toolkit 会以 UTF-8（无 BOM）写回 XML，并保持多行缩�
 关键规则：
 
 - `id` 必须唯一。重复 ID 会导致加载冲突或失败。
-- `uuid` 为条目的稳定唯一标识（32 位十六进制 GUID，无连字符）。XenoHaven MOD Toolkit 在新建建筑时自动生成；游戏内 `ModBuildingXML.GetHashId()` 返回 `uuid.GetHashCode()`，工具编辑窗会以只读 **hashId** 展示该值。`uuid` 创建后不应修改。
 - `size.x` 和 `size.y` 表示占地尺寸，应为正整数。
 - `materials` 表示建造材料列表，每个 `ModCraftMaterialData` 包含材料 `id` 与数量 `count`。
   XenoHaven MOD Toolkit 会在 Building 编辑窗中从 `DOC/K-可用材料表.xlsx` 加载材料下拉（界面显示 `木头-100055`，保存 XML 时写入 `100055`）；数量必须为 1–200 的正整数。
@@ -133,17 +131,17 @@ screenshot.png
 - `screenshot.png`：Mod 详情截图。
 - 新建、保存 Mod 信息、导出发布版时，XenoHaven MOD Toolkit 会校验这两个文件是否存在。
 
-对于 `ModBuildingXML.id = 1`：
+对于 `ModBuildingXML.id = 70000001`（示例 Mod 基础值 70000000 + 本地序号 1）：
 
 ```text
-Thing/Buildings/images/1.png
-Thing/Buildings/images/icon/1.png
+Thing/Buildings/images/70000001.png
+Thing/Buildings/images/icon/70000001.png
 ```
 
 含义：
 
-- `images/1.png`：建筑/物体在地图上的显示图。
-- `images/icon/1.png`：建筑被拆除后进入背包、或作为物品显示时的图标。
+- `images/<id>.png`：建筑/物体在地图上的显示图。
+- `images/icon/<id>.png`：建筑被拆除后进入背包、或作为物品显示时的图标。
 
 这个规则也适用于其它 Thing 类型：地图图使用 `images/<id>.png`，物品图标使用 `images/icon/<id>.png`。当前工具第一版优先支持 `Thing/Buildings`。
 

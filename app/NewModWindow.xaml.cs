@@ -20,12 +20,11 @@ public partial class NewModWindow : Window
         SupportVersionBox.Text = "1";
         NameBox.Text = "New Mod";
         AuthorBox.Text = "Author";
-        FolderNameBox.Text = "mod_new_01";
-        FolderNameBox.SelectAll();
-        FolderNameBox.Focus();
+        NameBox.SelectAll();
+        NameBox.Focus();
     }
 
-    internal sealed record NewModResult(string FolderName, string MainXml, string BuildingsXml, string IconSourcePath, string ScreenshotSourcePath);
+    internal sealed record NewModResult(string Name, string MainXml, string BuildingsXml, string IconSourcePath, string ScreenshotSourcePath);
 
     private void ImportIcon_Click(object sender, RoutedEventArgs e)
     {
@@ -51,19 +50,11 @@ public partial class NewModWindow : Window
 
     private void Create_Click(object sender, RoutedEventArgs e)
     {
-        var folderName = FolderNameBox.Text.Trim();
         var name = NameBox.Text.Trim();
         var author = AuthorBox.Text.Trim();
         var version = VersionBox.Text.Trim();
-        var spec = SpecBox.Text.Trim();
         var category = CategoryBox.Text.Trim();
         var description = DescriptionBox.Text;
-
-        if (string.IsNullOrWhiteSpace(folderName))
-        {
-            System.Windows.MessageBox.Show(this, "文件夹名不能为空。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
-            return;
-        }
 
         if (string.IsNullOrWhiteSpace(name))
         {
@@ -77,9 +68,9 @@ public partial class NewModWindow : Window
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(version) || string.IsNullOrWhiteSpace(spec))
+        if (string.IsNullOrWhiteSpace(version))
         {
-            System.Windows.MessageBox.Show(this, "version/specifications 不能为空。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(this, "version 不能为空。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -113,7 +104,6 @@ public partial class NewModWindow : Window
                 new XElement("name", name),
                 new XElement("auth", author),
                 new XElement("version", version),
-                new XElement("specifications", spec),
                 new XElement("description", description.Trim())
             )
         );
@@ -125,7 +115,7 @@ public partial class NewModWindow : Window
                 new XAttribute(XNamespace.Xmlns + "xsi", "http://www.w3.org/2001/XMLSchema-instance")));
 
         Result = new NewModResult(
-            folderName,
+            name,
             ModXmlFormatter.Serialize(mainDoc),
             ModXmlFormatter.Serialize(buildingsDoc),
             iconSourcePath!,

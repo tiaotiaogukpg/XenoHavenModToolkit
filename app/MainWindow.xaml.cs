@@ -389,12 +389,8 @@ public partial class MainWindow : Window
                 return;
             }
 
-            var targetFolder = Path.Combine(settings.ModsOverviewRoot!, dialog.Result.FolderName);
-            if (Directory.Exists(targetFolder))
-            {
-                Log($"新建失败：已存在同名文件夹：{dialog.Result.FolderName}");
-                return;
-            }
+            var folderName = CreateUniqueModFolderName(settings.ModsOverviewRoot!, dialog.Result.Name);
+            var targetFolder = Path.Combine(settings.ModsOverviewRoot!, folderName);
 
             Directory.CreateDirectory(targetFolder);
             Directory.CreateDirectory(Path.Combine(targetFolder, "Thing", "Buildings", "images", "icon"));
@@ -410,12 +406,36 @@ public partial class MainWindow : Window
             RefreshOverviewList();
             BuildOverviewNavigationTree();
             TrySelectModInTree(targetFolder);
-            Log($"已新建 Mod：{dialog.Result.FolderName}");
+            Log($"已新建 Mod：{folderName}");
         }
         catch (Exception ex)
         {
             Log($"新建 Mod 失败：{ex.Message}");
         }
+    }
+
+    private static string CreateUniqueModFolderName(string root, string name)
+    {
+        var baseName = MakeSafeFolderName(name);
+        var candidate = baseName;
+        var suffix = 2;
+        while (Directory.Exists(Path.Combine(root, candidate)))
+        {
+            candidate = $"{baseName}_{suffix}";
+            suffix++;
+        }
+
+        return candidate;
+    }
+
+    private static string MakeSafeFolderName(string name)
+    {
+        var invalidChars = Path.GetInvalidFileNameChars().ToHashSet();
+        var cleaned = new string(name.Trim().Select(ch => invalidChars.Contains(ch) ? '_' : ch).ToArray())
+            .Trim()
+            .TrimEnd('.');
+
+        return string.IsNullOrWhiteSpace(cleaned) ? "Mod" : cleaned;
     }
 
     private void ModInfo_Click(object sender, RoutedEventArgs e)
@@ -759,7 +779,6 @@ public partial class MainWindow : Window
               <name>New Mod</name>
               <auth>Author</auth>
               <version>1.0.0</version>
-              <specifications>0.0.1</specifications>
               <description>Mod description</description>
             </defs>
             """);

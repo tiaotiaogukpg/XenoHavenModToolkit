@@ -57,7 +57,6 @@ MyBuildingMod/
   <name>Example Building Mod</name>
   <auth>Author</auth>
   <version>1.0.0</version>
-  <specifications>0.0.1</specifications>
   <description>Mod description</description>
 </defs>
 ```
@@ -67,7 +66,6 @@ MyBuildingMod/
 - `name`：Mod 名称。
 - `auth`：作者。
 - `version`：Mod 版本。
-- `specifications`：规格/兼容版本字段，当前样例中为 `0.0.1`。
 - `description`：描述，必填。
 
 XenoHaven MOD Toolkit 会以 UTF-8（无 BOM）写回 XML，并保持多行缩进，避免中文内容或外部工具处理时出现编码问题。

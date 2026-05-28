@@ -4,6 +4,43 @@
         Title="新建 Mod" Height="700" Width="720"
         WindowStartupLocation="CenterOwner"
         Background="{DynamicResource Theme.WindowBackground}">
+    <Window.Resources>
+        <Style x:Key="PrimaryActionButtonStyle" TargetType="Button">
+            <Setter Property="Margin" Value="4"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="MinHeight" Value="30"/>
+            <Setter Property="Background" Value="#0E639C"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderBrush" Value="#1177BB"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="ButtonChrome"
+                                Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="3">
+                            <ContentPresenter HorizontalAlignment="Center"
+                                              VerticalAlignment="Center"
+                                              Margin="{TemplateBinding Padding}"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="ButtonChrome" Property="Background" Value="#1177BB"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="ButtonChrome" Property="Background" Value="#0B4F7A"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter Property="Opacity" Value="0.55"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
     <Grid Margin="16" Background="{DynamicResource Theme.WindowBackground}">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
@@ -28,57 +65,48 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <TextBlock Grid.Row="0" Grid.Column="0" Text="文件夹名" Style="{DynamicResource BuildingEditorLabelStyle}"
-                           ToolTip="总览目录下的子文件夹"/>
-                <TextBox Grid.Row="0" Grid.Column="1" x:Name="FolderNameBox" Margin="0,0,0,8" MinHeight="32" VerticalContentAlignment="Center"/>
-
-                <TextBlock Grid.Row="1" Grid.Column="0" Text="id" Style="{DynamicResource BuildingEditorLabelStyle}"
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="id" Style="{DynamicResource BuildingEditorLabelStyle}"
                            ToolTip="MOD 基础值，创建时自动生成"/>
-                <TextBox Grid.Row="1" Grid.Column="1" x:Name="IdBox" Margin="0,0,0,8" MinHeight="32" IsReadOnly="True"
+                <TextBox Grid.Row="0" Grid.Column="1" x:Name="IdBox" Margin="0,0,0,8" MinHeight="32" IsReadOnly="True"
                          VerticalContentAlignment="Center"
                          Foreground="{DynamicResource Theme.SecondaryTextColor}"/>
 
-                <TextBlock Grid.Row="2" Grid.Column="0" Text="steamPublishedFileId" Style="{DynamicResource BuildingEditorLabelStyle}"/>
-                <TextBox Grid.Row="2" Grid.Column="1" x:Name="SteamPublishedFileIdBox" Margin="0,0,0,8" MinHeight="32"
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="steamPublishedFileId" Style="{DynamicResource BuildingEditorLabelStyle}"/>
+                <TextBox Grid.Row="1" Grid.Column="1" x:Name="SteamPublishedFileIdBox" Margin="0,0,0,8" MinHeight="32"
                          Text="0" IsReadOnly="True" VerticalContentAlignment="Center"
                          Foreground="{DynamicResource Theme.SecondaryTextColor}"/>
 
-                <TextBlock Grid.Row="3" Grid.Column="0" Text="SupportVersion" Style="{DynamicResource BuildingEditorLabelStyle}"/>
-                <TextBox Grid.Row="3" Grid.Column="1" x:Name="SupportVersionBox" Text="1" Margin="0,0,0,8" MinHeight="32"
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="supportVersion" Style="{DynamicResource BuildingEditorLabelStyle}"/>
+                <TextBox Grid.Row="2" Grid.Column="1" x:Name="SupportVersionBox" Text="1" Margin="0,0,0,8" MinHeight="32"
                          IsReadOnly="True" VerticalContentAlignment="Center"
                          Foreground="{DynamicResource Theme.SecondaryTextColor}"/>
 
-                <TextBlock Grid.Row="4" Grid.Column="0" Text="name" Style="{DynamicResource BuildingEditorLabelStyle}"/>
-                <TextBox Grid.Row="4" Grid.Column="1" x:Name="NameBox" Margin="0,0,0,8" MinHeight="32" VerticalContentAlignment="Center"/>
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="name" Style="{DynamicResource BuildingEditorLabelStyle}"/>
+                <TextBox Grid.Row="3" Grid.Column="1" x:Name="NameBox" Margin="0,0,0,8" MinHeight="32" VerticalContentAlignment="Center"/>
 
-                <TextBlock Grid.Row="5" Grid.Column="0" Text="auth" Style="{DynamicResource BuildingEditorLabelStyle}"/>
-                <TextBox Grid.Row="5" Grid.Column="1" x:Name="AuthorBox" Margin="0,0,0,8" MinHeight="32" VerticalContentAlignment="Center"/>
+                <TextBlock Grid.Row="4" Grid.Column="0" Text="auth" Style="{DynamicResource BuildingEditorLabelStyle}"/>
+                <TextBox Grid.Row="4" Grid.Column="1" x:Name="AuthorBox" Margin="0,0,0,8" MinHeight="32" VerticalContentAlignment="Center"/>
 
-                <TextBlock Grid.Row="6" Grid.Column="0" Text="version" Style="{DynamicResource BuildingEditorLabelStyle}"/>
-                <TextBox Grid.Row="6" Grid.Column="1" x:Name="VersionBox" Text="1.0.0" Margin="0,0,0,8" MinHeight="32" VerticalContentAlignment="Center"/>
+                <TextBlock Grid.Row="5" Grid.Column="0" Text="version" Style="{DynamicResource BuildingEditorLabelStyle}"/>
+                <TextBox Grid.Row="5" Grid.Column="1" x:Name="VersionBox" Text="1.0.0" Margin="0,0,0,8" MinHeight="32" VerticalContentAlignment="Center"/>
 
-                <TextBlock Grid.Row="7" Grid.Column="0" Text="specifications" Style="{DynamicResource BuildingEditorLabelStyle}"/>
-                <TextBox Grid.Row="7" Grid.Column="1" x:Name="SpecBox" Text="0.0.1" Margin="0,0,0,8" MinHeight="32" VerticalContentAlignment="Center"/>
+                <TextBlock Grid.Row="6" Grid.Column="0" Text="category" Style="{DynamicResource BuildingEditorLabelStyle}"/>
+                <TextBox Grid.Row="6" Grid.Column="1" x:Name="CategoryBox" Text="Building" Margin="0,0,0,8" MinHeight="32" VerticalContentAlignment="Center"/>
 
-                <TextBlock Grid.Row="8" Grid.Column="0" Text="Category" Style="{DynamicResource BuildingEditorLabelStyle}"/>
-                <TextBox Grid.Row="8" Grid.Column="1" x:Name="CategoryBox" Text="Building" Margin="0,0,0,8" MinHeight="32" VerticalContentAlignment="Center"/>
-
-                <TextBlock Grid.Row="9" Grid.Column="0" Text="description" Style="{DynamicResource BuildingEditorLabelStyle}"
+                <TextBlock Grid.Row="7" Grid.Column="0" Text="description" Style="{DynamicResource BuildingEditorLabelStyle}"
                            VerticalAlignment="Top" Margin="0,6,10,0" ToolTip="必填"/>
-                <TextBox Grid.Row="9" Grid.Column="1" x:Name="DescriptionBox"
+                <TextBox Grid.Row="7" Grid.Column="1" x:Name="DescriptionBox"
                          AcceptsReturn="True"
                          VerticalScrollBarVisibility="Auto"
                          TextWrapping="Wrap"
                          MinHeight="120"
                          Margin="0,0,0,8"/>
 
-                <TextBlock Grid.Row="10" Grid.Column="0" Text="icon.png" Style="{DynamicResource BuildingEditorLabelStyle}"
+                <TextBlock Grid.Row="8" Grid.Column="0" Text="icon.png" Style="{DynamicResource BuildingEditorLabelStyle}"
                            VerticalAlignment="Center"/>
-                <DockPanel Grid.Row="10" Grid.Column="1" Margin="0,0,0,8" MinHeight="32">
+                <DockPanel Grid.Row="8" Grid.Column="1" Margin="0,0,0,8" MinHeight="32">
                     <Button Content="导入" Width="90" Margin="8,0,0,0" DockPanel.Dock="Right" Click="ImportIcon_Click"/>
                     <TextBlock x:Name="IconPathText"
                                Text="未选择"
@@ -87,9 +115,9 @@
                                TextTrimming="CharacterEllipsis"/>
                 </DockPanel>
 
-                <TextBlock Grid.Row="11" Grid.Column="0" Text="screenshot.png" Style="{DynamicResource BuildingEditorLabelStyle}"
+                <TextBlock Grid.Row="9" Grid.Column="0" Text="screenshot.png" Style="{DynamicResource BuildingEditorLabelStyle}"
                            VerticalAlignment="Center"/>
-                <DockPanel Grid.Row="11" Grid.Column="1" MinHeight="32">
+                <DockPanel Grid.Row="9" Grid.Column="1" MinHeight="32">
                     <Button Content="导入" Width="90" Margin="8,0,0,0" DockPanel.Dock="Right" Click="ImportScreenshot_Click"/>
                     <TextBlock x:Name="ScreenshotPathText"
                                Text="未选择"
@@ -101,8 +129,8 @@
         </ScrollViewer>
 
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,14,0,0">
-            <Button Content="取消" Width="100" IsCancel="True"/>
-            <Button Content="创建" Width="120" IsDefault="True" Click="Create_Click"/>
+            <Button Content="create" Width="120" IsDefault="True" Click="Create_Click" Style="{StaticResource PrimaryActionButtonStyle}"/>
+            <Button Content="cancel" Width="100" IsCancel="True"/>
         </StackPanel>
     </Grid>
 </Window>

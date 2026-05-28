@@ -7,6 +7,5 @@
   <name>Example Building Mod</name>
   <auth>XenoHaven Mod Author</auth>
   <version>1.0.0</version>
-  <specifications>0.0.1</specifications>
   <description>一个用于演示 XenoHaven MOD 工具的基础建筑 MOD。</description>
 </defs>

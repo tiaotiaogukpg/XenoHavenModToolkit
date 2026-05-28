@@ -55,7 +55,6 @@ public partial class ModInfoWindow : Window
             NameBox.Text = doc.Root.Element("name")?.Value ?? NameBox.Text;
             AuthorBox.Text = doc.Root.Element("auth")?.Value ?? AuthorBox.Text;
             VersionBox.Text = doc.Root.Element("version")?.Value ?? VersionBox.Text;
-            SpecBox.Text = doc.Root.Element("specifications")?.Value ?? SpecBox.Text;
             DescriptionBox.Text = doc.Root.Element("description")?.Value ?? DescriptionBox.Text;
             CategoryBox.Text = doc.Root.Elements().FirstOrDefault(e => e.Name.LocalName == "Category")?.Value ?? CategoryBox.Text;
         }
@@ -94,7 +93,6 @@ public partial class ModInfoWindow : Window
         var name = NameBox.Text.Trim();
         var author = AuthorBox.Text.Trim();
         var version = VersionBox.Text.Trim();
-        var spec = SpecBox.Text.Trim();
         var category = CategoryBox.Text.Trim();
         var description = DescriptionBox.Text;
 
@@ -113,12 +111,6 @@ public partial class ModInfoWindow : Window
         if (string.IsNullOrWhiteSpace(version))
         {
             System.Windows.MessageBox.Show(this, "version 不能为空。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
-            return;
-        }
-
-        if (string.IsNullOrWhiteSpace(spec))
-        {
-            System.Windows.MessageBox.Show(this, "specifications 不能为空。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -157,7 +149,6 @@ public partial class ModInfoWindow : Window
                 new XElement("name", name),
                 new XElement("auth", author),
                 new XElement("version", version),
-                new XElement("specifications", spec),
                 new XElement("description", description.Trim())
             )
         );

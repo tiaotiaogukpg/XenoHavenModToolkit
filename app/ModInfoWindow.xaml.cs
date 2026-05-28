@@ -1,5 +1,6 @@
 using System.IO;
 using System.Windows;
+using System.Windows.Media.Imaging;
 using System.Xml.Linq;
 
 namespace XenoHavenModToolkit;
@@ -40,8 +41,7 @@ public partial class ModInfoWindow : Window
 
             var idText = doc.Root.Elements().FirstOrDefault(e => e.Name.LocalName == "id")?.Value;
             if (int.TryParse(idText?.Trim(), out var parsedBaseId) &&
-                parsedBaseId is >= 10000000 and <= 90000000 &&
-                parsedBaseId % 100 == 0)
+                parsedBaseId is > 10000000 and <= 200000000)
             {
                 baseId = parsedBaseId;
             }
@@ -181,6 +181,30 @@ public partial class ModInfoWindow : Window
     {
         IconPathText.Text = FormatRootImageStatus(ModRootAssets.IconRelativePath, IconSourcePath);
         ScreenshotPathText.Text = FormatRootImageStatus(ModRootAssets.ScreenshotRelativePath, ScreenshotSourcePath);
+
+        var iconPath = ResolveRootImagePath(ModRootAssets.IconRelativePath, IconSourcePath);
+        var screenshotPath = ResolveRootImagePath(ModRootAssets.ScreenshotRelativePath, ScreenshotSourcePath);
+        IconImagePreview.Source = LoadBitmapIfExists(iconPath);
+        ScreenshotImagePreview.Source = LoadBitmapIfExists(screenshotPath);
+    }
+
+    private string ResolveRootImagePath(string relativePath, string? selectedPath)
+        => !string.IsNullOrWhiteSpace(selectedPath) ? selectedPath : Path.Combine(modRoot, relativePath);
+
+    private static BitmapImage? LoadBitmapIfExists(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+        {
+            return null;
+        }
+
+        var bitmap = new BitmapImage();
+        bitmap.BeginInit();
+        bitmap.CacheOption = BitmapCacheOption.OnLoad;
+        bitmap.UriSource = new Uri(path, UriKind.Absolute);
+        bitmap.EndInit();
+        bitmap.Freeze();
+        return bitmap;
     }
 
     private string FormatRootImageStatus(string relativePath, string? selectedPath)

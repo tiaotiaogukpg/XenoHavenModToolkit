@@ -4,6 +4,46 @@
         Title="编辑MOD" Height="700" Width="720"
         WindowStartupLocation="CenterOwner"
         Background="{DynamicResource Theme.WindowBackground}">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <Style x:Key="ImageSectionFoldToggleStyle" TargetType="ToggleButton">
+            <Setter Property="Width" Value="24"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="Margin" Value="0,0,4,0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ToggleButton">
+                        <Border Background="Transparent" Padding="4">
+                            <Path x:Name="Glyph"
+                                  Width="8"
+                                  Height="8"
+                                  Stretch="Uniform"
+                                  Fill="{DynamicResource Theme.SecondaryTextColor}"
+                                  Data="M2,1 L7,5 L2,9 Z"
+                                  RenderTransformOrigin="0.5,0.5">
+                                <Path.RenderTransform>
+                                    <RotateTransform Angle="0"/>
+                                </Path.RenderTransform>
+                            </Path>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Glyph" Property="RenderTransform">
+                                    <Setter.Value>
+                                        <RotateTransform Angle="90"/>
+                                    </Setter.Value>
+                                </Setter>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
     <Grid Margin="16" Background="{DynamicResource Theme.WindowBackground}">
         <Grid.RowDefinitions>
             <RowDefinition Height="*"/>
@@ -17,6 +57,9 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
@@ -74,25 +117,83 @@
                          MinHeight="120"
                          Margin="0,0,0,8"/>
 
-                <TextBlock Grid.Row="9" Grid.Column="0" Text="icon.png" Style="{DynamicResource BuildingEditorLabelStyle}"
-                           VerticalAlignment="Center" ToolTip="MOD 图标，保存到 MOD 根目录"/>
-                <DockPanel Grid.Row="9" Grid.Column="1" Margin="0,0,0,8" MinHeight="32">
-                    <Button Content="导入/替换" Width="100" Margin="8,0,0,0" DockPanel.Dock="Right" Click="ImportIcon_Click"/>
-                    <TextBlock x:Name="IconPathText"
-                               VerticalAlignment="Center"
-                               Foreground="{DynamicResource Theme.SecondaryTextColor}"
-                               TextTrimming="CharacterEllipsis"/>
-                </DockPanel>
+                <TextBlock Grid.Row="9" Grid.Column="0" Text="icon.png" Style="{DynamicResource BuildingEditorLabelStyle}" Margin="0,12,10,0"
+                           ToolTip="MOD 图标，保存到 MOD 根目录"/>
+                <Button Grid.Row="9" Grid.Column="1"
+                        Content="导入/替换 MOD 图标"
+                        Click="ImportIcon_Click"
+                        HorizontalAlignment="Left"
+                        Margin="0,12,0,4"/>
 
-                <TextBlock Grid.Row="10" Grid.Column="0" Text="screenshot.png" Style="{DynamicResource BuildingEditorLabelStyle}"
-                           VerticalAlignment="Center" ToolTip="MOD 截图，保存到 MOD 根目录"/>
-                <DockPanel Grid.Row="10" Grid.Column="1" MinHeight="32">
-                    <Button Content="导入/替换" Width="100" Margin="8,0,0,0" DockPanel.Dock="Right" Click="ImportScreenshot_Click"/>
-                    <TextBlock x:Name="ScreenshotPathText"
+                <Grid Grid.Row="10" Grid.Column="1" Margin="0,0,0,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <ToggleButton x:Name="IconPreviewExpandToggle"
+                                  Grid.Column="0"
+                                  Style="{StaticResource ImageSectionFoldToggleStyle}"
+                                  IsChecked="False"
+                                  ToolTip="展开/折叠预览"/>
+                    <TextBlock x:Name="IconPathText"
+                               Grid.Column="1"
                                VerticalAlignment="Center"
+                               TextWrapping="Wrap"
                                Foreground="{DynamicResource Theme.SecondaryTextColor}"
-                               TextTrimming="CharacterEllipsis"/>
-                </DockPanel>
+                               FontSize="12"/>
+                </Grid>
+
+                <Border Grid.Row="11" Grid.Column="1"
+                        x:Name="IconImagePreviewHost"
+                        Margin="0,0,0,12"
+                        Visibility="{Binding IsChecked, ElementName=IconPreviewExpandToggle, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Border Height="160"
+                            Background="{DynamicResource Theme.EditorBackground}"
+                            BorderBrush="{DynamicResource Theme.BorderColor}"
+                            BorderThickness="1"
+                            MouseLeftButtonUp="ImportIcon_Click">
+                        <Image x:Name="IconImagePreview" Stretch="Uniform"/>
+                    </Border>
+                </Border>
+
+                <TextBlock Grid.Row="12" Grid.Column="0" Text="screenshot.png" Style="{DynamicResource BuildingEditorLabelStyle}" Margin="0,4,10,0"
+                           ToolTip="MOD 截图，保存到 MOD 根目录"/>
+                <Button Grid.Row="12" Grid.Column="1"
+                        Content="导入/替换 MOD 截图"
+                        Click="ImportScreenshot_Click"
+                        HorizontalAlignment="Left"
+                        Margin="0,4,0,4"/>
+
+                <Grid Grid.Row="13" Grid.Column="1" Margin="0,0,0,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <ToggleButton x:Name="ScreenshotPreviewExpandToggle"
+                                  Grid.Column="0"
+                                  Style="{StaticResource ImageSectionFoldToggleStyle}"
+                                  IsChecked="False"
+                                  ToolTip="展开/折叠预览"/>
+                    <TextBlock x:Name="ScreenshotPathText"
+                               Grid.Column="1"
+                               VerticalAlignment="Center"
+                               TextWrapping="Wrap"
+                               Foreground="{DynamicResource Theme.SecondaryTextColor}"
+                               FontSize="12"/>
+                </Grid>
+
+                <Border Grid.Row="14" Grid.Column="1"
+                        x:Name="ScreenshotImagePreviewHost"
+                        Margin="0,0,0,8"
+                        Visibility="{Binding IsChecked, ElementName=ScreenshotPreviewExpandToggle, Converter={StaticResource BooleanToVisibilityConverter}}">
+                    <Border Height="160"
+                            Background="{DynamicResource Theme.EditorBackground}"
+                            BorderBrush="{DynamicResource Theme.BorderColor}"
+                            BorderThickness="1"
+                            MouseLeftButtonUp="ImportScreenshot_Click">
+                        <Image x:Name="ScreenshotImagePreview" Stretch="Uniform"/>
+                    </Border>
+                </Border>
             </Grid>
         </ScrollViewer>
 

@@ -218,23 +218,16 @@ public partial class BuildingFieldPicker : WpfUserControl
 
         }
 
+        var options = combo.ItemsSource?.Cast<string>().ToList() ??
+                      combo.Items.Cast<object>().Select(item => item.ToString() ?? string.Empty).ToList();
 
-
-        var items = combo.Items.Cast<object>().Select(item => item.ToString() ?? string.Empty).ToList();
-
-        if (!items.Any(item => string.Equals(item, value, StringComparison.OrdinalIgnoreCase)))
-
+        if (!options.Any(item => string.Equals(item, value, StringComparison.OrdinalIgnoreCase)))
         {
-
-            combo.Items.Add(value);
-
+            options.Insert(0, value);
+            combo.ItemsSource = options;
         }
 
-
-
-        combo.SelectedItem = combo.Items.Cast<object>()
-
-            .FirstOrDefault(item => string.Equals(item.ToString(), value, StringComparison.OrdinalIgnoreCase));
+        combo.SelectedItem = options.FirstOrDefault(item => string.Equals(item, value, StringComparison.OrdinalIgnoreCase));
 
     }
 

@@ -274,7 +274,7 @@ public partial class MainWindow : Window
         var selection = ClassifyCurrentSelection();
 
         OpenModButton.IsEnabled = !opened;
-        NewModButton.IsEnabled = !opened;
+        NewModButton.IsEnabled = IsOverviewRootConfigured() && (selection == TreeSelectionKind.OverviewRoot || !opened);
 
         ModInfoButton.IsEnabled = opened && selection is TreeSelectionKind.ModRoot or TreeSelectionKind.MainXml;
         AddBuildingButton.IsEnabled = opened && selection == TreeSelectionKind.BuildingsXml;
@@ -282,6 +282,9 @@ public partial class MainWindow : Window
         DeleteBuildingButton.IsEnabled = opened && selection == TreeSelectionKind.BuildingNode;
         ExportReleaseButton.IsEnabled = opened && selection == TreeSelectionKind.ModRoot;
     }
+
+    private bool IsOverviewRootConfigured()
+        => !string.IsNullOrWhiteSpace(settings.ModsOverviewRoot) && Directory.Exists(settings.ModsOverviewRoot);
 
     private TreeSelectionKind ClassifyCurrentSelection()
     {
@@ -302,6 +305,9 @@ public partial class MainWindow : Window
     {
         switch (item.Tag)
         {
+            case string path when !string.IsNullOrWhiteSpace(settings.ModsOverviewRoot) &&
+                                  path.Equals(settings.ModsOverviewRoot, StringComparison.OrdinalIgnoreCase):
+                return TreeSelectionKind.OverviewRoot;
             case OverviewModDirectoryTag directoryTag:
                 if (!string.IsNullOrWhiteSpace(currentModRoot) &&
                     string.Equals(directoryTag.FullPath, currentModRoot, StringComparison.OrdinalIgnoreCase))
@@ -709,29 +715,7 @@ public partial class MainWindow : Window
 
         try
         {
-            if (currentModBaseId is null)
-            {
-                System.Windows.MessageBox.Show(
-                    this,
-                    "当前 Mod 缺少有效的 main.xml <id>（或现有 Building id 不符合规则）。\n" +
-                    "请先在“编辑MOD”中生成/保存一次 main.xml，确保写入 8 位 MOD id（例如 70000000）。",
-                    "新建组件",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
-                return;
-            }
-
             var (nextId, nextName) = SuggestNewBuildingDefaults();
-            if (nextId <= 0)
-            {
-                System.Windows.MessageBox.Show(
-                    this,
-                    "localBuildingId（1-99）已用尽，无法继续新增组件。",
-                    "新建组件",
-                    MessageBoxButton.OK,
-                    MessageBoxImage.Warning);
-                return;
-            }
 
             var dialog = new AddBuildingWindow(nextId, nextName)
             {
@@ -1615,29 +1599,11 @@ public partial class MainWindow : Window
 
     private (int nextId, string nextName) SuggestNewBuildingDefaults()
     {
-        if (currentModBaseId is null)
-        {
-            return (-1, "NewBuilding");
-        }
-
-        var usedLocals = new HashSet<int>();
-        foreach (var b in buildings)
-        {
-            var local = b.Id - currentModBaseId.Value;
-            if (local is >= 1 and <= 99)
-            {
-                usedLocals.Add(local);
-            }
-        }
-
-        var nextLocal = Enumerable.Range(1, 99).FirstOrDefault(x => !usedLocals.Contains(x));
-        if (nextLocal <= 0)
-        {
-            return (-1, "NewBuilding");
-        }
-
-        var nextId = currentModBaseId.Value + nextLocal;
-        return (nextId, $"NewBuilding_{nextLocal}");
+        // BuildingId 独立于 ModId：仅建议在 1–99 范围内。
+        // 新建时默认取“当前最大 BuildingId + 1”（无则从 1 起），不做强约束拦截。
+        var maxId = buildings.Count == 0 ? 0 : buildings.Max(b => b.Id);
+        var nextId = Math.Max(1, maxId + 1);
+        return (nextId, $"NewBuilding_{nextId}");
     }
 
     private void AddBuildingToBuildingsXml(NewBuilding b)
@@ -1807,6 +1773,38 @@ public partial class MainWindow : Window
         }
     }
 
+    private void TryRenameBuildingImageFiles(int oldId, int newId)
+    {
+        if (oldId == newId)
+        {
+            return;
+        }
+
+        foreach (var relativeDir in new[] { BuildingImagesRelativePath, BuildingIconsRelativePath })
+        {
+            try
+            {
+                var source = GetFullPath(Path.Combine(relativeDir, $"{oldId}.png"));
+                if (!File.Exists(source))
+                {
+                    continue;
+                }
+
+                var target = GetFullPath(Path.Combine(relativeDir, $"{newId}.png"));
+                if (File.Exists(target))
+                {
+                    continue;
+                }
+
+                File.Move(source, target);
+            }
+            catch (Exception ex)
+            {
+                Log($"迁移建筑图片失败（{oldId}→{newId}）：{ex.Message}");
+            }
+        }
+    }
+
     private void UpsertBuildingToBuildingsXml(EditableBuilding b)
     {
         var doc = XDocument.Parse(buildingsXmlText, LoadOptions.PreserveWhitespace);
@@ -1863,53 +1861,12 @@ public partial class MainWindow : Window
     {
         var baseIdFromMain = TryReadMainXmlRootValue(GetFullPath(MainXmlRelativePath), "id");
         if (int.TryParse(baseIdFromMain?.Trim(), out var baseId) &&
-            baseId is >= 10000000 and <= 90000000 &&
-            baseId % 100 == 0)
+            baseId is > 10000000 and <= 200000000)
         {
-            return BuildingsMatchBaseId(baseId) ? baseId : null;
+            return baseId;
         }
 
-        var inferred = TryInferBaseIdFromBuildings();
-        return inferred is not null && BuildingsMatchBaseId(inferred.Value) ? inferred : null;
+        return null;
     }
 
-    private bool BuildingsMatchBaseId(int baseId)
-    {
-        foreach (var b in buildings)
-        {
-            var local = b.Id - baseId;
-            if (local is < 1 or > 99)
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private int? TryInferBaseIdFromBuildings()
-    {
-        if (buildings.Count == 0)
-        {
-            return null;
-        }
-
-        int? inferred = null;
-        foreach (var b in buildings)
-        {
-            if (b.Id <= 0)
-            {
-                return null;
-            }
-
-            var candidate = (b.Id / 100) * 100;
-            inferred ??= candidate;
-            if (inferred.Value != candidate)
-            {
-                return null;
-            }
-        }
-
-        return inferred;
-    }
 }

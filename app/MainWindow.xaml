@@ -49,8 +49,8 @@
                     <Button x:Name="AddBuildingButton" Content="新建组件" Click="AddBuilding_Click" IsEnabled="False"/>
                     <Button x:Name="EditBuildingButton" Content="编辑组件" Click="OpenBuildingEditor_Click" IsEnabled="False"/>
                     <Button x:Name="DeleteBuildingButton" Content="删除组件" Click="DeleteBuilding_Click" IsEnabled="False"/>
+                    <Button x:Name="DeleteModButton" Content="删除MOD" Click="DeleteMod_Click" IsEnabled="False"/>
                     <Button x:Name="CleanMetaOpenedButton" Content="清理 .meta" Click="CleanMeta_Click" Visibility="Collapsed"/>
-                    <Button x:Name="ExportReleaseButton" Content="导出" Click="ExportRelease_Click" IsEnabled="False"/>
                 </WrapPanel>
 
             <TextBlock x:Name="CurrentModPathText"

@@ -276,11 +276,24 @@ public partial class MainWindow : Window
         OpenModButton.IsEnabled = !opened;
         NewModButton.IsEnabled = IsOverviewRootConfigured() && (selection == TreeSelectionKind.OverviewRoot || !opened);
 
-        ModInfoButton.IsEnabled = opened && selection is TreeSelectionKind.ModRoot or TreeSelectionKind.MainXml;
-        AddBuildingButton.IsEnabled = opened && selection == TreeSelectionKind.BuildingsXml;
+        ModInfoButton.IsEnabled = opened &&
+                                  selection is TreeSelectionKind.ModRoot
+                                               or TreeSelectionKind.MainXml
+                                               or TreeSelectionKind.BuildingsXml
+                                               or TreeSelectionKind.BuildingNode
+                                               or TreeSelectionKind.ModOther;
+        AddBuildingButton.IsEnabled = opened &&
+                                      selection is TreeSelectionKind.ModRoot
+                                                   or TreeSelectionKind.OverviewModFolder
+                                                   or TreeSelectionKind.BuildingsXml;
         EditBuildingButton.IsEnabled = opened && selection == TreeSelectionKind.BuildingNode;
         DeleteBuildingButton.IsEnabled = opened && selection == TreeSelectionKind.BuildingNode;
-        ExportReleaseButton.IsEnabled = opened && selection == TreeSelectionKind.ModRoot;
+        DeleteModButton.IsEnabled = ModFileTree.SelectedItem is TreeViewItem { Tag: OverviewModDirectoryTag } ||
+                                    (opened && selection is TreeSelectionKind.ModRoot
+                                                        or TreeSelectionKind.MainXml
+                                                        or TreeSelectionKind.BuildingsXml
+                                                        or TreeSelectionKind.BuildingNode
+                                                        or TreeSelectionKind.ModOther);
     }
 
     private bool IsOverviewRootConfigured()
@@ -549,46 +562,6 @@ public partial class MainWindow : Window
         }
     }
 
-    private void ExportRelease_Click(object sender, RoutedEventArgs e)
-    {
-        if (!EnsureModOpen())
-        {
-            return;
-        }
-
-        var messages = new List<string>();
-        ValidateModMetadata(currentModRoot!, mainXmlText, messages);
-        if (messages.Any(message => message.StartsWith("[错误]", StringComparison.Ordinal)))
-        {
-            Log("导出发布版前校验失败：" + Environment.NewLine + string.Join(Environment.NewLine, messages));
-            System.Windows.MessageBox.Show(this, string.Join(Environment.NewLine, messages), "导出发布版", MessageBoxButton.OK, MessageBoxImage.Warning);
-            return;
-        }
-
-        using var dialog = new WinForms.FolderBrowserDialog
-        {
-            Description = "选择发布版 Mod 输出目录",
-            UseDescriptionForTitle = true
-        };
-
-        if (dialog.ShowDialog() != WinForms.DialogResult.OK)
-        {
-            return;
-        }
-
-        try
-        {
-            var sourceName = new DirectoryInfo(currentModRoot!).Name;
-            var targetRoot = Path.Combine(dialog.SelectedPath, sourceName);
-            CopyDirectoryWithoutMeta(currentModRoot!, targetRoot);
-            Log($"发布版已导出：{targetRoot}");
-        }
-        catch (Exception ex)
-        {
-            Log($"导出失败：{ex.Message}");
-        }
-    }
-
     private void ModFileTree_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
     {
         if (e.NewValue is not TreeViewItem item)
@@ -679,6 +652,50 @@ public partial class MainWindow : Window
         OpenBuildingEditor_Click(sender, e);
     }
 
+    private void DeleteMod_Click(object sender, RoutedEventArgs e)
+    {
+        var modRoot = (ModFileTree.SelectedItem is TreeViewItem { Tag: OverviewModDirectoryTag directoryTag })
+            ? directoryTag.FullPath
+            : currentModRoot;
+
+        if (string.IsNullOrWhiteSpace(modRoot) || !Directory.Exists(modRoot))
+        {
+            return;
+        }
+
+        var folderName = new DirectoryInfo(modRoot).Name;
+        var confirm = System.Windows.MessageBox.Show(
+            $"你确定要删除 “{folderName}“吗？",
+            "删除 MOD",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (confirm != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        try
+        {
+            if (!string.IsNullOrWhiteSpace(currentModRoot) &&
+                string.Equals(currentModRoot, modRoot, StringComparison.OrdinalIgnoreCase))
+            {
+                CloseCurrentMod();
+            }
+
+            Directory.Delete(modRoot, recursive: true);
+            RefreshOverviewList();
+            BuildOverviewNavigationTree();
+            UpdateTopBarState();
+            Log($"已删除 MOD：{folderName}");
+        }
+        catch (Exception ex)
+        {
+            Log($"删除 MOD 失败：{ex.Message}");
+            System.Windows.MessageBox.Show(this, ex.Message, "删除 MOD", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
     private void DeleteBuilding_Click(object sender, RoutedEventArgs e)
     {
         if (!EnsureModOpen())
@@ -693,7 +710,7 @@ public partial class MainWindow : Window
         }
 
         var confirm = System.Windows.MessageBox.Show(
-            $"确定从 Buildings.xml 中删除 Building「{selected.Name}」（id={selected.Id}）吗？\n将同时尝试删除 Thing/Buildings/images 与 icon 下对应的 {selected.Id}.png（若存在）。",
+            $"你确定要删除 “{selected.Id}-{selected.Name}” 吗？",
             "删除 Building",
             MessageBoxButton.YesNo,
             MessageBoxImage.Warning);
@@ -1458,34 +1475,6 @@ public partial class MainWindow : Window
         }
 
         return count;
-    }
-
-    private static void CopyDirectoryWithoutMeta(string sourceRoot, string targetRoot)
-    {
-        if (Directory.Exists(targetRoot))
-        {
-            Directory.Delete(targetRoot, recursive: true);
-        }
-
-        foreach (var directory in Directory.EnumerateDirectories(sourceRoot, "*", SearchOption.AllDirectories))
-        {
-            var relativePath = Path.GetRelativePath(sourceRoot, directory);
-            Directory.CreateDirectory(Path.Combine(targetRoot, relativePath));
-        }
-
-        Directory.CreateDirectory(targetRoot);
-        foreach (var file in Directory.EnumerateFiles(sourceRoot, "*", SearchOption.AllDirectories))
-        {
-            if (Path.GetExtension(file).Equals(".meta", StringComparison.OrdinalIgnoreCase))
-            {
-                continue;
-            }
-
-            var relativePath = Path.GetRelativePath(sourceRoot, file);
-            var targetPath = Path.Combine(targetRoot, relativePath);
-            Directory.CreateDirectory(Path.GetDirectoryName(targetPath)!);
-            File.Copy(file, targetPath, overwrite: true);
-        }
     }
 
     private string GetFullPath(string relativePath)

@@ -20,6 +20,8 @@ public partial class AddBuildingWindow : Window
         this.suggestedId = suggestedId;
         IdBox.Text = suggestedId.ToString(CultureInfo.InvariantCulture);
         NameBox.Text = suggestedName;
+        TypeBox.ItemsSource = BuildingFieldOptions.DefaultTypes;
+        TypeBox.SelectedItem = BuildingFieldOptions.DefaultTypes[0];
         NameBox.SelectAll();
         NameBox.Focus();
     }
@@ -33,7 +35,7 @@ public partial class AddBuildingWindow : Window
             return;
         }
 
-        var type = TypeBox.Text.Trim();
+        var type = TypeBox.SelectedItem as string ?? string.Empty;
         if (string.IsNullOrWhiteSpace(type))
         {
             WpfMessageBox.Show(this, "type 不能为空。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);

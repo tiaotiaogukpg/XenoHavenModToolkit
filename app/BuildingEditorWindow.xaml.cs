@@ -41,7 +41,9 @@ public partial class BuildingEditorWindow : Window
         NameBox.Text = initial.Name;
         FieldPicker.InitializeWorkbenches(gameData);
         FieldPicker.SetValues(initial.Type, initial.Direction, initial.WorkbenchId);
+        FieldPicker.TypeChanged += (_, _) => ApplyCapbilityVisibility();
         CapbilityBox.Text = ClampCapbility(initial.Capbility).ToString(CultureInfo.InvariantCulture);
+        ApplyCapbilityVisibility();
         HealthBox.Text = BuildingFieldOptions.FixedHealth.ToString(CultureInfo.InvariantCulture);
         SizeXBox.Text = initial.SizeX.ToString(CultureInfo.InvariantCulture);
         SizeYBox.Text = initial.SizeY.ToString(CultureInfo.InvariantCulture);
@@ -118,11 +120,17 @@ public partial class BuildingEditorWindow : Window
         }
 
         var type = FieldPicker.SelectedType;
-        var direction = FieldPicker.SelectedDirection;
+        var direction = FieldPicker.EffectiveDirection;
         var workbenchId = FieldPicker.SelectedWorkbenchId;
+        var capbilityVisible = BuildingFieldOptions.ShowsCapbility(type);
 
-        if (!TryReadCapbility(CapbilityBox.Text, out var capbility, "capbility") ||
-            !TryReadPositiveInt(SizeXBox.Text, out var sx, "size.x") ||
+        var capbility = BuildingFieldOptions.DefaultCapbility;
+        if (capbilityVisible && !TryReadCapbility(CapbilityBox.Text, out capbility, "capbility"))
+        {
+            return;
+        }
+
+        if (!TryReadPositiveInt(SizeXBox.Text, out var sx, "size.x") ||
             !TryReadPositiveInt(SizeYBox.Text, out var sy, "size.y") ||
             !TryReadMaterials(out var materialSnapshot))
         {
@@ -132,6 +140,15 @@ public partial class BuildingEditorWindow : Window
         Result = new MainWindow.EditableBuilding(
             buildingId, name, type, direction, capbility, workbenchId, BuildingFieldOptions.FixedHealth, sx, sy, materialSnapshot);
         DialogResult = true;
+    }
+
+    private void ApplyCapbilityVisibility()
+    {
+        var visibility = BuildingFieldOptions.ShowsCapbility(FieldPicker.SelectedType)
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        CapbilityLabel.Visibility = visibility;
+        CapbilityBox.Visibility = visibility;
     }
 
     private void AddMaterial_Click(object sender, RoutedEventArgs e)

@@ -1,3 +1,4 @@
+using System.Windows;
 using System.Windows.Controls;
 
 
@@ -18,6 +19,8 @@ public partial class BuildingFieldPicker : WpfUserControl
 
     private IReadOnlyList<LabeledIdOption> workbenchOptions = [];
 
+    public event EventHandler? TypeChanged;
+
 
 
     public BuildingFieldPicker()
@@ -30,6 +33,10 @@ public partial class BuildingFieldPicker : WpfUserControl
 
         BindIntCombo(DirectionCombo, BuildingFieldOptions.DefaultDirections);
 
+        TypeCombo.SelectionChanged += TypeCombo_SelectionChanged;
+
+        ApplyTypeVisibility();
+
     }
 
 
@@ -39,6 +46,8 @@ public partial class BuildingFieldPicker : WpfUserControl
 
 
     public int SelectedDirection => DirectionCombo.SelectedItem is int value ? value : 0;
+
+    public int EffectiveDirection => BuildingFieldOptions.RequiresFixedDirection(SelectedType) ? 1 : SelectedDirection;
 
 
 
@@ -80,6 +89,8 @@ public partial class BuildingFieldPicker : WpfUserControl
 
         SelectWorkbench(workbenchId);
 
+        ApplyTypeVisibility();
+
     }
 
 
@@ -100,7 +111,7 @@ public partial class BuildingFieldPicker : WpfUserControl
 
 
 
-        if (SelectedDirection <= 0)
+        if (!BuildingFieldOptions.RequiresFixedDirection(SelectedType) && SelectedDirection <= 0)
 
         {
 
@@ -128,6 +139,23 @@ public partial class BuildingFieldPicker : WpfUserControl
 
         return true;
 
+    }
+
+    private void TypeCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        ApplyTypeVisibility();
+        TypeChanged?.Invoke(this, EventArgs.Empty);
+    }
+
+    private void ApplyTypeVisibility()
+    {
+        var fixedDirection = BuildingFieldOptions.RequiresFixedDirection(SelectedType);
+        if (fixedDirection)
+        {
+            SelectInt(DirectionCombo, 1);
+        }
+
+        DirectionCombo.IsEnabled = !fixedDirection;
     }
 
 

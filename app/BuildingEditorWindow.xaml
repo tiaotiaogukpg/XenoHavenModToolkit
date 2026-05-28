@@ -137,7 +137,7 @@
 
                 <controls:BuildingFieldPicker Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" x:Name="FieldPicker" HorizontalAlignment="Stretch"/>
 
-                <TextBlock Grid.Row="3" Grid.Column="0" Text="capbility" Style="{DynamicResource BuildingEditorLabelStyle}"/>
+                <TextBlock Grid.Row="3" Grid.Column="0" x:Name="CapbilityLabel" Text="capbility" Style="{DynamicResource BuildingEditorLabelStyle}"/>
                 <TextBox Grid.Row="3" Grid.Column="1" x:Name="CapbilityBox" Margin="0,0,0,8" Text="16" VerticalContentAlignment="Center" MinHeight="32"
                          ToolTip="容量范围：16–96"/>
 

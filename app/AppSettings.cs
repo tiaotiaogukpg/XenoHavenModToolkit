@@ -14,7 +14,7 @@ internal sealed class AppSettings
     {
         var dir = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "XenoHavenModToolkit");
+            "XenoHavenModTool");
         Directory.CreateDirectory(dir);
         return Path.Combine(dir, "settings.json");
     }

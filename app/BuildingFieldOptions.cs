@@ -5,8 +5,7 @@ internal static class BuildingFieldOptions
     internal static readonly string[] DefaultTypes =
     [
         "BOX",
-        "SIMPLE_OBJECT",
-        "PRODUCTION_LINE"
+        "SIMPLE_OBJECT"
     ];
 
     internal static readonly int[] DefaultDirections =

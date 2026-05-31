@@ -539,13 +539,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        var result = System.Windows.MessageBox.Show(
-            "将删除当前 Mod 目录内所有 *.meta 文件。该操作只建议用于发布版 Mod。是否继续？",
-            "清理 .meta",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Warning);
-
-        if (result != MessageBoxResult.Yes)
+        if (!ConfirmDialog.Show(this, "清理 .meta", "将删除当前 Mod 目录内所有 *.meta 文件。该操作只建议用于发布版 Mod。是否继续？"))
         {
             return;
         }
@@ -664,13 +658,7 @@ public partial class MainWindow : Window
         }
 
         var folderName = new DirectoryInfo(modRoot).Name;
-        var confirm = System.Windows.MessageBox.Show(
-            $"你确定要删除 “{folderName}“吗？",
-            "删除 MOD",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Warning);
-
-        if (confirm != MessageBoxResult.Yes)
+        if (!ConfirmDialog.Show(this, "删除 MOD", $"你确定要删除 “{folderName}“吗？"))
         {
             return;
         }
@@ -709,13 +697,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        var confirm = System.Windows.MessageBox.Show(
-            $"你确定要删除 “{selected.Id}-{selected.Name}” 吗？",
-            "删除 Building",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Warning);
-
-        if (confirm != MessageBoxResult.Yes)
+        if (!ConfirmDialog.Show(this, "删除 Building", $"你确定要删除 “{selected.Id}-{selected.Name}” 吗？"))
         {
             return;
         }

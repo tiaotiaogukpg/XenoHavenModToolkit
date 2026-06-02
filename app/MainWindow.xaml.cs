@@ -273,7 +273,7 @@ public partial class MainWindow : Window
         var opened = !string.IsNullOrWhiteSpace(currentModRoot) && Directory.Exists(currentModRoot);
         var selection = ClassifyCurrentSelection();
 
-        OpenModButton.IsEnabled = !opened;
+        OpenModButton.IsEnabled = true;
         NewModButton.IsEnabled = IsOverviewRootConfigured() && (selection == TreeSelectionKind.OverviewRoot || !opened);
 
         ModInfoButton.IsEnabled = opened &&
@@ -735,23 +735,29 @@ public partial class MainWindow : Window
         try
         {
             var (nextId, nextName) = SuggestNewBuildingDefaults();
+            var initial = new EditableBuilding(
+                nextId,
+                nextName,
+                "BOX",
+                1,
+                BuildingFieldOptions.DefaultCapbility,
+                gameData.DefaultWorkbenchId,
+                BuildingFieldOptions.FixedHealth,
+                1,
+                1,
+                []);
 
-            var dialog = new AddBuildingWindow(nextId, nextName)
-            {
-                Owner = this
-            };
-
-            if (dialog.ShowDialog() != true)
+            var dialog = new BuildingEditorWindow(initial, currentModRoot!, gameData) { Owner = this };
+            if (dialog.ShowDialog() != true || dialog.Result is null)
             {
                 return;
             }
 
-            var newEntry = dialog.Result!;
-            AddBuildingToBuildingsXml(newEntry);
+            UpsertBuildingToBuildingsXml(dialog.Result);
             SaveBuildingsXmlToDisk();
             ParseBuildingsFromEditor();
             RefreshBuildingNodesInTree();
-            Log($"已新增 Building：{newEntry.Id} - {newEntry.Name} ({newEntry.Type})。");
+            Log($"已新增 Building：{dialog.Result.Id} - {dialog.Result.Name} ({dialog.Result.Type})。");
         }
         catch (Exception ex)
         {

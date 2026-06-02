@@ -13,7 +13,7 @@ public partial class SettingsWindow : Window
         InitializeComponent();
         Settings = settings;
         OverviewRootBox.Text = settings.ModsOverviewRoot ?? string.Empty;
-        ThemeBox.SelectedValue = ThemeManager.Parse(settings.Theme).ToString();
+        OverviewRootPathText.Text = OverviewRootBox.Text;
         OpenLastModCheck.IsChecked = settings.OpenLastModOnStartup;
     }
 
@@ -36,14 +36,13 @@ public partial class SettingsWindow : Window
         }
 
         OverviewRootBox.Text = dialog.SelectedPath;
+        OverviewRootPathText.Text = dialog.SelectedPath;
     }
 
     private void Save_Click(object sender, RoutedEventArgs e)
     {
         Settings.ModsOverviewRoot = string.IsNullOrWhiteSpace(OverviewRootBox.Text) ? null : OverviewRootBox.Text.Trim();
-        Settings.Theme = (ThemeBox.SelectedValue as string) ?? nameof(AppTheme.Light);
         Settings.OpenLastModOnStartup = OpenLastModCheck.IsChecked == true;
-        ThemeManager.ApplyTheme(ThemeManager.Parse(Settings.Theme));
         DialogResult = true;
     }
 }

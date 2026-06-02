@@ -183,9 +183,9 @@
                                Foreground="{DynamicResource Theme.SecondaryTextColor}"/>
                 </StackPanel>
 
-                <TextBlock Grid.Row="8" Grid.Column="0" Text="物品图标" Style="{DynamicResource BuildingEditorLabelStyle}" Margin="0,12,10,0"/>
+                <TextBlock Grid.Row="8" Grid.Column="0" Text="物品栏图标" Style="{DynamicResource BuildingEditorLabelStyle}" Margin="0,12,10,0"/>
                 <Button Grid.Row="8" Grid.Column="1"
-                        Content="导入物品图标"
+                        Content="导入物品栏图标"
                         Click="ImportIconImage_Click"
                         HorizontalAlignment="Left"
                         Margin="0,12,0,4"/>
@@ -226,9 +226,9 @@
                     </Border>
                 </Border>
 
-                <TextBlock Grid.Row="11" Grid.Column="0" Text="地图显示图" Style="{DynamicResource BuildingEditorLabelStyle}" Margin="0,4,10,0"/>
+                <TextBlock Grid.Row="11" Grid.Column="0" Text="组件图片" Style="{DynamicResource BuildingEditorLabelStyle}" Margin="0,4,10,0"/>
                 <Button Grid.Row="11" Grid.Column="1"
-                        Content="导入地图显示图"
+                        Content="导入组件图片"
                         Click="ImportWorldImage_Click"
                         HorizontalAlignment="Left"
                         Margin="0,4,0,4"/>

@@ -7,8 +7,7 @@ public partial class App : System.Windows.Application
 {
     private void App_Startup(object sender, System.Windows.StartupEventArgs e)
     {
-        var settings = AppSettings.Load();
-        ThemeManager.ApplyTheme(ThemeManager.Parse(settings.Theme));
+        ThemeManager.ApplyTheme(AppTheme.Dark);
 
         var window = new MainWindow();
         window.InitializeOnStartup();

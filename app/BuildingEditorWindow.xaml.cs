@@ -177,22 +177,22 @@ public partial class BuildingEditorWindow : Window
 
     private void ImportWorldImage_Click(object sender, RoutedEventArgs e)
     {
-        ImportImageToCurrentBuilding(BuildingImagesRelativePath, "地图显示图");
+        ImportImageToCurrentBuilding(BuildingImagesRelativePath, "组件图片");
     }
 
     private void ImportIconImage_Click(object sender, RoutedEventArgs e)
     {
-        ImportImageToCurrentBuilding(BuildingIconsRelativePath, "物品图标");
+        ImportImageToCurrentBuilding(BuildingIconsRelativePath, "物品栏图标");
     }
 
     private void WorldImage_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
-        ImportImageToCurrentBuilding(BuildingImagesRelativePath, "地图显示图");
+        ImportImageToCurrentBuilding(BuildingImagesRelativePath, "组件图片");
     }
 
     private void IconImage_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
-        ImportImageToCurrentBuilding(BuildingIconsRelativePath, "物品图标");
+        ImportImageToCurrentBuilding(BuildingIconsRelativePath, "物品栏图标");
     }
 
     private void WorldImage_DragEnter(object sender, WpfDragEventArgs e)
@@ -207,7 +207,7 @@ public partial class BuildingEditorWindow : Window
 
     private void WorldImage_Drop(object sender, WpfDragEventArgs e)
     {
-        HandleImageDrop(e, BuildingImagesRelativePath, "地图显示图", WorldImageDropBorder);
+        HandleImageDrop(e, BuildingImagesRelativePath, "组件图片", WorldImageDropBorder);
     }
 
     private void IconImage_DragEnter(object sender, WpfDragEventArgs e)
@@ -222,7 +222,7 @@ public partial class BuildingEditorWindow : Window
 
     private void IconImage_Drop(object sender, WpfDragEventArgs e)
     {
-        HandleImageDrop(e, BuildingIconsRelativePath, "物品图标", IconImageDropBorder);
+        HandleImageDrop(e, BuildingIconsRelativePath, "物品栏图标", IconImageDropBorder);
     }
 
     private void ImportImageToCurrentBuilding(string targetRelativeFolder, string slotName, string? sourceImagePath = null)
@@ -322,8 +322,8 @@ public partial class BuildingEditorWindow : Window
     {
         var worldPath = Path.Combine(modRoot, BuildingImagesRelativePath, $"{buildingId}.png");
         var iconPath = Path.Combine(modRoot, BuildingIconsRelativePath, $"{buildingId}.png");
-        WorldImagePathText.Text = $"地图显示图：{Path.GetRelativePath(modRoot, worldPath)}";
-        IconImagePathText.Text = $"物品图标：{Path.GetRelativePath(modRoot, iconPath)}";
+        WorldImagePathText.Text = $"组件图片：{Path.GetRelativePath(modRoot, worldPath)}";
+        IconImagePathText.Text = $"物品栏图标：{Path.GetRelativePath(modRoot, iconPath)}";
         WorldImagePreview.Source = LoadBitmapIfExists(worldPath);
         IconImagePreview.Source = LoadBitmapIfExists(iconPath);
     }

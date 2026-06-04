@@ -10,6 +10,9 @@
 # Publish / packaging outputs (repo-level)
 dist/
 
+# Local verify / scratch publish trees (scripts, manual smoke tests)
+.build/
+
 # --- Visual Studio / MSBuild ---
 .vs/
 *.user
@@ -45,8 +48,9 @@ coverage*/
 .idea/
 *.sln.iml
 
-# --- VS Code ---
+# --- VS Code / Cursor ---
 .vscode/
+.cursor/
 
 # --- OS / tooling clutter ---
 [Tt]humbs.db
@@ -58,5 +62,12 @@ Desktop.ini
 *.tmp
 *.temp
 
-# 开发规范/踩坑总结（请见 docs/AvoidTypeAmbiguity-WpfWinForms.md）
+# --- Generated docs (export via scripts/export-steam-guide-pdf.ps1) ---
+docs/SteamModDevGuide.pdf
 
+# --- Python (scripts/md_to_pdf.py) ---
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/

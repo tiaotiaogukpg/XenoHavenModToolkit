@@ -81,7 +81,7 @@ using WpfDragEventArgs = System.Windows.DragEventArgs;
 你只要用到以下关键字，就要想到可能会撞名：
 
 - `MessageBox`
-- `Drag*`
+- `Drag`*
 - `DataFormats`
 - `OpenFileDialog`
 
@@ -103,7 +103,7 @@ using WpfDragEventArgs = System.Windows.DragEventArgs;
 
 ## 如何“保证以后不会再犯”
 
-- **约定写法**：WinForms 只用 `WinForms.*`；WPF 的同名类型统一用 `System.Windows.*` 或 `Wpf*` 别名。
+- **约定写法**：WinForms 只用 `WinForms.`*；WPF 的同名类型统一用 `System.Windows.`* 或 `Wpf*` 别名。
 - **代码评审点**：看到 `using System.Windows.Forms;` 或看到裸写 `MessageBox/DragEventArgs/DataFormats` 就立刻改成别名/全限定名。
 - **落地策略**：以后新增 UI 相关功能时，先在文件顶部补齐常用别名（`WpfDataFormats/WpfDragEventArgs/...`），再写事件与逻辑代码。
 

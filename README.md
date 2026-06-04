@@ -106,7 +106,14 @@ dist/win-x64/
 | 文档                                                   | 说明                                       |
 | ---------------------------------------------------- | ---------------------------------------- |
 | [docs/SteamModDevGuide.md](docs/SteamModDevGuide.md) | **Steam / 玩家向**：如何打开工具、创建 Mod、编辑 Mod 与组件 |
+| [docs/SteamModDevGuide.pdf](docs/SteamModDevGuide.pdf) | 同上内容的 PDF 版（含配图） |
 | [docs/ModDevGuide.md](docs/ModDevGuide.md)           | **技术向**：目录结构、XML 字段、图片命名与游戏对接约定          |
+
+重新导出 Steam 指南 PDF（需 `pip install markdown playwright` 且 `python -m playwright install chromium`）：
+
+```powershell
+.\scripts\export-steam-guide-pdf.ps1
+```
 
 
 ## 重要规则

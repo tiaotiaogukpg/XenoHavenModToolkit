@@ -20,4 +20,25 @@
     <health>100</health>
     <barrier>true</barrier>
   </ModBuildingXML>
+  <ModBuildingXML>
+    <id>70000002</id>
+    <name>Example Production Line</name>
+    <type>PRODUCTION_LINE</type>
+    <direction>1</direction>
+    <capbility>16</capbility>
+    <size>
+      <x>1</x>
+      <y>1</y>
+    </size>
+    <workbenchId>100083</workbenchId>
+    <simulateId>302323</simulateId>
+    <materials>
+      <ModCraftMaterialData>
+        <id>100055</id>
+        <count>10</count>
+      </ModCraftMaterialData>
+    </materials>
+    <health>100</health>
+    <barrier>true</barrier>
+  </ModBuildingXML>
 </ArrayOfModBuildingXML>

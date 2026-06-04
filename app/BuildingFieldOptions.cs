@@ -5,7 +5,8 @@ internal static class BuildingFieldOptions
     internal static readonly string[] DefaultTypes =
     [
         "BOX",
-        "SIMPLE_OBJECT"
+        "SIMPLE_OBJECT",
+        "PRODUCTION_LINE"
     ];
 
     internal static readonly int[] DefaultDirections =
@@ -22,6 +23,12 @@ internal static class BuildingFieldOptions
     internal static bool RequiresFixedDirection(string type)
         => string.Equals(type, "BOX", StringComparison.OrdinalIgnoreCase) ||
            string.Equals(type, "SIMPLE_OBJECT", StringComparison.OrdinalIgnoreCase);
+
+    internal static bool IsProductionLine(string type)
+        => string.Equals(type, "PRODUCTION_LINE", StringComparison.OrdinalIgnoreCase);
+
+    internal static bool RequiresSimulateId(string type)
+        => IsProductionLine(type);
 
     internal static bool ShowsCapbility(string type)
         => !string.Equals(type, "SIMPLE_OBJECT", StringComparison.OrdinalIgnoreCase);

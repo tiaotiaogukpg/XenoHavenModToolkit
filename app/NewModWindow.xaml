@@ -89,8 +89,10 @@
                 <TextBlock Grid.Row="4" Grid.Column="0" Text="auth" Style="{DynamicResource BuildingEditorLabelStyle}"/>
                 <TextBox Grid.Row="4" Grid.Column="1" x:Name="AuthorBox" Margin="0,0,0,8" MinHeight="32" VerticalContentAlignment="Center"/>
 
-                <TextBlock Grid.Row="5" Grid.Column="0" Text="version" Style="{DynamicResource BuildingEditorLabelStyle}"/>
-                <TextBox Grid.Row="5" Grid.Column="1" x:Name="VersionBox" Text="1.0.0" Margin="0,0,0,8" MinHeight="32" VerticalContentAlignment="Center"/>
+                <TextBlock Grid.Row="5" Grid.Column="0" Text="version" Style="{DynamicResource BuildingEditorLabelStyle}"
+                           ToolTip="默认游戏最新版（目前 1.0.0）"/>
+                <TextBox Grid.Row="5" Grid.Column="1" x:Name="VersionBox" Text="1.0.0" Margin="0,0,0,8" MinHeight="32" VerticalContentAlignment="Center"
+                         ToolTip="默认游戏最新版（目前 1.0.0）"/>
 
                 <TextBlock Grid.Row="6" Grid.Column="0" Text="category" Style="{DynamicResource BuildingEditorLabelStyle}"/>
                 <TextBox Grid.Row="6" Grid.Column="1" x:Name="CategoryBox" Text="Building" Margin="0,0,0,8" MinHeight="32" VerticalContentAlignment="Center"/>

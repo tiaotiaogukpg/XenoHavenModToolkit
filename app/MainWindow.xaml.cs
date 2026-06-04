@@ -377,6 +377,9 @@ public partial class MainWindow : Window
     private int NormalizeWorkbenchId(int raw)
         => gameData.FindWorkbench(raw)?.Id ?? gameData.DefaultWorkbenchId;
 
+    private int NormalizeProductionLineId(int raw)
+        => gameData.FindProductionLine(raw)?.Id ?? gameData.DefaultProductionLineId;
+
     private static int NormalizeCapbility(int raw)
     {
         if (raw < BuildingFieldOptions.MinCapbility)
@@ -742,6 +745,7 @@ public partial class MainWindow : Window
                 1,
                 BuildingFieldOptions.DefaultCapbility,
                 gameData.DefaultWorkbenchId,
+                0,
                 BuildingFieldOptions.FixedHealth,
                 1,
                 1,
@@ -914,6 +918,12 @@ public partial class MainWindow : Window
             ValidatePositiveInt(element, "direction", id, messages);
             ValidatePositiveInt(element, "capbility", id, messages);
             ValidatePositiveInt(element, "workbenchId", id, messages);
+            var typeValue = element.Elements().FirstOrDefault(e => e.Name.LocalName == "type")?.Value ?? string.Empty;
+            if (BuildingFieldOptions.RequiresSimulateId(typeValue))
+            {
+                ValidateSimulateId(element, id, messages);
+            }
+
             ValidatePositiveInt(element, "health", id, messages);
 
             var size = element.Elements().FirstOrDefault(e => e.Name.LocalName == "size");
@@ -947,6 +957,27 @@ public partial class MainWindow : Window
         if (!int.TryParse(value, out var number) || number <= 0)
         {
             messages.Add($"[错误] 建筑 {buildingId} 的 {scope}.{childName} 需要是正整数。");
+        }
+    }
+
+    private void ValidateSimulateId(XElement parent, int buildingId, List<string> messages)
+    {
+        var value = parent.Elements().FirstOrDefault(e => e.Name.LocalName == "simulateId")?.Value;
+        if (!int.TryParse(value, out var simulateId) || simulateId <= 0)
+        {
+            messages.Add($"[错误] 建筑 {buildingId} 的 building.simulateId 需要是正整数。");
+            return;
+        }
+
+        if (gameData.ProductionLines.Count == 0)
+        {
+            messages.Add($"[警告] 未加载 {GameDataPaths.ProductionLinesFileName}，无法校验建筑 {buildingId} 的 simulateId。");
+            return;
+        }
+
+        if (gameData.FindProductionLine(simulateId) is null)
+        {
+            messages.Add($"[错误] 建筑 {buildingId} 的 simulateId 不在 {GameDataPaths.ProductionLinesFileName} 中：{simulateId}。");
         }
     }
 
@@ -1541,6 +1572,7 @@ public partial class MainWindow : Window
         int Direction,
         int Capbility,
         int WorkbenchId,
+        int SimulateId,
         int Health,
         int SizeX,
         int SizeY,
@@ -1563,6 +1595,9 @@ public partial class MainWindow : Window
             new XElement("direction", b.Direction),
             new XElement("capbility", b.Capbility),
             new XElement("workbenchId", b.WorkbenchId),
+            BuildingFieldOptions.RequiresSimulateId(b.Type) && b.SimulateId > 0
+                ? new XElement("simulateId", b.SimulateId)
+                : null,
             new XElement("health", b.Health),
             new XElement("size",
                 new XElement("x", b.SizeX),
@@ -1626,6 +1661,7 @@ public partial class MainWindow : Window
                 1,
                 BuildingFieldOptions.DefaultCapbility,
                 gameData.DefaultWorkbenchId,
+                0,
                 BuildingFieldOptions.FixedHealth,
                 b.SizeX,
                 b.SizeY,
@@ -1667,11 +1703,11 @@ public partial class MainWindow : Window
                 ? (string.IsNullOrWhiteSpace(selected.Type) ? $"Building_{selected.Id}" : selected.Type)
                 : selected.Name;
             var typeForEdit = string.IsNullOrWhiteSpace(selected.Type) ? "Building" : selected.Type;
-            return new EditableBuilding(selected.Id, nameForEdit, typeForEdit, 1, BuildingFieldOptions.DefaultCapbility, gameData.DefaultWorkbenchId, BuildingFieldOptions.FixedHealth, 1, 1, []);
+            return new EditableBuilding(selected.Id, nameForEdit, typeForEdit, 1, BuildingFieldOptions.DefaultCapbility, gameData.DefaultWorkbenchId, 0, BuildingFieldOptions.FixedHealth, 1, 1, []);
         }
 
         var (nextId, nextName) = SuggestNewBuildingDefaults();
-        return new EditableBuilding(nextId, nextName, "Building", 1, BuildingFieldOptions.DefaultCapbility, gameData.DefaultWorkbenchId, BuildingFieldOptions.FixedHealth, 1, 1, []);
+        return new EditableBuilding(nextId, nextName, "Building", 1, BuildingFieldOptions.DefaultCapbility, gameData.DefaultWorkbenchId, 0, BuildingFieldOptions.FixedHealth, 1, 1, []);
     }
 
     private EditableBuilding? TryReadEditableBuildingById(int id)
@@ -1713,6 +1749,7 @@ public partial class MainWindow : Window
                 ReadInt("direction", 1),
                 NormalizeCapbility(ReadInt("capbility", BuildingFieldOptions.DefaultCapbility)),
                 NormalizeWorkbenchId(ReadInt("workbenchId", gameData.DefaultWorkbenchId)),
+                NormalizeProductionLineId(ReadInt("simulateId", gameData.DefaultProductionLineId)),
                 BuildingFieldOptions.FixedHealth,
                 sx,
                 sy,

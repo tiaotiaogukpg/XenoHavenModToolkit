@@ -18,6 +18,7 @@ public partial class BuildingFieldPicker : WpfUserControl
 {
 
     private IReadOnlyList<LabeledIdOption> workbenchOptions = [];
+    private IReadOnlyList<LabeledIdOption> productionLineOptions = [];
 
     public event EventHandler? TypeChanged;
 
@@ -53,6 +54,8 @@ public partial class BuildingFieldPicker : WpfUserControl
 
     public int SelectedWorkbenchId => WorkbenchIdCombo.SelectedValue is int value ? value : 0;
 
+    public int SelectedSimulateId => SimulateIdCombo.SelectedValue is int value ? value : 0;
+
 
 
     internal void InitializeWorkbenches(GameDataCatalog catalog)
@@ -77,9 +80,22 @@ public partial class BuildingFieldPicker : WpfUserControl
 
     }
 
+    internal void InitializeProductionLines(GameDataCatalog catalog)
+    {
+        productionLineOptions = catalog.ProductionLines.ToList();
+        SimulateIdCombo.ItemsSource = productionLineOptions;
+        SimulateIdCombo.DisplayMemberPath = nameof(LabeledIdOption.Display);
+        SimulateIdCombo.SelectedValuePath = nameof(LabeledIdOption.Id);
+
+        if (productionLineOptions.Count > 0)
+        {
+            SimulateIdCombo.SelectedValue = productionLineOptions[0].Id;
+        }
+    }
 
 
-    public void SetValues(string type, int direction, int workbenchId)
+
+    public void SetValues(string type, int direction, int workbenchId, int simulateId)
 
     {
 
@@ -88,6 +104,8 @@ public partial class BuildingFieldPicker : WpfUserControl
         SelectInt(DirectionCombo, direction);
 
         SelectWorkbench(workbenchId);
+
+        SelectProductionLine(simulateId);
 
         ApplyTypeVisibility();
 
@@ -133,6 +151,13 @@ public partial class BuildingFieldPicker : WpfUserControl
 
         }
 
+        if (BuildingFieldOptions.RequiresSimulateId(SelectedType) &&
+            (SelectedSimulateId <= 0 || productionLineOptions.All(option => option.Id != SelectedSimulateId)))
+        {
+            message = "请选择 simulateId。请确认 DOC/S-生产线定义.xlsx 已加载。";
+            return false;
+        }
+
 
 
         message = string.Empty;
@@ -156,6 +181,11 @@ public partial class BuildingFieldPicker : WpfUserControl
         }
 
         DirectionCombo.IsEnabled = !fixedDirection;
+        var simulateVisibility = BuildingFieldOptions.RequiresSimulateId(SelectedType)
+            ? System.Windows.Visibility.Visible
+            : System.Windows.Visibility.Collapsed;
+        SimulateIdLabel.Visibility = simulateVisibility;
+        SimulateIdCombo.Visibility = simulateVisibility;
     }
 
 
@@ -188,6 +218,22 @@ public partial class BuildingFieldPicker : WpfUserControl
 
         WorkbenchIdCombo.SelectedValue = workbenchOptions[0].Id;
 
+    }
+
+    private void SelectProductionLine(int simulateId)
+    {
+        if (productionLineOptions.Count == 0)
+        {
+            return;
+        }
+
+        if (productionLineOptions.Any(option => option.Id == simulateId))
+        {
+            SimulateIdCombo.SelectedValue = simulateId;
+            return;
+        }
+
+        SimulateIdCombo.SelectedValue = productionLineOptions[0].Id;
     }
 
 

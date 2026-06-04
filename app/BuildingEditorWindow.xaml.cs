@@ -40,7 +40,8 @@ public partial class BuildingEditorWindow : Window
         IdBox.Text = buildingId.ToString(CultureInfo.InvariantCulture);
         NameBox.Text = initial.Name;
         FieldPicker.InitializeWorkbenches(gameData);
-        FieldPicker.SetValues(initial.Type, initial.Direction, initial.WorkbenchId);
+        FieldPicker.InitializeProductionLines(gameData);
+        FieldPicker.SetValues(initial.Type, initial.Direction, initial.WorkbenchId, initial.SimulateId);
         FieldPicker.TypeChanged += (_, _) => ApplyCapbilityVisibility();
         CapbilityBox.Text = ClampCapbility(initial.Capbility).ToString(CultureInfo.InvariantCulture);
         ApplyCapbilityVisibility();
@@ -122,6 +123,7 @@ public partial class BuildingEditorWindow : Window
         var type = FieldPicker.SelectedType;
         var direction = FieldPicker.EffectiveDirection;
         var workbenchId = FieldPicker.SelectedWorkbenchId;
+        var simulateId = FieldPicker.SelectedSimulateId;
         var capbilityVisible = BuildingFieldOptions.ShowsCapbility(type);
 
         var capbility = BuildingFieldOptions.DefaultCapbility;
@@ -138,7 +140,7 @@ public partial class BuildingEditorWindow : Window
         }
 
         Result = new MainWindow.EditableBuilding(
-            buildingId, name, type, direction, capbility, workbenchId, BuildingFieldOptions.FixedHealth, sx, sy, materialSnapshot);
+            buildingId, name, type, direction, capbility, workbenchId, simulateId, BuildingFieldOptions.FixedHealth, sx, sy, materialSnapshot);
         DialogResult = true;
     }
 

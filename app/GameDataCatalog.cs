@@ -6,17 +6,21 @@ namespace XenoHavenModToolkit;
 
 internal sealed class GameDataCatalog
 {
-    private static readonly string[] NameHeaderAliases = ["名称", "name", "Name", "材料名称", "物品名称", "工作台名称"];
-    private static readonly string[] IdHeaderAliases = ["ID", "id", "Id", "材料ID", "物品ID", "工作台ID"];
+    private static readonly string[] NameHeaderAliases = ["名称", "name", "Name", "材料名称", "物品名称", "工作台名称", "生产线名称"];
+    private static readonly string[] IdHeaderAliases = ["ID", "id", "Id", "材料ID", "物品ID", "工作台ID", "生产线ID"];
 
     private GameDataCatalog(
         IReadOnlyList<LabeledIdOption> materials,
         IReadOnlyList<LabeledIdOption> workbenches,
-        string? loadError)
+        IReadOnlyList<LabeledIdOption> productionLines,
+        string? loadError,
+        string? productionLinesLoadWarning = null)
     {
         Materials = materials;
         Workbenches = workbenches;
+        ProductionLines = productionLines;
         LoadError = loadError;
+        ProductionLinesLoadWarning = productionLinesLoadWarning;
         IsReady = loadError is null && materials.Count > 0 && workbenches.Count > 0;
     }
 
@@ -24,9 +28,13 @@ internal sealed class GameDataCatalog
 
     public IReadOnlyList<LabeledIdOption> Workbenches { get; }
 
+    public IReadOnlyList<LabeledIdOption> ProductionLines { get; }
+
     public bool IsReady { get; }
 
     public string? LoadError { get; }
+
+    public string? ProductionLinesLoadWarning { get; }
 
     public static GameDataCatalog Load()
     {
@@ -35,19 +43,38 @@ internal sealed class GameDataCatalog
             var docDir = GameDataPaths.ResolveDocDirectory();
             var materialsPath = Path.Combine(docDir, GameDataPaths.MaterialsFileName);
             var workbenchesPath = Path.Combine(docDir, GameDataPaths.WorkbenchesFileName);
+            var productionLinesPath = Path.Combine(docDir, GameDataPaths.ProductionLinesFileName);
 
             if (!File.Exists(materialsPath) || !File.Exists(workbenchesPath))
             {
-                return new GameDataCatalog([], [], $"未找到游戏数据表，请确认目录存在：{docDir}");
+                return new GameDataCatalog([], [], [], $"未找到游戏数据表，请确认目录存在：{docDir}");
             }
 
             var materials = LoadSheet(materialsPath, GameDataPaths.MaterialsFileName);
             var workbenches = LoadSheet(workbenchesPath, GameDataPaths.WorkbenchesFileName);
-            return new GameDataCatalog(materials, workbenches, null);
+            var productionLines = Array.Empty<LabeledIdOption>();
+            string? productionLinesLoadWarning = null;
+            if (File.Exists(productionLinesPath))
+            {
+                try
+                {
+                    productionLines = LoadSheet(productionLinesPath, GameDataPaths.ProductionLinesFileName).ToArray();
+                }
+                catch (Exception ex)
+                {
+                    productionLinesLoadWarning = $"加载 {GameDataPaths.ProductionLinesFileName} 失败：{ex.Message}";
+                }
+            }
+            else
+            {
+                productionLinesLoadWarning = $"未找到 {GameDataPaths.ProductionLinesFileName}，PRODUCTION_LINE 的 simulateId 下拉不可用。";
+            }
+
+            return new GameDataCatalog(materials, workbenches, productionLines, null, productionLinesLoadWarning);
         }
         catch (Exception ex)
         {
-            return new GameDataCatalog([], [], $"加载游戏数据表失败：{ex.Message}");
+            return new GameDataCatalog([], [], [], $"加载游戏数据表失败：{ex.Message}");
         }
     }
 
@@ -57,8 +84,14 @@ internal sealed class GameDataCatalog
     public LabeledIdOption? FindWorkbench(int id)
         => Workbenches.FirstOrDefault(option => option.Id == id);
 
+    public LabeledIdOption? FindProductionLine(int id)
+        => ProductionLines.FirstOrDefault(option => option.Id == id);
+
     public int DefaultWorkbenchId
         => Workbenches.Count > 0 ? Workbenches[0].Id : 0;
+
+    public int DefaultProductionLineId
+        => ProductionLines.Count > 0 ? ProductionLines[0].Id : 0;
 
     private static IReadOnlyList<LabeledIdOption> LoadSheet(string filePath, string displayName)
     {

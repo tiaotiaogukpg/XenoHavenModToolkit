@@ -7,6 +7,7 @@ internal static class GameDataPaths
     internal const string DocFolderName = "DOC";
     internal const string MaterialsFileName = "K-可用材料表.xlsx";
     internal const string WorkbenchesFileName = "K-可用工作台.xlsx";
+    internal const string ProductionLinesFileName = "S-生产线定义.xlsx";
 
     internal static string ResolveDocDirectory()
     {
@@ -40,6 +41,8 @@ internal static class GameDataPaths
     internal static string MaterialsFilePath => Path.Combine(ResolveDocDirectory(), MaterialsFileName);
 
     internal static string WorkbenchesFilePath => Path.Combine(ResolveDocDirectory(), WorkbenchesFileName);
+
+    internal static string ProductionLinesFilePath => Path.Combine(ResolveDocDirectory(), ProductionLinesFileName);
 
     private static bool ContainsGameDataFiles(string directory)
         => File.Exists(Path.Combine(directory, MaterialsFileName))

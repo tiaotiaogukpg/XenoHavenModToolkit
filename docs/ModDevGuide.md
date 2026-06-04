@@ -2,6 +2,8 @@
 
 本文档基于当前已验证的 Mod 样例与 `ModManager.cs` 行为整理。它不是官方 SDK 文档，而是面向基础内容 Mod 作者的实用约定说明。
 
+工具操作步骤（打开工具、新建/编辑 Mod 与组件）见 [SteamModDevGuide.md](./SteamModDevGuide.md)。
+
 ## 1. MOD 加载模型
 
 XenoHaven 当前的 Mod 系统属于“文件夹扫描 + XML 定义 + 启动时注册”的 Unity 内容扩展架构。
@@ -65,7 +67,7 @@ MyBuildingMod/
 
 - `name`：Mod 名称。
 - `auth`：作者。
-- `version`：Mod 版本。
+- `version`：Mod 版本，默认与游戏最新版一致（目前 `1.0.0`）。
 - `description`：描述，必填。
 
 XenoHaven MOD Toolkit 会以 UTF-8（无 BOM）写回 XML，并保持多行缩进，避免中文内容或外部工具处理时出现编码问题。
@@ -83,8 +85,8 @@ XenoHaven MOD Toolkit 会以 UTF-8（无 BOM）写回 XML，并保持多行缩�
 ```xml
 <ModBuildingXML>
   <id>1</id>
-  <name>Example Box</name>
-  <type>BOX</type>
+  <name>Example Production Line</name>
+  <type>PRODUCTION_LINE</type>
   <direction>1</direction>
   <capbility>10</capbility>
   <size>
@@ -92,6 +94,7 @@ XenoHaven MOD Toolkit 会以 UTF-8（无 BOM）写回 XML，并保持多行缩�
     <y>1</y>
   </size>
   <workbenchId>100083</workbenchId>
+  <simulateId>302323</simulateId>
   <materials>
     <ModCraftMaterialData>
       <id>100055</id>
@@ -108,8 +111,9 @@ XenoHaven MOD Toolkit 会以 UTF-8（无 BOM）写回 XML，并保持多行缩�
 - `id` 必须唯一。重复 ID 会导致加载冲突或失败。
 - `size.x` 和 `size.y` 表示占地尺寸，应为正整数。
 - `materials` 表示建造材料列表，每个 `ModCraftMaterialData` 包含材料 `id` 与数量 `count`。
-  XenoHaven MOD Toolkit 会在 Building 编辑窗中从 `DOC/K-可用材料表.xlsx` 加载材料下拉（界面显示 `木头-100055`，保存 XML 时写入 `100055`）；数量必须为 1–200 的正整数。
+XenoHaven MOD Toolkit 会在 Building 编辑窗中从 `DOC/K-可用材料表.xlsx` 加载材料下拉（界面显示 `木头-100055`，保存 XML 时写入 `100055`）；数量必须为 1–200 的正整数。
 - `workbenchId` 必须从 `DOC/K-可用工作台.xlsx` 中选择（界面显示 `木工桌-100083`，保存 XML 时写入 `100083`）。
+- `type` 为 `PRODUCTION_LINE` 时必须填写 `simulateId`，它表示这个 Mod 建筑要模拟哪一条原版生产线；XenoHaven MOD Toolkit 会从 `DOC/S-生产线定义.xlsx` 加载下拉（界面显示 `炼油厂-302323`，保存 XML 时写入 `302323`）。
 - `barrier` 表示是否作为阻挡/障碍处理。
 
 注意：字段名 `capbility` 按当前可行样例保留拼写，不要自行改成 `capability`，否则游戏端可能无法反序列化。
@@ -156,26 +160,38 @@ XenoHaven MOD Toolkit 提供：
 
 ## 7. 游戏数据表（DOC）
 
-工具从仓库根目录 `DOC/` 读取两份 Excel（构建/发布时会复制到程序目录下的 `DOC/`）：
+工具从仓库根目录 `DOC/` 读取 Excel（构建/发布时会复制到程序目录下的 `DOC/`）：
 
-| 文件 | 用途 |
-|------|------|
-| `K-可用材料表.xlsx` | 制造公式材料下拉 |
-| `K-可用工作台.xlsx` | `workbenchId` 下拉 |
+
+| 文件             | 用途                                  |
+| -------------- | ----------------------------------- |
+| `K-可用材料表.xlsx` | 制造公式材料下拉                            |
+| `K-可用工作台.xlsx` | `workbenchId` 下拉                    |
+| `S-生产线定义.xlsx` | `PRODUCTION_LINE` 的 `simulateId` 下拉 |
+
 
 表头需包含「名称」与「ID」列（也支持 `name`/`id` 等别名）。界面统一显示为 `名称-ID`，写入 XML 的仍是数字 ID。
 
-## 8. 使用 XenoHaven MOD Toolkit
+## 8. 游戏端 PRODUCTION_LINE 对接
+
+`PRODUCTION_LINE` 的工具端 XML 字段需要游戏端配套读取：
+
+- `ModBuildingXML` 增加 `public int simulateId;`。
+- `ModBuildingType` 增加 `PRODUCTION_LINE`。
+- 在 `ProductionLineComponent` 同目录创建 `ModProductlineComponent : MonoBehaviour`，用于保存当前 Mod 建筑的 `simulateId`。
+- `ProductionLineComponent` 查找公式时优先读取 `ModProductlineComponent`；存在且 `simulateId > 0` 时使用 `ProductLineDatabase.Instance.Find(simulateId)`，否则保留原来的 `ProductLineDatabase.Instance.Find(creature.ID)`。
+
+## 9. 使用 XenoHaven MOD Toolkit
 
 基本流程：
 
 1. 打开工具。
 2. 选择一个 Mod 根目录，例如 `MyBuildingMod/`。
 3. 在左侧树中选中对应节点后，顶栏按钮才会启用（类似资源管理器）：
-   - 选中当前 Mod 根或 `main.xml` → **Mod 信息**
-   - 选中 `Buildings.xml` → **新建 Building**
-   - 选中某个 Building 节点（或右侧磁贴）→ **编辑 Building** / **删除 Building**
-   - 选中当前 Mod 根 → **导出发布版** / **清理 .meta**
+  - 选中当前 Mod 根或 `main.xml` → **Mod 信息**
+  - 选中 `Buildings.xml` → **新建 Building**
+  - 选中某个 Building 节点（或右侧磁贴）→ **编辑 Building** / **删除 Building**
+  - 选中当前 Mod 根 → **导出发布版** / **清理 .meta**
 4. 编辑 `main.xml` 和 `Thing/Buildings/Buildings.xml`（双击 Building 节点可打开编辑窗）。
 5. 在右侧选择一个建筑条目可同步树选中并预览图片。
 6. 导入“地图显示图”或“物品图标”，工具会自动保存为 `<id>.png`。
@@ -196,3 +212,4 @@ XenoHaven MOD Toolkit 提供：
 - 修改 XML 后先用工具校验，再进游戏测试。
 - 发布前清理 `.meta`。
 - 不要随意改动已验证 XML 字段名，尤其是 `capbility` 这类与游戏端反序列化强绑定的字段。
+

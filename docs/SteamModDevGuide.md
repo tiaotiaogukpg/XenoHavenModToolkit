@@ -167,11 +167,11 @@ dotnet run --project .\app\app.csproj
 | ------------------- | -------------------------------------------------------------------- |
 | **id**              | 只读，与图片文件名对应。                                                         |
 | **name**            | 组件显示名称。                                                              |
-| **type**            | `BOX`、`SIMPLE_OBJECT`、`PRODUCTION_LINE`。                             |
-| **direction**       | 朝向；`BOX` / `SIMPLE_OBJECT` 固定为 `1`。                                  |
+| **type**            | `BOX`、`SIMPLE_OBJECT`、`SMALL_LAMP`、`STREET_LIGHT`、`PRODUCTION_LINE`。                 |
+| **direction**       | 朝向；`BOX` / `SIMPLE_OBJECT` / `SMALL_LAMP` / `STREET_LIGHT` 固定为 `1`。                    |
 | **workbenchId**     | 工作台，从游戏数据表下拉（显示 `名称-ID`，XML 存数字 ID）。                                 |
 | **simulateId**      | 仅 **PRODUCTION_LINE** 需要，选择要模拟的原版生产线。                                |
-| **capbility**       | 容量（16–96）；`SIMPLE_OBJECT` 不显示此字段。拼写须为 `capbility`（勿写成 `capability`）。 |
+| **capbility**       | 容量（16–96）；`SIMPLE_OBJECT` / `SMALL_LAMP` / `STREET_LIGHT` 不显示此字段。拼写须为 `capbility`（勿写成 `capability`）。 |
 | **health**          | 固定为 `10`。                                                            |
 | **size.x / size.y** | 占地尺寸（正整数）。                                                           |
 | **制造公式**            | 材料从材料表选择，单条数量 1–200。                                                 |

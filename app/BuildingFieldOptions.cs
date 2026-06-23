@@ -6,6 +6,8 @@ internal static class BuildingFieldOptions
     [
         "BOX",
         "SIMPLE_OBJECT",
+        "SMALL_LAMP",
+        "STREET_LIGHT",
         "PRODUCTION_LINE"
     ];
 
@@ -22,14 +24,20 @@ internal static class BuildingFieldOptions
 
     internal static bool RequiresFixedDirection(string type)
         => string.Equals(type, "BOX", StringComparison.OrdinalIgnoreCase) ||
-           string.Equals(type, "SIMPLE_OBJECT", StringComparison.OrdinalIgnoreCase);
+           IsSimpleDecorType(type);
 
     internal static bool IsProductionLine(string type)
         => string.Equals(type, "PRODUCTION_LINE", StringComparison.OrdinalIgnoreCase);
+
+    internal static bool IsSimpleDecorType(string type)
+        => string.Equals(type, "SIMPLE_OBJECT", StringComparison.OrdinalIgnoreCase) ||
+           string.Equals(type, "SMALL_LAMP", StringComparison.OrdinalIgnoreCase) ||
+           string.Equals(type, "STREET_LIGHT", StringComparison.OrdinalIgnoreCase);
 
     internal static bool RequiresSimulateId(string type)
         => IsProductionLine(type);
 
     internal static bool ShowsCapbility(string type)
-        => !string.Equals(type, "SIMPLE_OBJECT", StringComparison.OrdinalIgnoreCase);
+        => !IsSimpleDecorType(type) &&
+           !IsProductionLine(type);
 }

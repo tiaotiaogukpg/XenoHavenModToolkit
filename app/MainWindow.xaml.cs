@@ -916,9 +916,13 @@ public partial class MainWindow : Window
             }
 
             ValidatePositiveInt(element, "direction", id, messages);
-            ValidatePositiveInt(element, "capbility", id, messages);
-            ValidatePositiveInt(element, "workbenchId", id, messages);
             var typeValue = element.Elements().FirstOrDefault(e => e.Name.LocalName == "type")?.Value ?? string.Empty;
+            if (BuildingFieldOptions.ShowsCapbility(typeValue))
+            {
+                ValidatePositiveInt(element, "capbility", id, messages);
+            }
+
+            ValidatePositiveInt(element, "workbenchId", id, messages);
             if (BuildingFieldOptions.RequiresSimulateId(typeValue))
             {
                 ValidateSimulateId(element, id, messages);
@@ -1593,7 +1597,9 @@ public partial class MainWindow : Window
             new XElement("name", b.Name),
             new XElement("type", b.Type),
             new XElement("direction", b.Direction),
-            new XElement("capbility", b.Capbility),
+            BuildingFieldOptions.ShowsCapbility(b.Type)
+                ? new XElement("capbility", b.Capbility)
+                : null,
             new XElement("workbenchId", b.WorkbenchId),
             BuildingFieldOptions.RequiresSimulateId(b.Type) && b.SimulateId > 0
                 ? new XElement("simulateId", b.SimulateId)

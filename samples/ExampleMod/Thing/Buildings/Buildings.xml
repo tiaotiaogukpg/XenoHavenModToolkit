@@ -25,7 +25,6 @@
     <name>Example Production Line</name>
     <type>PRODUCTION_LINE</type>
     <direction>1</direction>
-    <capbility>16</capbility>
     <size>
       <x>1</x>
       <y>1</y>

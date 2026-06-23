@@ -113,6 +113,7 @@ XenoHaven MOD Toolkit 会以 UTF-8（无 BOM）写回 XML，并保持多行缩�
 - `materials` 表示建造材料列表，每个 `ModCraftMaterialData` 包含材料 `id` 与数量 `count`。
 XenoHaven MOD Toolkit 会在 Building 编辑窗中从 `DOC/K-可用材料表.xlsx` 加载材料下拉（界面显示 `木头-100055`，保存 XML 时写入 `100055`）；数量必须为 1–200 的正整数。
 - `workbenchId` 必须从 `DOC/K-可用工作台.xlsx` 中选择（界面显示 `木工桌-100083`，保存 XML 时写入 `100083`）。
+- `type` 可为 `BOX`、`SIMPLE_OBJECT`、`SMALL_LAMP`、`STREET_LIGHT`、`PRODUCTION_LINE`；`SMALL_LAMP` / `STREET_LIGHT` 与 `SIMPLE_OBJECT` 一样固定 `direction = 1`，且不写入 `capbility`。
 - `type` 为 `PRODUCTION_LINE` 时必须填写 `simulateId`，它表示这个 Mod 建筑要模拟哪一条原版生产线；XenoHaven MOD Toolkit 会从 `DOC/S-生产线定义.xlsx` 加载下拉（界面显示 `炼油厂-302323`，保存 XML 时写入 `302323`）。
 - `barrier` 表示是否作为阻挡/障碍处理。
 
@@ -181,7 +182,25 @@ XenoHaven MOD Toolkit 提供：
 - 在 `ProductionLineComponent` 同目录创建 `ModProductlineComponent : MonoBehaviour`，用于保存当前 Mod 建筑的 `simulateId`。
 - `ProductionLineComponent` 查找公式时优先读取 `ModProductlineComponent`；存在且 `simulateId > 0` 时使用 `ProductLineDatabase.Instance.Find(simulateId)`，否则保留原来的 `ProductLineDatabase.Instance.Find(creature.ID)`。
 
-## 9. 使用 XenoHaven MOD Toolkit
+## 9. 游戏端 SMALL_LAMP 对接
+
+`SMALL_LAMP` 的工具端 XML 字段与 `SIMPLE_OBJECT` 一致：固定 `direction = 1`，不需要 `simulateId`，也不写入 `capbility`。游戏端需要配套：
+
+- `ModBuildingType` 增加 `SMALL_LAMP`。
+- `ModUtils.ConvertCategory` 将 `SMALL_LAMP` 归为 `ItemCategory.BUILDING`，与 `SIMPLE_OBJECT` 一致。
+- `ModBuildingData.SetupCreature` 在单向分支中把 `SMALL_LAMP` 与 `SIMPLE_OBJECT` 同等处理：替换根节点 `SpriteRenderer` 的图片，并按 `size` 设置 `BoxCollider2D`；有 `Low Power UI` 时，换图后对齐到 Mod 贴图本地坐标中心（`sprite.bounds.center`）。
+- 在 `Assets/Resources/Mod/Prefabs/` 增加 `mod_template_type_small_lamp_1.prefab`，基于原版 `300059_space_ship_lamp` 保留用电、灯光与缺电提示 `Low Power UI` 组件。
+
+## 10. 游戏端 STREET_LIGHT 对接
+
+`STREET_LIGHT` 的工具端 XML 字段与 `SMALL_LAMP` 一致：固定 `direction = 1`，不需要 `simulateId`，也不写入 `capbility`。游戏端需要配套：
+
+- `ModBuildingType` 增加 `STREET_LIGHT`。
+- `ModUtils.ConvertCategory` 将 `STREET_LIGHT` 归为 `ItemCategory.BUILDING`，与 `SMALL_LAMP` 一致。
+- `ModBuildingData.SetupCreature` 在单向分支中把 `STREET_LIGHT` 与 `SMALL_LAMP` 同等处理（含缺电 UI 对齐贴图中心）。
+- 在 `Assets/Resources/Mod/Prefabs/` 增加 `mod_template_type_street_light_1.prefab`，基于原版 `303486_building_303486` 剥离 `ColonyProsperComponent` 等无关组件，保留 `SortingGroup`、`PowerSupplyConsumer`（耗电 100）、大范围 `Point Light 2D`（内径 3 / 外径 12）与缺电提示 `Low Power UI`。
+
+## 11. 使用 XenoHaven MOD Toolkit
 
 基本流程：
 
@@ -198,14 +217,14 @@ XenoHaven MOD Toolkit 提供：
 7. 保存 XML。
 8. 导出发布版 Mod 或清理 `.meta`。
 
-## 9. 当前限制
+## 12. 当前限制
 
 - 当前游戏端大概率不支持热重载。修改 Mod 后通常需要重启游戏或重新进入存档。
 - 当前工具第一版优先支持 `Thing/Buildings`。
 - 工具只做基础静态校验，不能完全替代游戏内实测。
 - 物品 ID、工作台 ID、材料 ID 是否真实存在，仍需要结合游戏数据验证。
 
-## 10. 建议的开发习惯
+## 13. 建议的开发习惯
 
 - 每个 Mod 使用唯一目录名。
 - 每个 Thing 使用唯一 `id`。

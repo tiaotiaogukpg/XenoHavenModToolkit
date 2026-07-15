@@ -40,29 +40,34 @@ public partial class MainWindow : Window
 
     public void InitializeOnStartup()
     {
+        Log($"运行模式：{AppPaths.RunModeLabel}");
+        Log($"应用基础目录：{AppPaths.GetApplicationBaseDirectory()}");
+        Log($"配置文件路径：{AppPaths.GetConfigFilePath()}");
+        Log($"Mods 目录路径：{AppPaths.GetModsDirectory()}");
+
         settings = AppSettings.Load();
         if (!gameData.IsReady && !string.IsNullOrWhiteSpace(gameData.LoadError))
         {
             Log(gameData.LoadError);
         }
 
-        UpdateTopBarState();
-
-        if (EnsureOverviewRootConfigured())
+        if (!EnsureModsDirectory())
         {
-            RefreshOverviewList();
-            BuildOverviewNavigationTree();
-            if (settings.OpenLastModOnStartup &&
-                !string.IsNullOrWhiteSpace(settings.LastModPath) &&
-                Directory.Exists(settings.LastModPath))
-            {
-                TrySelectModInTree(settings.LastModPath);
-            }
-
+            UpdateTopBarState();
             return;
         }
 
-        PromptOpenModFolder();
+        RefreshOverviewList();
+        BuildOverviewNavigationTree();
+        Log($"扫描到的工程数量：{overviewMods.Count}");
+
+        if (settings.OpenLastModOnStartup &&
+            !string.IsNullOrWhiteSpace(settings.LastModPath) &&
+            Directory.Exists(settings.LastModPath))
+        {
+            TrySelectModInTree(settings.LastModPath);
+        }
+
         UpdateTopBarState();
     }
 
@@ -71,27 +76,29 @@ public partial class MainWindow : Window
         PromptOpenModFolder();
     }
 
-    private bool EnsureOverviewRootConfigured()
+    /// <summary>
+    /// 确保 Mods 目录存在；失败时记录完整路径与原因，并提示用户。
+    /// </summary>
+    private bool EnsureModsDirectory()
     {
-        if (!string.IsNullOrWhiteSpace(settings.ModsOverviewRoot) && Directory.Exists(settings.ModsOverviewRoot))
+        var modsDir = AppPaths.GetModsDirectory();
+        try
         {
+            if (!Directory.Exists(modsDir))
+            {
+                Directory.CreateDirectory(modsDir);
+                Log($"已创建 Mods 目录：{modsDir}");
+            }
+
             return true;
         }
-
-        using var dialog = new WinForms.FolderBrowserDialog
+        catch (Exception ex)
         {
-            Description = "首次使用：请选择 Mod 总览目录（该目录下每个子文件夹都是一个 Mod）",
-            UseDescriptionForTitle = true
-        };
-
-        if (dialog.ShowDialog() != WinForms.DialogResult.OK)
-        {
+            var message = $"无法创建 Mods 目录：{modsDir}{Environment.NewLine}{ex.Message}";
+            Log(message);
+            System.Windows.MessageBox.Show(this, message, "Mods 目录", MessageBoxButton.OK, MessageBoxImage.Error);
             return false;
         }
-
-        settings.ModsOverviewRoot = dialog.SelectedPath;
-        settings.Save();
-        return true;
     }
 
     private void PromptOpenModFolder()
@@ -113,19 +120,21 @@ public partial class MainWindow : Window
 
     private void RefreshOverview_Click(object sender, RoutedEventArgs e)
     {
-        if (EnsureOverviewRootConfigured())
+        if (!EnsureModsDirectory())
         {
-            RefreshOverviewList();
-            BuildOverviewNavigationTree();
-            if (EnsureModOpen(showMessage: false))
-            {
-                ReloadBuildingsXmlFromDisk();
-                ParseBuildingsFromEditor();
-                RefreshBuildingNodesInTree();
-            }
-
-            Log("已刷新 Mod 总览列表。");
+            return;
         }
+
+        RefreshOverviewList();
+        BuildOverviewNavigationTree();
+        if (EnsureModOpen(showMessage: false))
+        {
+            ReloadBuildingsXmlFromDisk();
+            ParseBuildingsFromEditor();
+            RefreshBuildingNodesInTree();
+        }
+
+        Log($"已刷新 Mod 总览列表（工程数：{overviewMods.Count}）。");
     }
 
     private void ModFileTree_PreviewMouseDown(object sender, MouseButtonEventArgs e)
@@ -177,12 +186,13 @@ public partial class MainWindow : Window
     private void RefreshOverviewList()
     {
         overviewMods.Clear();
-        if (string.IsNullOrWhiteSpace(settings.ModsOverviewRoot) || !Directory.Exists(settings.ModsOverviewRoot))
+        var modsRoot = AppPaths.GetModsDirectory();
+        if (!Directory.Exists(modsRoot))
         {
             return;
         }
 
-        foreach (var dir in new DirectoryInfo(settings.ModsOverviewRoot).GetDirectories().OrderBy(d => d.Name))
+        foreach (var dir in new DirectoryInfo(modsRoot).GetDirectories().OrderBy(d => d.Name))
         {
             var mainXmlPath = Path.Combine(dir.FullName, MainXmlRelativePath);
             var hasMainXml = File.Exists(mainXmlPath);
@@ -204,7 +214,6 @@ public partial class MainWindow : Window
     {
         var copy = new AppSettings
         {
-            ModsOverviewRoot = settings.ModsOverviewRoot,
             LastModPath = settings.LastModPath,
             OpenLastModOnStartup = settings.OpenLastModOnStartup,
             Theme = settings.Theme
@@ -218,11 +227,27 @@ public partial class MainWindow : Window
         }
 
         settings = dialog.Settings;
-        settings.Save();
-        RefreshOverviewList();
-        BuildOverviewNavigationTree();
+        SaveSettingsOrReport();
+        if (EnsureModsDirectory())
+        {
+            RefreshOverviewList();
+            BuildOverviewNavigationTree();
+        }
+
         ClearSidebarSelection();
         Log("设置已保存。");
+    }
+
+    private void SaveSettingsOrReport()
+    {
+        var error = settings.TrySave();
+        if (error is null)
+        {
+            return;
+        }
+
+        Log(error);
+        System.Windows.MessageBox.Show(this, error, "保存配置", MessageBoxButton.OK, MessageBoxImage.Error);
     }
 
     private void TopBar_ButtonClick(object sender, RoutedEventArgs e)
@@ -246,7 +271,7 @@ public partial class MainWindow : Window
         currentModRoot = folder;
         CurrentModPathText.Text = folder;
         settings.LastModPath = folder;
-        settings.Save();
+        SaveSettingsOrReport();
         LoadKnownXmlFiles();
         ParseBuildingsFromEditor();
         currentModBaseId = TryDetermineCurrentModBaseId();
@@ -287,7 +312,7 @@ public partial class MainWindow : Window
         var selection = ClassifyCurrentSelection();
 
         OpenModButton.IsEnabled = true;
-        NewModButton.IsEnabled = IsOverviewRootConfigured() && (selection == TreeSelectionKind.OverviewRoot || !opened);
+        NewModButton.IsEnabled = IsModsDirectoryReady() && (selection == TreeSelectionKind.OverviewRoot || !opened);
 
         ModInfoButton.IsEnabled = opened &&
                                   selection is TreeSelectionKind.ModRoot
@@ -309,8 +334,8 @@ public partial class MainWindow : Window
                                                         or TreeSelectionKind.ModOther);
     }
 
-    private bool IsOverviewRootConfigured()
-        => !string.IsNullOrWhiteSpace(settings.ModsOverviewRoot) && Directory.Exists(settings.ModsOverviewRoot);
+    private static bool IsModsDirectoryReady()
+        => Directory.Exists(AppPaths.GetModsDirectory());
 
     private TreeSelectionKind ClassifyCurrentSelection()
     {
@@ -331,8 +356,7 @@ public partial class MainWindow : Window
     {
         switch (item.Tag)
         {
-            case string path when !string.IsNullOrWhiteSpace(settings.ModsOverviewRoot) &&
-                                  path.Equals(settings.ModsOverviewRoot, StringComparison.OrdinalIgnoreCase):
+            case string path when path.Equals(AppPaths.GetModsDirectory(), StringComparison.OrdinalIgnoreCase):
                 return TreeSelectionKind.OverviewRoot;
             case OverviewModDirectoryTag directoryTag:
                 if (!string.IsNullOrWhiteSpace(currentModRoot) &&
@@ -407,19 +431,20 @@ public partial class MainWindow : Window
     {
         try
         {
-            if (!EnsureOverviewRootConfigured())
+            if (!EnsureModsDirectory())
             {
                 return;
             }
 
+            var modsRoot = AppPaths.GetModsDirectory();
             var dialog = new NewModWindow { Owner = this };
             if (dialog.ShowDialog() != true || dialog.Result is null)
             {
                 return;
             }
 
-            var folderName = CreateUniqueModFolderName(settings.ModsOverviewRoot!, dialog.Result.Name);
-            var targetFolder = Path.Combine(settings.ModsOverviewRoot!, folderName);
+            var folderName = CreateUniqueModFolderName(modsRoot, dialog.Result.Name);
+            var targetFolder = Path.Combine(modsRoot, folderName);
 
             Directory.CreateDirectory(targetFolder);
             Directory.CreateDirectory(Path.Combine(targetFolder, "Thing", "Buildings", "images", "icon"));
@@ -1402,13 +1427,14 @@ public partial class MainWindow : Window
     {
         var expandedTags = CaptureTreeExpandedTags(ModFileTree);
         var selectedTag = (ModFileTree.SelectedItem as TreeViewItem)?.Tag;
+        var modsRoot = AppPaths.GetModsDirectory();
 
         ModFileTree.Items.Clear();
-        if (string.IsNullOrWhiteSpace(settings.ModsOverviewRoot) || !Directory.Exists(settings.ModsOverviewRoot))
+        if (!Directory.Exists(modsRoot))
         {
             ModFileTree.Items.Add(new TreeViewItem
             {
-                Header = "（未配置 Mod 总览目录，请在设置中指定）",
+                Header = "（Mods 目录不可用）",
                 IsEnabled = false
             });
             return;
@@ -1418,7 +1444,7 @@ public partial class MainWindow : Window
         var root = new TreeViewItem
         {
             Header = "Mod",
-            Tag = settings.ModsOverviewRoot,
+            Tag = modsRoot,
             IsExpanded = true
         };
 

@@ -204,8 +204,8 @@ XenoHaven MOD Toolkit 提供：
 
 基本流程：
 
-1. 打开工具。
-2. 选择一个 Mod 根目录，例如 `MyBuildingMod/`。
+1. 打开工具（自动使用程序旁 `Mods` 目录，无需选择工作目录）。
+2. 在左侧树中从 `Mods` 下列出的工程中选择一个 Mod（或使用「打开工程」打开任意含 `main.xml` 的目录）。
 3. 在左侧树中选中对应节点后，顶栏按钮才会启用（类似资源管理器）：
   - 选中当前 Mod 根或 `main.xml` → **Mod 信息**
   - 选中 `Buildings.xml` → **新建 Building**

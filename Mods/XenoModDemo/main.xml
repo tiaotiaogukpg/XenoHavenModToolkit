@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<defs xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+  <id>70000000</id>
+  <steamPublishedFileId>0</steamPublishedFileId>
+  <SupportVersion>1</SupportVersion>
+  <Category>Building</Category>
+  <name>XenoModDemo</name>
+  <auth>XenoHaven Mod Author</auth>
+  <version>1.0.0</version>
+  <description>开发与发布验证用示例 Mod（位于程序旁 Mods/XenoModDemo）。</description>
+</defs>

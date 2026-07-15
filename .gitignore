@@ -57,6 +57,9 @@ coverage*/
 Desktop.ini
 .DS_Store
 
+# --- App local config (written next to baseDir at runtime) ---
+/config.json
+
 # --- Logs / temp ---
 *.log
 *.tmp

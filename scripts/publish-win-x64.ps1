@@ -12,4 +12,10 @@ dotnet publish $project `
     -p:IncludeNativeLibrariesForSelfExtract=true `
     -o $output
 
+$modsDir = Join-Path $output "Mods"
+if (-not (Test-Path $modsDir)) {
+    New-Item -ItemType Directory -Path $modsDir | Out-Null
+}
+
 Write-Host "Published to: $output"
+Write-Host "Mods directory: $modsDir"

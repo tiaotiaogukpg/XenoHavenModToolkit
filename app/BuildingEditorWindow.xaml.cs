@@ -42,9 +42,14 @@ public partial class BuildingEditorWindow : Window
         FieldPicker.InitializeWorkbenches(gameData);
         FieldPicker.InitializeProductionLines(gameData);
         FieldPicker.SetValues(initial.Type, initial.Direction, initial.WorkbenchId, initial.SimulateId);
-        FieldPicker.TypeChanged += (_, _) => ApplyCapbilityVisibility();
+        FieldPicker.TypeChanged += (_, _) =>
+        {
+            ApplyCapbilityVisibility();
+            BarrierToggle.IsChecked = BuildingFieldOptions.DefaultBarrier(FieldPicker.SelectedType);
+        };
         CapbilityBox.Text = ClampCapbility(initial.Capbility).ToString(CultureInfo.InvariantCulture);
         ApplyCapbilityVisibility();
+        BarrierToggle.IsChecked = initial.Barrier;
         HealthBox.Text = BuildingFieldOptions.FixedHealth.ToString(CultureInfo.InvariantCulture);
         SizeXBox.Text = initial.SizeX.ToString(CultureInfo.InvariantCulture);
         SizeYBox.Text = initial.SizeY.ToString(CultureInfo.InvariantCulture);
@@ -140,7 +145,8 @@ public partial class BuildingEditorWindow : Window
         }
 
         Result = new MainWindow.EditableBuilding(
-            buildingId, name, type, direction, capbility, workbenchId, simulateId, BuildingFieldOptions.FixedHealth, sx, sy, materialSnapshot);
+            buildingId, name, type, direction, capbility, workbenchId, simulateId, BuildingFieldOptions.FixedHealth, sx, sy, materialSnapshot,
+            BarrierToggle.IsChecked == true);
         DialogResult = true;
     }
 
@@ -324,8 +330,8 @@ public partial class BuildingEditorWindow : Window
     {
         var worldPath = Path.Combine(modRoot, BuildingImagesRelativePath, $"{buildingId}.png");
         var iconPath = Path.Combine(modRoot, BuildingIconsRelativePath, $"{buildingId}.png");
-        WorldImagePathText.Text = $"组件图片：{Path.GetRelativePath(modRoot, worldPath)}";
-        IconImagePathText.Text = $"物品栏图标：{Path.GetRelativePath(modRoot, iconPath)}";
+        WorldImagePathText.Text = Path.GetRelativePath(modRoot, worldPath);
+        IconImagePathText.Text = Path.GetRelativePath(modRoot, iconPath);
         WorldImagePreview.Source = LoadBitmapIfExists(worldPath);
         IconImagePreview.Source = LoadBitmapIfExists(iconPath);
     }

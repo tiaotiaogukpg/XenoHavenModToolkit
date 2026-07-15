@@ -40,4 +40,10 @@ internal static class BuildingFieldOptions
     internal static bool ShowsCapbility(string type)
         => !IsSimpleDecorType(type) &&
            !IsProductionLine(type);
+
+    /// <summary>
+    /// BOX 默认开启碰撞；其它类型（含灯）默认关闭，由编辑窗 On/Off 滑块控制。
+    /// </summary>
+    internal static bool DefaultBarrier(string type)
+        => string.Equals(type, "BOX", StringComparison.OrdinalIgnoreCase);
 }

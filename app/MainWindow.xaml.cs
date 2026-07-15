@@ -213,6 +213,7 @@ public partial class MainWindow : Window
         var dialog = new SettingsWindow(copy) { Owner = this };
         if (dialog.ShowDialog() != true)
         {
+            ClearSidebarSelection();
             return;
         }
 
@@ -220,12 +221,24 @@ public partial class MainWindow : Window
         settings.Save();
         RefreshOverviewList();
         BuildOverviewNavigationTree();
-        if (EnsureModOpen(showMessage: false))
+        ClearSidebarSelection();
+        Log("设置已保存。");
+    }
+
+    private void TopBar_ButtonClick(object sender, RoutedEventArgs e)
+    {
+        ClearSidebarSelection();
+    }
+
+    private void ClearSidebarSelection()
+    {
+        if (ModFileTree.SelectedItem is TreeViewItem selected)
         {
-            TrySelectModInTree(currentModRoot!);
+            selected.IsSelected = false;
         }
 
-        Log("设置已保存。");
+        BuildingTiles.SelectedItem = null;
+        UpdateToolbarForSelection();
     }
 
     private void OpenModFolder(string folder)
@@ -563,6 +576,8 @@ public partial class MainWindow : Window
     {
         if (e.NewValue is not TreeViewItem item)
         {
+            BuildingTiles.SelectedItem = null;
+            UpdateToolbarForSelection();
             return;
         }
 
@@ -570,12 +585,15 @@ public partial class MainWindow : Window
         {
             case OverviewModDirectoryTag directoryTag:
                 EnsureModActivated(directoryTag.FullPath);
+                BuildingTiles.SelectedItem = null;
                 break;
             case BuildingTreeTag buildingTag:
                 EnsureModActivated(buildingTag.ModRoot);
                 SyncBuildingTileSelection(buildingTag.BuildingId);
                 break;
             case string path:
+                BuildingTiles.SelectedItem = null;
+
                 if (TryResolveModRootFromPath(path) is { } modRoot)
                 {
                     EnsureModActivated(modRoot);
@@ -749,7 +767,8 @@ public partial class MainWindow : Window
                 BuildingFieldOptions.FixedHealth,
                 1,
                 1,
-                []);
+                [],
+                BuildingFieldOptions.DefaultBarrier("BOX"));
 
             var dialog = new BuildingEditorWindow(initial, currentModRoot!, gameData) { Owner = this };
             if (dialog.ShowDialog() != true || dialog.Result is null)
@@ -929,6 +948,7 @@ public partial class MainWindow : Window
             }
 
             ValidatePositiveInt(element, "health", id, messages);
+            ValidateOptionalBool(element, "barrier", id, messages);
 
             var size = element.Elements().FirstOrDefault(e => e.Name.LocalName == "size");
             if (size is null)
@@ -950,6 +970,8 @@ public partial class MainWindow : Window
                     ValidatePositiveInt(material, "count", id, messages, "material");
                 }
             }
+
+            ValidateOptionalBool(element, "barrier", id, messages);
         }
 
         messages.Add($"[信息] 识别到 {seenIds.Count} 个建筑条目。");
@@ -961,6 +983,20 @@ public partial class MainWindow : Window
         if (!int.TryParse(value, out var number) || number <= 0)
         {
             messages.Add($"[错误] 建筑 {buildingId} 的 {scope}.{childName} 需要是正整数。");
+        }
+    }
+
+    private static void ValidateOptionalBool(XElement parent, string childName, int buildingId, List<string> messages)
+    {
+        var value = parent.Elements().FirstOrDefault(e => e.Name.LocalName == childName)?.Value;
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return;
+        }
+
+        if (!bool.TryParse(value.Trim(), out _))
+        {
+            messages.Add($"[错误] 建筑 {buildingId} 的 building.{childName} 需要是 true 或 false。");
         }
     }
 
@@ -1580,7 +1616,8 @@ public partial class MainWindow : Window
         int Health,
         int SizeX,
         int SizeY,
-        IReadOnlyList<CraftMaterial> Materials);
+        IReadOnlyList<CraftMaterial> Materials,
+        bool Barrier);
 
     private static XElement CreateMaterialsElement(IReadOnlyList<CraftMaterial> materials) =>
         new(
@@ -1608,7 +1645,8 @@ public partial class MainWindow : Window
             new XElement("size",
                 new XElement("x", b.SizeX),
                 new XElement("y", b.SizeY)),
-            CreateMaterialsElement(b.Materials));
+            CreateMaterialsElement(b.Materials),
+            new XElement("barrier", b.Barrier ? "true" : "false"));
 
     private static IReadOnlyList<CraftMaterial> ReadMaterials(XElement element)
     {
@@ -1671,7 +1709,8 @@ public partial class MainWindow : Window
                 BuildingFieldOptions.FixedHealth,
                 b.SizeX,
                 b.SizeY,
-                []));
+                [],
+                BuildingFieldOptions.DefaultBarrier(b.Type)));
 
         doc.Root.Add(element);
         buildingsXmlText = ModXmlFormatter.Serialize(doc);
@@ -1709,11 +1748,11 @@ public partial class MainWindow : Window
                 ? (string.IsNullOrWhiteSpace(selected.Type) ? $"Building_{selected.Id}" : selected.Type)
                 : selected.Name;
             var typeForEdit = string.IsNullOrWhiteSpace(selected.Type) ? "Building" : selected.Type;
-            return new EditableBuilding(selected.Id, nameForEdit, typeForEdit, 1, BuildingFieldOptions.DefaultCapbility, gameData.DefaultWorkbenchId, 0, BuildingFieldOptions.FixedHealth, 1, 1, []);
+            return new EditableBuilding(selected.Id, nameForEdit, typeForEdit, 1, BuildingFieldOptions.DefaultCapbility, gameData.DefaultWorkbenchId, 0, BuildingFieldOptions.FixedHealth, 1, 1, [], BuildingFieldOptions.DefaultBarrier(typeForEdit));
         }
 
         var (nextId, nextName) = SuggestNewBuildingDefaults();
-        return new EditableBuilding(nextId, nextName, "Building", 1, BuildingFieldOptions.DefaultCapbility, gameData.DefaultWorkbenchId, 0, BuildingFieldOptions.FixedHealth, 1, 1, []);
+        return new EditableBuilding(nextId, nextName, "Building", 1, BuildingFieldOptions.DefaultCapbility, gameData.DefaultWorkbenchId, 0, BuildingFieldOptions.FixedHealth, 1, 1, [], BuildingFieldOptions.DefaultBarrier("Building"));
     }
 
     private EditableBuilding? TryReadEditableBuildingById(int id)
@@ -1737,6 +1776,17 @@ public partial class MainWindow : Window
             int ReadInt(string name, int fallback)
                 => int.TryParse(el.Elements().FirstOrDefault(x => x.Name.LocalName == name)?.Value, out var v) ? v : fallback;
 
+            bool ReadBool(string name, bool fallback)
+            {
+                var text = el.Elements().FirstOrDefault(x => x.Name.LocalName == name)?.Value;
+                if (string.IsNullOrWhiteSpace(text))
+                {
+                    return fallback;
+                }
+
+                return bool.TryParse(text, out var v) ? v : fallback;
+            }
+
             var nameValue = el.Elements().FirstOrDefault(x => x.Name.LocalName == "name")?.Value ?? $"Building_{id}";
             var typeValue = el.Elements().FirstOrDefault(x => x.Name.LocalName == "type")?.Value ?? "Building";
             var size = el.Elements().FirstOrDefault(x => x.Name.LocalName == "size");
@@ -1759,7 +1809,8 @@ public partial class MainWindow : Window
                 BuildingFieldOptions.FixedHealth,
                 sx,
                 sy,
-                ReadMaterials(el));
+                ReadMaterials(el),
+                ReadBool("barrier", BuildingFieldOptions.DefaultBarrier(typeValue)));
         }
         catch
         {

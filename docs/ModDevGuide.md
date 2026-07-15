@@ -115,7 +115,7 @@ XenoHaven MOD Toolkit 会在 Building 编辑窗中从 `DOC/K-可用材料表.xls
 - `workbenchId` 必须从 `DOC/K-可用工作台.xlsx` 中选择（界面显示 `木工桌-100083`，保存 XML 时写入 `100083`）。
 - `type` 可为 `BOX`、`SIMPLE_OBJECT`、`SMALL_LAMP`、`STREET_LIGHT`、`PRODUCTION_LINE`；`SMALL_LAMP` / `STREET_LIGHT` 与 `SIMPLE_OBJECT` 一样固定 `direction = 1`，且不写入 `capbility`。
 - `type` 为 `PRODUCTION_LINE` 时必须填写 `simulateId`，它表示这个 Mod 建筑要模拟哪一条原版生产线；XenoHaven MOD Toolkit 会从 `DOC/S-生产线定义.xlsx` 加载下拉（界面显示 `炼油厂-302323`，保存 XML 时写入 `302323`）。
-- `barrier` 表示是否作为阻挡/障碍处理。
+- `barrier` 表示是否作为阻挡/障碍处理（`true` = 实体碰撞，不可穿过）。工具在 Building 编辑窗提供 **碰撞** 开关；新建时 `BOX` 默认开启，其它类型默认关闭。游戏端对应 `collider.isTrigger = !barrier`，且 `barrier=true` 时会切到 `Barrier` 层（灯类模板默认在 `Static` 层且 isTrigger，仅改字段不够）。
 
 注意：字段名 `capbility` 按当前可行样例保留拼写，不要自行改成 `capability`，否则游戏端可能无法反序列化。
 
@@ -188,8 +188,8 @@ XenoHaven MOD Toolkit 提供：
 
 - `ModBuildingType` 增加 `SMALL_LAMP`。
 - `ModUtils.ConvertCategory` 将 `SMALL_LAMP` 归为 `ItemCategory.BUILDING`，与 `SIMPLE_OBJECT` 一致。
-- `ModBuildingData.SetupCreature` 在单向分支中把 `SMALL_LAMP` 与 `SIMPLE_OBJECT` 同等处理：替换根节点 `SpriteRenderer` 的图片，并按 `size` 设置 `BoxCollider2D`；有 `Low Power UI` 时，换图后对齐到 Mod 贴图本地坐标中心（`sprite.bounds.center`）。
-- 在 `Assets/Resources/Mod/Prefabs/` 增加 `mod_template_type_small_lamp_1.prefab`，基于原版 `300059_space_ship_lamp` 保留用电、灯光与缺电提示 `Low Power UI` 组件。
+- `ModBuildingData.SetupCreature` 在单向分支中把 `SMALL_LAMP` 与 `SIMPLE_OBJECT` 同等处理：替换根节点 `SpriteRenderer` 的图片，并按 `size` / `barrier` 设置 `BoxCollider2D`（`barrier=true` 时切到 `Barrier` 层）；有 `Low Power UI` 时，换图后对齐到 Mod 贴图本地坐标中心（`sprite.bounds.center`）。
+- 在 `Assets/Resources/Mod/Prefabs/` 增加 `mod_template_type_small_lamp_1.prefab`，基于原版 `300059_space_ship_lamp` 保留用电、灯光与缺电提示 `Low Power UI` 组件；需挂 `ModBuilding1Component`，默认层宜为 `Barrier`（勿停在仅可穿过的 `Static` + Trigger）。
 
 ## 10. 游戏端 STREET_LIGHT 对接
 

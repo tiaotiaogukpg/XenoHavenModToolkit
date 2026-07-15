@@ -40,7 +40,9 @@
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
-                <WrapPanel Grid.Column="0" VerticalAlignment="Center">
+                <WrapPanel Grid.Column="0"
+                           VerticalAlignment="Center"
+                           Button.Click="TopBar_ButtonClick">
                     <Button x:Name="OpenModButton" Content="打开工程" Click="OpenModFolder_Click"/>
                     <Button x:Name="NewModButton" Content="新建MOD" Click="NewMod_Click"/>
                     <Button x:Name="DeleteModButton" Content="删除MOD" Click="DeleteMod_Click" IsEnabled="False"/>

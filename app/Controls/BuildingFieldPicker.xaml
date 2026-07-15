@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              HorizontalAlignment="Stretch"
              HorizontalContentAlignment="Stretch">
-    <Grid Margin="0,0,0,8">
+    <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" SharedSizeGroup="BuildingEditorLabelCol"/>
             <ColumnDefinition Width="*"/>
@@ -16,15 +16,15 @@
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0" Grid.Column="0" Text="type" Style="{DynamicResource BuildingEditorLabelStyle}"/>
-        <ComboBox Grid.Row="0" Grid.Column="1" x:Name="TypeCombo" MinHeight="28" VerticalContentAlignment="Center" Margin="0,0,0,8"/>
+        <ComboBox Grid.Row="0" Grid.Column="1" x:Name="TypeCombo" MinHeight="32" VerticalContentAlignment="Center" Margin="0,0,0,8" Padding="8,4"/>
 
         <TextBlock Grid.Row="1" Grid.Column="0" x:Name="DirectionLabel" Text="direction" Style="{DynamicResource BuildingEditorLabelStyle}"/>
-        <ComboBox Grid.Row="1" Grid.Column="1" x:Name="DirectionCombo" MinHeight="28" VerticalContentAlignment="Center" Margin="0,0,0,8"/>
+        <ComboBox Grid.Row="1" Grid.Column="1" x:Name="DirectionCombo" MinHeight="32" VerticalContentAlignment="Center" Margin="0,0,0,8" Padding="8,4"/>
 
         <TextBlock Grid.Row="2" Grid.Column="0" Text="workbenchId" Style="{DynamicResource BuildingEditorLabelStyle}"/>
-        <ComboBox Grid.Row="2" Grid.Column="1" x:Name="WorkbenchIdCombo" MinHeight="28" VerticalContentAlignment="Center" Margin="0,0,0,8"/>
+        <ComboBox Grid.Row="2" Grid.Column="1" x:Name="WorkbenchIdCombo" MinHeight="32" VerticalContentAlignment="Center" Margin="0,0,0,8" Padding="8,4"/>
 
         <TextBlock Grid.Row="3" Grid.Column="0" x:Name="SimulateIdLabel" Text="simulateId" Style="{DynamicResource BuildingEditorLabelStyle}"/>
-        <ComboBox Grid.Row="3" Grid.Column="1" x:Name="SimulateIdCombo" MinHeight="28" VerticalContentAlignment="Center"/>
+        <ComboBox Grid.Row="3" Grid.Column="1" x:Name="SimulateIdCombo" MinHeight="32" VerticalContentAlignment="Center" Margin="0,0,0,8" Padding="8,4"/>
     </Grid>
 </UserControl>

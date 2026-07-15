@@ -175,6 +175,7 @@ dotnet run --project .\app\app.csproj
 | **health**          | 固定为 `10`。                                                            |
 | **size.x / size.y** | 占地尺寸（正整数）。                                                           |
 | **制造公式**            | 材料从材料表选择，单条数量 1–200。                                                 |
+| **isBarrier**       | 勾选写入 XML `<barrier>true</barrier>`（实体碰撞）；`BOX` 默认勾选，装饰灯等默认不勾选。 |
 | **物品栏图标**           | 保存为 `Thing/Buildings/images/icon/<id>.png`。                          |
 | **组件图片**            | 地图显示图，保存为 `Thing/Buildings/images/<id>.png`。                         |
 

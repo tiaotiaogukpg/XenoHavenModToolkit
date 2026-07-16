@@ -5,6 +5,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
+using System.Windows.Threading;
 using System.Xml;
 using System.Xml.Linq;
 using WinForms = System.Windows.Forms;
@@ -213,7 +214,9 @@ public partial class MainWindow : Window
 
     private void TopBar_ButtonClick(object sender, RoutedEventArgs e)
     {
+        // 立即清一次；再延迟清一次，避免模态窗关闭后焦点回到磁贴导致 ListBoxItem 再次自选中。
         ClearSidebarSelection();
+        Dispatcher.BeginInvoke(ClearSidebarSelection, DispatcherPriority.Input);
     }
 
     private void SaveSettingsOrReport()
@@ -235,7 +238,17 @@ public partial class MainWindow : Window
             selected.IsSelected = false;
         }
 
+        BuildingTiles.UnselectAll();
+        BuildingTiles.SelectedIndex = -1;
         BuildingTiles.SelectedItem = null;
+
+        // 焦点若仍落在磁贴上，WPF 会在 GotFocus 时重新选中该项
+        if (BuildingTiles.IsKeyboardFocusWithin)
+        {
+            Keyboard.ClearFocus();
+            FocusManager.SetFocusedElement(this, this);
+        }
+
         UpdateToolbarForSelection();
     }
 

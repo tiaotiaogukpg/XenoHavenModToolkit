@@ -108,7 +108,7 @@ XenoHaven MOD Toolkit 会以 UTF-8（无 BOM）写回 XML，并保持多行缩�
 
 关键规则：
 
-- `id` 必须唯一。重复 ID 会导致加载冲突或失败。
+- `id` 必须唯一，使用本地序号 **1、2、3…**（不要写成 `ModId + 序号`）。重复 ID 会导致加载冲突或失败。
 - `size.x` 和 `size.y` 表示占地尺寸，应为正整数。
 - `materials` 表示建造材料列表，每个 `ModCraftMaterialData` 包含材料 `id` 与数量 `count`。
 XenoHaven MOD Toolkit 会在 Building 编辑窗中从 `DOC/K-可用材料表.xlsx` 加载材料下拉（界面显示 `木头-100055`，保存 XML 时写入 `100055`）；数量必须为 1–200 的正整数。
@@ -134,19 +134,19 @@ screenshot.png
 - `screenshot.png`：Mod 详情截图。
 - 新建、保存 Mod 信息、导出发布版时，XenoHaven MOD Toolkit 会校验这两个文件是否存在。
 
-对于 `ModBuildingXML.id = 70000001`（示例 Mod 基础值 70000000 + 本地序号 1）：
+对于 `ModBuildingXML.id = 1`（本地序号，从 1 起递增；**不要**写成 `ModId + 序号`）：
 
 ```text
-Thing/Buildings/images/70000001.png
-Thing/Buildings/images/icon/70000001.png
+Thing/Buildings/images/1.png
+Thing/Buildings/images/icon/1.png
 ```
 
 含义：
 
-- `images/<id>.png`：建筑/物体在地图上的显示图。
+- `images/<id>.png`：建筑/物体在地图上的显示图（文件名为本地序号，如 `1.png`、`2.png`）。
 - `images/icon/<id>.png`：建筑被拆除后进入背包、或作为物品显示时的图标。
 
-这个规则也适用于其它 Thing 类型：地图图使用 `images/<id>.png`，物品图标使用 `images/icon/<id>.png`。当前工具第一版优先支持 `Thing/Buildings`。
+游戏运行时可用 `ModId + 本地序号` 合成最终物品 ID；磁盘上的图片仍只按本地 `id` 命名。这个规则也适用于其它 Thing 类型。当前工具第一版优先支持 `Thing/Buildings`。
 
 ## 6. Unity .meta 文件
 
@@ -213,7 +213,7 @@ XenoHaven MOD Toolkit 提供：
   - 选中当前 Mod 根 → **导出发布版** / **清理 .meta**
 4. 编辑 `main.xml` 和 `Thing/Buildings/Buildings.xml`（双击 Building 节点可打开编辑窗）。
 5. 在右侧选择一个建筑条目可同步树选中并预览图片。
-6. 导入“地图显示图”或“物品图标”，工具会自动保存为 `<id>.png`。
+6. 导入“地图显示图”或“物品图标”，工具会自动保存为本地序号文件名（如 `1.png`）。
 7. 保存 XML。
 8. 导出发布版 Mod 或清理 `.meta`。
 

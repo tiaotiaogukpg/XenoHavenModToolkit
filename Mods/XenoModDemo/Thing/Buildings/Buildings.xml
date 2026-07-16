@@ -1,22 +1,4 @@
-<<<<<<< .mine
 <?xml version="1.0" encoding="utf-8"?>
 <ArrayOfModBuildingXML xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <ModBuildingXML><id>70000001</id><name>Demo Box</name><type>BOX</type><direction>1</direction><capbility>16</capbility><workbenchId>100083</workbenchId><health>10</health><size><x>1</x><y>1</y></size><materials><ModCraftMaterialData><id>100055</id><count>10</count></ModCraftMaterialData></materials><barrier>true</barrier></ModBuildingXML>
-<ModBuildingXML><id>70000002</id><name>Demo Production Line</name><type>PRODUCTION_LINE</type><direction>1</direction><workbenchId>100083</workbenchId><simulateId>100279</simulateId><health>10</health><size><x>3</x><y>2</y></size><materials><ModCraftMaterialData><id>100055</id><count>10</count></ModCraftMaterialData></materials><barrier>true</barrier></ModBuildingXML><ModBuildingXML><id>70000003</id><name>Demo Small Lamp</name><type>SMALL_LAMP</type><direction>1</direction><workbenchId>100083</workbenchId><health>10</health><size><x>1</x><y>1</y></size><materials><ModCraftMaterialData><id>100055</id><count>10</count></ModCraftMaterialData></materials><barrier>true</barrier></ModBuildingXML><ModBuildingXML><id>70000004</id><name>Demo Street Light</name><type>STREET_LIGHT</type><direction>1</direction><workbenchId>100083</workbenchId><health>10</health><size><x>1</x><y>1</y></size><materials><ModCraftMaterialData><id>100055</id><count>10</count></ModCraftMaterialData></materials><barrier>true</barrier></ModBuildingXML></ArrayOfModBuildingXML>
-||||||| .r0
-=======
-<?xml version="1.0" encoding="utf-8"?>
-
-
-
-
-
-<ArrayOfModBuildingXML xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-  <ModBuildingXML><id>1</id><name>帝国保险箱</name><type>BOX</type><direction>1</direction><capbility>16</capbility><barrier>true</barrier><workbenchId>100083</workbenchId><health>10</health><size><x>2</x><y>2</y></size><materials><ModCraftMaterialData><id>100055</id><count>10</count></ModCraftMaterialData></materials></ModBuildingXML>
-
-  <ModBuildingXML><id>2</id><name>33</name><type>BOX</type><direction>1</direction><capbility>16</capbility><barrier>true</barrier><workbenchId>100083</workbenchId><health>10</health><size><x>2</x><y>1</y></size><materials><ModCraftMaterialData><id>100055</id><count>10</count></ModCraftMaterialData></materials></ModBuildingXML>
-
-  <ModBuildingXML><id>3</id><name>酒吧招牌</name><type>SIMPLE_OBJECT</type><direction>1</direction><barrier>true</barrier><workbenchId>100083</workbenchId><health>10</health><size><x>1</x><y>1</y></size><materials><ModCraftMaterialData><id>100055</id><count>10</count></ModCraftMaterialData></materials></ModBuildingXML>
-
-
-</ArrayOfModBuildingXML>>>>>>>> .r63256
+  <ModBuildingXML><id>1</id><name>Demo Box</name><type>BOX</type><direction>1</direction><capbility>16</capbility><workbenchId>100083</workbenchId><health>10</health><size><x>1</x><y>1</y></size><materials><ModCraftMaterialData><id>100055</id><count>10</count></ModCraftMaterialData></materials><barrier>true</barrier></ModBuildingXML>
+<ModBuildingXML><id>2</id><name>Demo Object</name><type>SIMPLE_OBJECT</type><direction>1</direction><workbenchId>100083</workbenchId><health>10</health><size><x>1</x><y>1</y></size><materials><ModCraftMaterialData><id>100055</id><count>10</count></ModCraftMaterialData></materials><barrier>false</barrier></ModBuildingXML><ModBuildingXML><id>3</id><name>Demo Production Line</name><type>PRODUCTION_LINE</type><direction>1</direction><workbenchId>100083</workbenchId><simulateId>100279</simulateId><health>10</health><size><x>1</x><y>1</y></size><materials><ModCraftMaterialData><id>100055</id><count>10</count></ModCraftMaterialData></materials><barrier>true</barrier></ModBuildingXML><ModBuildingXML><id>4</id><name>Demo Lamp</name><type>SMALL_LAMP</type><direction>1</direction><workbenchId>100083</workbenchId><health>10</health><size><x>1</x><y>1</y></size><materials><ModCraftMaterialData><id>100055</id><count>10</count></ModCraftMaterialData></materials><barrier>false</barrier></ModBuildingXML><ModBuildingXML><id>5</id><name>Demo Street Light</name><type>BOX</type><direction>1</direction><capbility>16</capbility><workbenchId>100083</workbenchId><health>10</health><size><x>1</x><y>1</y></size><materials><ModCraftMaterialData><id>100055</id><count>10</count></ModCraftMaterialData></materials><barrier>true</barrier></ModBuildingXML></ArrayOfModBuildingXML>

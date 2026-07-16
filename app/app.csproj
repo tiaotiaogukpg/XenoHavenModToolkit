@@ -17,6 +17,7 @@
 
   <ItemGroup>
     <None Include="..\DOC\*.xlsx" Link="DOC\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\Mods\**\*" Link="Mods\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

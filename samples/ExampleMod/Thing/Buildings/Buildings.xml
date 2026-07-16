@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ArrayOfModBuildingXML xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
   <ModBuildingXML>
-    <id>70000001</id>
+    <id>1</id>
     <name>Example Box</name>
     <type>BOX</type>
     <direction>1</direction>
-    <capbility>10</capbility>
+    <capbility>16</capbility>
     <size>
       <x>1</x>
       <y>1</y>
@@ -17,11 +17,11 @@
         <count>10</count>
       </ModCraftMaterialData>
     </materials>
-    <health>100</health>
+    <health>10</health>
     <barrier>true</barrier>
   </ModBuildingXML>
   <ModBuildingXML>
-    <id>70000002</id>
+    <id>2</id>
     <name>Example Production Line</name>
     <type>PRODUCTION_LINE</type>
     <direction>1</direction>
@@ -37,7 +37,7 @@
         <count>10</count>
       </ModCraftMaterialData>
     </materials>
-    <health>100</health>
+    <health>10</health>
     <barrier>true</barrier>
   </ModBuildingXML>
 </ArrayOfModBuildingXML>

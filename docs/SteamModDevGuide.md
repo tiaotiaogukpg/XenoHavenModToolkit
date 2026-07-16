@@ -32,13 +32,9 @@ dotnet run --project .\app\app.csproj
 
 - 该目录下 **每个一级子文件夹 = 一个 Mod 工程**（不会把 `Mods` 自身或深层子目录当成独立工程）。
 - 若 `Mods` 不存在，启动时会自动创建。
-- **不需要**首次选择工作目录，也不再通过设置修改工程根路径。
+- **不需要**首次选择工作目录，也没有工程根路径设置入口。
 
 示例仓库中已包含 `Mods/XenoModDemo`，开发启动后左侧树应能看到该工程。
-
-右上角 **「设置」** 目前仅保留：
-
-- **启动时自动打开上次的 Mod**
 
 配置文件位于应用基础目录：`config.json`（开发时在仓库根，发布时在 exe 旁）。
 
@@ -67,7 +63,7 @@ dotnet run --project .\app\app.csproj
 
 ### 2.1 前置条件
 
-- 工具已能扫描到旁路 `Mods` 目录（启动时自动定位，无需在设置中指定）。
+- 工具已能扫描到旁路 `Mods` 目录（启动时自动定位）。
 - 在总览状态下，或当前未打开其它 Mod 时，顶栏 **「新建MOD」** 可用。
 
 ### 2.2 填写 Mod 信息
@@ -77,7 +73,7 @@ dotnet run --project .\app\app.csproj
 
 | 字段                       | 说明                                                 |
 | ------------------------ | -------------------------------------------------- |
-| **id**                   | Mod 基础 ID，创建时自动生成，**创建后不可修改**。组件 ID = 该基础值 + 本地序号。 |
+| **id**                   | Mod 基础 ID，创建时自动生成，**创建后不可修改**。游戏内最终物品 ID = 基础值 + Building 本地序号。 |
 | **steamPublishedFileId** | Steam 创意工坊条目 ID；新建 Mod 固定为 `0`，发布并由游戏/工坊写入后只读显示。   |
 | **supportVersion**       | 支持版本，固定为 `1`。                                      |
 | **name**                 | Mod 显示名称（必填）。                                      |
@@ -147,7 +143,7 @@ dotnet run --project .\app\app.csproj
 2. 立即保存到磁盘
 3. 刷新左侧树与右侧磁贴
 
-组件 **id** 由工具根据 Mod 的 `id` 基础值自动分配，请勿与其它 Mod 冲突。
+组件 **id** 为本地序号（1、2、3…），图片按同名保存；游戏内可与 Mod 基础值合成最终物品 ID，请勿与其它 Mod 冲突。
 
 ### 3.3 编辑已有组件
 
@@ -168,7 +164,7 @@ dotnet run --project .\app\app.csproj
 
 | 字段                  | 说明                                                                   |
 | ------------------- | -------------------------------------------------------------------- |
-| **id**              | 只读，与图片文件名对应。                                                         |
+| **id**              | 只读本地序号（1、2、3…），与图片文件名对应；勿使用 ModId+序号。                                      |
 | **name**            | 组件显示名称。                                                              |
 | **type**            | `BOX`、`SIMPLE_OBJECT`、`SMALL_LAMP`、`STREET_LIGHT`、`PRODUCTION_LINE`。                 |
 | **direction**       | 朝向；`BOX` / `SIMPLE_OBJECT` / `SMALL_LAMP` / `STREET_LIGHT` 固定为 `1`。                    |
@@ -178,9 +174,9 @@ dotnet run --project .\app\app.csproj
 | **health**          | 固定为 `10`。                                                            |
 | **size.x / size.y** | 占地尺寸（正整数）。                                                           |
 | **制造公式**            | 材料从材料表选择，单条数量 1–200。                                                 |
-| **isBarrier**       | 勾选写入 XML `<barrier>true</barrier>`（实体碰撞）；`BOX` 默认勾选，装饰灯等默认不勾选。 |
-| **物品栏图标**           | 保存为 `Thing/Buildings/images/icon/<id>.png`。                          |
-| **组件图片**            | 地图显示图，保存为 `Thing/Buildings/images/<id>.png`。                         |
+| **碰撞**              | On/Off 滑块写入 `<barrier>true/false</barrier>`；`BOX` 默认 On。 |
+| **物品栏图标**           | 保存为 `Thing/Buildings/images/icon/1.png`（按本地 id）。                          |
+| **组件图片**            | 地图显示图，保存为 `Thing/Buildings/images/1.png`（按本地 id）。                         |
 
 
 支持 **拖拽图片** 到预览区，或点击按钮导入；支持 png / jpg / jpeg / bmp / webp。
@@ -197,8 +193,8 @@ Mod 根目录
 ├── icon.png / screenshot.png
 └── Thing/Buildings/
     ├── Buildings.xml     ← 「新建组件」
-    ├── images/<id>.png   ← 组件图片
-    └── images/icon/<id>.png  ← 物品栏图标
+    ├── images/1.png      ← 组件图片（本地序号）
+    └── images/icon/1.png ← 物品栏图标（本地序号）
 ```
 
 底部日志会显示 XML 校验、保存成功或错误（如重复 id、缺少必填字段等）。

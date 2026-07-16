@@ -30,6 +30,7 @@ public partial class MainWindow : Window
     private string? currentModRoot;
     private int? currentModBaseId;
     private AppSettings settings = new();
+    private bool suppressTileClearOnTreeDeselect;
 
     public MainWindow()
     {
@@ -210,32 +211,9 @@ public partial class MainWindow : Window
         }
     }
 
-    private void Settings_Click(object sender, RoutedEventArgs e)
+    private void TopBar_ButtonClick(object sender, RoutedEventArgs e)
     {
-        var copy = new AppSettings
-        {
-            LastModPath = settings.LastModPath,
-            OpenLastModOnStartup = settings.OpenLastModOnStartup,
-            Theme = settings.Theme
-        };
-
-        var dialog = new SettingsWindow(copy) { Owner = this };
-        if (dialog.ShowDialog() != true)
-        {
-            ClearSidebarSelection();
-            return;
-        }
-
-        settings = dialog.Settings;
-        SaveSettingsOrReport();
-        if (EnsureModsDirectory())
-        {
-            RefreshOverviewList();
-            BuildOverviewNavigationTree();
-        }
-
         ClearSidebarSelection();
-        Log("设置已保存。");
     }
 
     private void SaveSettingsOrReport()
@@ -248,11 +226,6 @@ public partial class MainWindow : Window
 
         Log(error);
         System.Windows.MessageBox.Show(this, error, "保存配置", MessageBoxButton.OK, MessageBoxImage.Error);
-    }
-
-    private void TopBar_ButtonClick(object sender, RoutedEventArgs e)
-    {
-        ClearSidebarSelection();
     }
 
     private void ClearSidebarSelection()
@@ -601,7 +574,11 @@ public partial class MainWindow : Window
     {
         if (e.NewValue is not TreeViewItem item)
         {
-            BuildingTiles.SelectedItem = null;
+            if (!suppressTileClearOnTreeDeselect)
+            {
+                BuildingTiles.SelectedItem = null;
+            }
+
             UpdateToolbarForSelection();
             return;
         }
@@ -671,11 +648,19 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (BuildingTiles.SelectedItem is BuildingEntry entry &&
-            TryFindBuildingTreeItem(ModFileTree, currentModRoot, entry.Id) is TreeViewItem treeItem)
+        // 点右侧 Building 时，清除左侧树的上次选中痕迹，避免双向残留高亮
+        if (BuildingTiles.SelectedItem is BuildingEntry &&
+            ModFileTree.SelectedItem is TreeViewItem selected)
         {
-            treeItem.IsSelected = true;
-            treeItem.BringIntoView();
+            suppressTileClearOnTreeDeselect = true;
+            try
+            {
+                selected.IsSelected = false;
+            }
+            finally
+            {
+                suppressTileClearOnTreeDeselect = false;
+            }
         }
 
         UpdateToolbarForSelection();
@@ -1700,10 +1685,15 @@ public partial class MainWindow : Window
 
     private (int nextId, string nextName) SuggestNewBuildingDefaults()
     {
-        // BuildingId 独立于 ModId：仅建议在 1–99 范围内。
-        // 新建时默认取“当前最大 BuildingId + 1”（无则从 1 起），不做强约束拦截。
-        var maxId = buildings.Count == 0 ? 0 : buildings.Max(b => b.Id);
-        var nextId = Math.Max(1, maxId + 1);
+        // Building 本地序号独立于 ModId：图片按 1.png、2.png… 命名，XML id 同步使用该序号。
+        // 取当前未占用的最小正整数（从 1 起），避免沿用旧的「ModId + 序号」大 ID。
+        var usedIds = buildings.Select(b => b.Id).ToHashSet();
+        var nextId = 1;
+        while (usedIds.Contains(nextId))
+        {
+            nextId++;
+        }
+
         return (nextId, $"NewBuilding_{nextId}");
     }
 

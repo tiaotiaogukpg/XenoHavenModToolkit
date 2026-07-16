@@ -37,7 +37,6 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <WrapPanel Grid.Column="0"
@@ -62,9 +61,6 @@
                        Foreground="{DynamicResource Theme.SecondaryTextColor}"
                        TextTrimming="CharacterEllipsis"
                        VerticalAlignment="Center"/>
-
-                <!-- 设置常驻最右边 -->
-                <Button x:Name="SettingsButton" Grid.Column="2" Content="设置" Click="Settings_Click"/>
             </Grid>
         </Border>
 

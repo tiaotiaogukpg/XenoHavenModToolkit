@@ -265,10 +265,13 @@ public partial class MainWindow : Window
         UpdateTopBarState();
     }
 
-    private void CloseCurrentMod()
+    private void CloseCurrentMod(bool rebuildNavigationTree = true)
     {
         if (string.IsNullOrWhiteSpace(currentModRoot))
         {
+            buildings.Clear();
+            BuildingTiles.SelectedItem = null;
+            UpdateTopBarState();
             return;
         }
 
@@ -282,7 +285,11 @@ public partial class MainWindow : Window
         mainXmlText = string.Empty;
         buildingsXmlText = string.Empty;
 
-        BuildOverviewNavigationTree();
+        if (rebuildNavigationTree)
+        {
+            BuildOverviewNavigationTree();
+        }
+
         UpdateTopBarState();
         Log("已返回总览状态。");
     }
@@ -323,6 +330,26 @@ public partial class MainWindow : Window
     private static bool IsModsDirectoryReady()
         => Directory.Exists(AppPaths.GetModsDirectory());
 
+    private static bool IsOverviewRootPath(string path)
+    {
+        if (string.IsNullOrWhiteSpace(path))
+        {
+            return false;
+        }
+
+        try
+        {
+            var left = Path.GetFullPath(path.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+            var right = Path.GetFullPath(AppPaths.GetModsDirectory()
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+            return left.Equals(right, StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     private TreeSelectionKind ClassifyCurrentSelection()
     {
         if (ModFileTree.SelectedItem is TreeViewItem treeItem)
@@ -342,7 +369,7 @@ public partial class MainWindow : Window
     {
         switch (item.Tag)
         {
-            case string path when path.Equals(AppPaths.GetModsDirectory(), StringComparison.OrdinalIgnoreCase):
+            case string path when IsOverviewRootPath(path):
                 return TreeSelectionKind.OverviewRoot;
             case OverviewModDirectoryTag directoryTag:
                 if (!string.IsNullOrWhiteSpace(currentModRoot) &&
@@ -605,6 +632,10 @@ public partial class MainWindow : Window
             case BuildingTreeTag buildingTag:
                 EnsureModActivated(buildingTag.ModRoot);
                 SyncBuildingTileSelection(buildingTag.BuildingId);
+                break;
+            case string path when IsOverviewRootPath(path):
+                // 点击顶层 Mod：关闭当前工程并清空右侧 Building 显示（保留树选中，避免重建闪烁）
+                CloseCurrentMod(rebuildNavigationTree: false);
                 break;
             case string path:
                 BuildingTiles.SelectedItem = null;
@@ -1442,7 +1473,7 @@ public partial class MainWindow : Window
         var root = new TreeViewItem
         {
             Header = "Mod",
-            Tag = modsRoot,
+            Tag = Path.GetFullPath(modsRoot),
             IsExpanded = true
         };
 

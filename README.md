@@ -25,6 +25,7 @@ XenoHaven MOD Toolkit 是一个用于制作异星家园（XenoHaven）基础 MOD
 - 制造公式材料只能从材料表下拉选择，单条数量上限 200。
 - 一键删除当前 Mod 内所有 `.meta` 文件。
 - 导出发布版 Mod（复制目录并跳过 `.meta`）。
+- 启动时连接本机 Steam 客户端，在顶栏显示当前登录账号（需 Steam 已运行；AppID 见 `app/steam_appid.txt`）。
 
 ## 工程结构
 
@@ -36,6 +37,10 @@ XenoHavenModToolkit/
     App.xaml
     MainWindow.xaml
     MainWindow.xaml.cs
+    SteamSession.cs
+    steam_appid.txt
+  third_party/
+    Steamworks.NET/
   DOC/
     K-可用材料表.xlsx
     K-可用工作台.xlsx

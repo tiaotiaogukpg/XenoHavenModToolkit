@@ -32,11 +32,13 @@ public partial class MainWindow : Window
     private int? currentModBaseId;
     private AppSettings settings = new();
     private bool suppressTileClearOnTreeDeselect;
+    private SteamSession? steamSession;
 
     public MainWindow()
     {
         InitializeComponent();
         BuildingTiles.ItemsSource = buildings;
+        Closed += MainWindow_Closed;
         UpdateTopBarState();
     }
 
@@ -46,6 +48,8 @@ public partial class MainWindow : Window
         Log($"应用基础目录：{AppPaths.GetApplicationBaseDirectory()}");
         Log($"配置文件路径：{AppPaths.GetConfigFilePath()}");
         Log($"Mods 目录路径：{AppPaths.GetModsDirectory()}");
+
+        ConnectSteam(showFailureDialog: true);
 
         settings = AppSettings.Load();
         if (!gameData.IsReady && !string.IsNullOrWhiteSpace(gameData.LoadError))
@@ -71,6 +75,64 @@ public partial class MainWindow : Window
         }
 
         UpdateTopBarState();
+    }
+
+    private void ConnectSteam(bool showFailureDialog)
+    {
+        steamSession?.Dispose();
+        steamSession = SteamSession.TryStart(SteamAppIds.XenoHaven);
+        RefreshSteamStatusUi();
+
+        if (steamSession.IsAvailable)
+        {
+            Log($"Steam 已连接：{steamSession.PersonaName}（SteamID {steamSession.SteamId64}，AppID {steamSession.AppId}）");
+            return;
+        }
+
+        var reason = steamSession.FailureReason ?? "未知原因";
+        Log($"Steam 未连接：{reason}");
+        if (showFailureDialog)
+        {
+            System.Windows.MessageBox.Show(
+                this,
+                "未能连接 Steam 账号。" + Environment.NewLine + Environment.NewLine +
+                reason + Environment.NewLine + Environment.NewLine +
+                "请确认：\n1. Steam 客户端已启动并登录\n2. 本机可访问 Steam\n3. AppID 配置正确（steam_appid.txt）\n\n" +
+                "工具仍可编辑本地 Mod；创意工坊相关功能需要 Steam。",
+                "Steam 账号",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+        }
+    }
+
+    private void RefreshSteamStatusUi()
+    {
+        if (SteamStatusText is null)
+        {
+            return;
+        }
+
+        SteamStatusText.Text = steamSession?.StatusText ?? "Steam：未连接";
+        SteamStatusText.ToolTip = steamSession?.IsAvailable == true
+            ? "已通过本机 Steam 客户端登录"
+            : steamSession?.FailureReason ?? "Steam 未连接";
+        if (SteamReconnectButton is not null)
+        {
+            SteamReconnectButton.IsEnabled = steamSession?.IsAvailable != true;
+        }
+
+        UpdateToolbarForSelection();
+    }
+
+    private void SteamReconnect_Click(object sender, RoutedEventArgs e)
+    {
+        ConnectSteam(showFailureDialog: true);
+    }
+
+    private void MainWindow_Closed(object? sender, EventArgs e)
+    {
+        steamSession?.Dispose();
+        steamSession = null;
     }
 
     private void OpenModFolder_Click(object sender, RoutedEventArgs e)
@@ -313,6 +375,7 @@ public partial class MainWindow : Window
                                                or TreeSelectionKind.BuildingsXml
                                                or TreeSelectionKind.BuildingNode
                                                or TreeSelectionKind.ModOther;
+        UploadWorkshopButton.IsEnabled = opened && steamSession?.IsAvailable == true;
         AddBuildingButton.IsEnabled = opened &&
                                       selection is TreeSelectionKind.ModRoot
                                                    or TreeSelectionKind.OverviewModFolder
@@ -555,6 +618,57 @@ public partial class MainWindow : Window
         {
             Log($"main.xml 更新失败：{ex.Message}");
             System.Windows.MessageBox.Show(this, ex.Message, "Mod 信息", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+    }
+
+    private void UploadWorkshop_Click(object sender, RoutedEventArgs e)
+    {
+        if (!EnsureModOpen())
+        {
+            return;
+        }
+
+        if (steamSession?.IsAvailable != true)
+        {
+            System.Windows.MessageBox.Show(
+                this,
+                "尚未连接 Steam。请先启动并登录 Steam 客户端，再点击「重连 Steam」。",
+                "上传到创意工坊",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return;
+        }
+
+        var messages = new List<string>();
+        ValidateModMetadata(currentModRoot!, mainXmlText, messages);
+        if (messages.Any(message => message.StartsWith("[错误]", StringComparison.Ordinal)))
+        {
+            Log("上传前校验失败：" + Environment.NewLine + string.Join(Environment.NewLine, messages));
+            System.Windows.MessageBox.Show(
+                this,
+                string.Join(Environment.NewLine, messages),
+                "上传前校验失败",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            return;
+        }
+
+        var dialog = new WorkshopUploadWindow(currentModRoot!, mainXmlText, steamSession.AppId)
+        {
+            Owner = this
+        };
+        dialog.ShowDialog();
+
+        if (!string.IsNullOrWhiteSpace(dialog.UpdatedMainXml))
+        {
+            mainXmlText = dialog.UpdatedMainXml;
+            RefreshOverviewList();
+            BuildOverviewNavigationTree();
+        }
+
+        if (dialog.UploadSucceeded)
+        {
+            Log($"创意工坊上传成功：PublishedFileId={dialog.ResultPublishedFileId}");
         }
     }
 

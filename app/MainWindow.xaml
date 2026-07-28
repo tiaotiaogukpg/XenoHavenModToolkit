@@ -37,6 +37,7 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <WrapPanel Grid.Column="0"
@@ -48,19 +49,39 @@
                     <Button x:Name="CleanMetaButton" Content="清理 .meta" Click="CleanMeta_Click" Visibility="Collapsed"/>
 
                     <Button x:Name="ModInfoButton" Content="编辑MOD" Click="ModInfo_Click" IsEnabled="False"/>
+                    <Button x:Name="UploadWorkshopButton" Content="上传工坊" Click="UploadWorkshop_Click" IsEnabled="False"
+                            ToolTip="将当前 Mod 上传或更新到 Steam 创意工坊（需已连接 Steam）"/>
                     <Button x:Name="AddBuildingButton" Content="新建组件" Click="AddBuilding_Click" IsEnabled="False"/>
                     <Button x:Name="EditBuildingButton" Content="编辑组件" Click="OpenBuildingEditor_Click" IsEnabled="False"/>
                     <Button x:Name="DeleteBuildingButton" Content="删除组件" Click="DeleteBuilding_Click" IsEnabled="False"/>
                     <Button x:Name="CleanMetaOpenedButton" Content="清理 .meta" Click="CleanMeta_Click" Visibility="Collapsed"/>
                 </WrapPanel>
 
-            <TextBlock x:Name="CurrentModPathText"
-                       Grid.Column="1"
-                       Text="未打开 Mod 文件夹"
-                       Margin="12,0"
-                       Foreground="{DynamicResource Theme.SecondaryTextColor}"
-                       TextTrimming="CharacterEllipsis"
-                       VerticalAlignment="Center"/>
+                <TextBlock x:Name="CurrentModPathText"
+                           Grid.Column="1"
+                           Text="未打开 Mod 文件夹"
+                           Margin="12,0"
+                           Foreground="{DynamicResource Theme.SecondaryTextColor}"
+                           TextTrimming="CharacterEllipsis"
+                           VerticalAlignment="Center"/>
+
+                <StackPanel Grid.Column="2"
+                            Orientation="Horizontal"
+                            VerticalAlignment="Center"
+                            Margin="8,0,0,0">
+                    <TextBlock x:Name="SteamStatusText"
+                               Text="Steam：未连接"
+                               Foreground="{DynamicResource Theme.SecondaryTextColor}"
+                               TextTrimming="CharacterEllipsis"
+                               MaxWidth="420"
+                               VerticalAlignment="Center"
+                               ToolTip="本机 Steam 客户端登录状态"/>
+                    <Button x:Name="SteamReconnectButton"
+                            Content="重连 Steam"
+                            Margin="8,0,0,0"
+                            Click="SteamReconnect_Click"
+                            ToolTip="在启动 Steam 并登录后重试连接"/>
+                </StackPanel>
             </Grid>
         </Border>
 

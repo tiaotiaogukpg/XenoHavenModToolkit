@@ -2,7 +2,7 @@
 
 本文档基于当前已验证的 Mod 样例与 `ModManager.cs` 行为整理。它不是官方 SDK 文档，而是面向基础内容 Mod 作者的实用约定说明。
 
-工具操作步骤（打开工具、新建/编辑 Mod 与组件）见 [SteamModDevGuide.md](./SteamModDevGuide.md)。
+从创建到工坊上传的完整跟做教程见 [异星家园Mod制作完整教程.md](./异星家园Mod制作完整教程.md)。工具按钮操作步骤见 [SteamModDevGuide.md](./SteamModDevGuide.md)。
 
 ## 1. MOD 加载模型
 

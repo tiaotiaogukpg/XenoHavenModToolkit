@@ -2,7 +2,7 @@
 
 本指南说明如何使用 **XenoHaven MOD Toolkit**（主程序 `XenoHavenModTool.exe`）制作建筑类 Mod，适合发布到 Steam 创意工坊或随游戏分发的 Mod 工具包。当前工具第一版主要支持 `Thing/Buildings`（建筑/可放置组件）。
 
-更完整的 XML 约定、目录结构与 `PRODUCTION_LINE` 对接说明见 [ModDevGuide.md](./ModDevGuide.md)。
+从创建到工坊上传的完整跟做教程见 [异星家园Mod制作完整教程.md](./异星家园Mod制作完整教程.md)。更完整的 XML 约定、目录结构与 `PRODUCTION_LINE` 对接说明见 [ModDevGuide.md](./ModDevGuide.md)。
 
 ---
 

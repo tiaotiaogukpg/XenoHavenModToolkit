@@ -21,32 +21,72 @@ internal static class LocalizationManager
 
     public static event EventHandler? LanguageChanged;
 
+    /// <summary>
+    /// 解析配置中的语言。null / 空 / system / auto → 跟随系统 UI 语言。
+    /// </summary>
+    public static AppLanguage Resolve(string? settingsValue)
+    {
+        if (string.IsNullOrWhiteSpace(settingsValue) ||
+            settingsValue.Equals("system", StringComparison.OrdinalIgnoreCase) ||
+            settingsValue.Equals("auto", StringComparison.OrdinalIgnoreCase))
+        {
+            return DetectFromSystem();
+        }
+
+        return Parse(settingsValue);
+    }
+
+    /// <summary>根据系统 UI 区域选择应用语言（中文系→中文，其它→英语）。</summary>
+    public static AppLanguage DetectFromSystem()
+    {
+        try
+        {
+            for (var culture = CultureInfo.CurrentUICulture;
+                 culture is not null && !Equals(culture, CultureInfo.InvariantCulture);
+                 culture = culture.Parent)
+            {
+                if (culture.TwoLetterISOLanguageName.Equals("zh", StringComparison.OrdinalIgnoreCase))
+                {
+                    return AppLanguage.ZhCn;
+                }
+
+                if (culture.TwoLetterISOLanguageName.Equals("en", StringComparison.OrdinalIgnoreCase))
+                {
+                    return AppLanguage.En;
+                }
+            }
+        }
+        catch
+        {
+            // fall through
+        }
+
+        return AppLanguage.En;
+    }
+
     public static AppLanguage Parse(string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
         {
-            return AppLanguage.ZhCn;
+            return DetectFromSystem();
         }
 
         var normalized = value.Trim().Replace('_', '-');
         if (normalized.Equals("en", StringComparison.OrdinalIgnoreCase) ||
-            normalized.Equals("en-US", StringComparison.OrdinalIgnoreCase) ||
-            normalized.Equals("en-GB", StringComparison.OrdinalIgnoreCase))
+            normalized.StartsWith("en-", StringComparison.OrdinalIgnoreCase))
         {
             return AppLanguage.En;
         }
 
         if (normalized.Equals("zh", StringComparison.OrdinalIgnoreCase) ||
-            normalized.Equals("zh-CN", StringComparison.OrdinalIgnoreCase) ||
-            normalized.Equals("zh-Hans", StringComparison.OrdinalIgnoreCase) ||
-            normalized.Equals("zh-TW", StringComparison.OrdinalIgnoreCase))
+            normalized.StartsWith("zh-", StringComparison.OrdinalIgnoreCase))
         {
             return AppLanguage.ZhCn;
         }
 
         return Enum.TryParse<AppLanguage>(normalized, ignoreCase: true, out var lang)
             ? lang
-            : AppLanguage.ZhCn;
+            : DetectFromSystem();
     }
 
     public static string ToSettingsValue(AppLanguage language)

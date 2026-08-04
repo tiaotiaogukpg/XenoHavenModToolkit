@@ -8,8 +8,10 @@ internal sealed class AppSettings
     public string? LastModPath { get; set; }
     public bool OpenLastModOnStartup { get; set; } = true;
     public string Theme { get; set; } = nameof(AppTheme.Light);
-    /// <summary>UI 语言：zh-CN / en</summary>
-    public string Language { get; set; } = "zh-CN";
+    /// <summary>
+    /// UI 语言：zh-CN / en；null 或空表示跟随系统。
+    /// </summary>
+    public string? Language { get; set; }
 
     public static string GetConfigFilePath() => AppPaths.GetConfigFilePath();
 

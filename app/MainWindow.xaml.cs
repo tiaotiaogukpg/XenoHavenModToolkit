@@ -49,7 +49,7 @@ public partial class MainWindow : Window
     public void InitializeOnStartup()
     {
         settings = AppSettings.Load();
-        SyncLanguageCombo(LocalizationManager.Parse(settings.Language));
+        SyncLanguageCombo(LocalizationManager.Resolve(settings.Language));
 
         Log($"运行模式：{AppPaths.RunModeLabel}");
         Log($"应用基础目录：{AppPaths.GetApplicationBaseDirectory()}");

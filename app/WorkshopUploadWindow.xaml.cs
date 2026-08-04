@@ -57,15 +57,15 @@ public partial class WorkshopUploadWindow : Window
         }
 
         var isCreate = publishedFileId == 0;
-        ModeText.Text = isCreate ? "首次发布（CreateItem）" : "更新已有条目（StartItemUpdate）";
-        PublishedFileIdBox.Text = isCreate ? "0（上传成功后写入）" : publishedFileId.ToString();
+        ModeText.Text = isCreate ? Loc.Get("Str.Workshop.ModeCreate") : Loc.Get("Str.Workshop.ModeUpdate");
+        PublishedFileIdBox.Text = isCreate ? Loc.Get("Str.Workshop.PublishedFileIdNew") : publishedFileId.ToString();
         TitleBox.Text = title;
         DescriptionBox.Text = description;
         ChangeNoteBox.Text = isCreate ? "Initial upload" : "Update";
         PreviewPathBox.Text = SteamWorkshopPublisher.ResolvePreviewPath(modRoot);
         ContentPathBox.Text = modRoot;
         OpenItemButton.IsEnabled = true;
-        OpenItemButton.Content = isCreate ? "打开工坊总览" : "打开工坊页";
+        OpenItemButton.Content = isCreate ? Loc.Get("Str.Workshop.OpenHub") : Loc.Get("Str.Workshop.OpenItem");
         OpenItemButton.ToolTip = isCreate
             ? SteamAppIds.WorkshopAboutUrl
             : $"https://steamcommunity.com/sharedfiles/filedetails/?id={publishedFileId}";
@@ -82,26 +82,26 @@ public partial class WorkshopUploadWindow : Window
         var description = DescriptionBox.Text.Trim();
         if (string.IsNullOrWhiteSpace(title))
         {
-            System.Windows.MessageBox.Show(this, "标题不能为空。", "上传到创意工坊", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(this, Loc.Get("Str.Workshop.TitleRequired"), Loc.Get("Str.Workshop.Title"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
         if (string.IsNullOrWhiteSpace(description))
         {
-            System.Windows.MessageBox.Show(this, "简介不能为空。", "上传到创意工坊", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(this, Loc.Get("Str.Workshop.DescriptionRequired"), Loc.Get("Str.Workshop.Title"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
         var previewPath = PreviewPathBox.Text.Trim();
         if (!File.Exists(previewPath))
         {
-            System.Windows.MessageBox.Show(this, $"预览图不存在：{previewPath}", "上传到创意工坊", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(this, Loc.Format("Str.Workshop.PreviewMissing", previewPath), Loc.Get("Str.Workshop.Title"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
         SetBusy(true);
         StatusText.Text = string.Empty;
-        ProgressText.Text = "开始上传…";
+        ProgressText.Text = Loc.Get("Str.Workshop.Starting");
         ProgressBar.IsIndeterminate = true;
         ProgressBar.Value = 0;
 
@@ -129,16 +129,16 @@ public partial class WorkshopUploadWindow : Window
             if (!result.Success)
             {
                 ProgressBar.IsIndeterminate = false;
-                ProgressText.Text = "上传失败";
-                StatusText.Text = result.ErrorMessage ?? "未知错误";
+                ProgressText.Text = Loc.Get("Str.Workshop.UploadFailed");
+                StatusText.Text = result.ErrorMessage ?? Loc.Get("Str.UnknownReason");
 
                 // CreateItem 已成功但 Submit 失败时，仍写回 ID，避免下次再 Create 出空条目。
                 if (result.PublishedFileId != 0)
                 {
                     publishedFileId = result.PublishedFileId;
                     PublishedFileIdBox.Text = publishedFileId.ToString();
-                    ModeText.Text = "更新已有条目（StartItemUpdate）";
-                    OpenItemButton.Content = "打开工坊页";
+                    ModeText.Text = Loc.Get("Str.Workshop.ModeUpdate");
+                    OpenItemButton.Content = Loc.Get("Str.Workshop.OpenItem");
                     OpenItemButton.ToolTip =
                         $"https://steamcommunity.com/sharedfiles/filedetails/?id={publishedFileId}";
                     ChangeNoteBox.Text = "Update";
@@ -146,13 +146,11 @@ public partial class WorkshopUploadWindow : Window
                     if (TryWritePublishedFileId(publishedFileId, out var writeError))
                     {
                         uploadSucceeded = true;
-                        StatusText.Text +=
-                            $"\n\n已创建条目 PublishedFileId={publishedFileId} 并写入 main.xml；修复 Steamworks 配置后请再次「开始上传」以提交内容。";
+                        StatusText.Text += Loc.Format("Str.Workshop.PartialCreateSaved", publishedFileId);
                     }
                     else
                     {
-                        StatusText.Text +=
-                            $"\n\n已创建条目 PublishedFileId={publishedFileId}，但写入 main.xml 失败：{writeError}";
+                        StatusText.Text += Loc.Format("Str.Workshop.PartialCreateWriteFail", publishedFileId, writeError ?? string.Empty);
                     }
                 }
 
@@ -164,7 +162,7 @@ public partial class WorkshopUploadWindow : Window
                 System.Windows.MessageBox.Show(
                     this,
                     StatusText.Text,
-                    "上传到创意工坊",
+                    Loc.Get("Str.Workshop.Title"),
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
                 return;
@@ -172,20 +170,20 @@ public partial class WorkshopUploadWindow : Window
 
             publishedFileId = result.PublishedFileId;
             PublishedFileIdBox.Text = publishedFileId.ToString();
-            ModeText.Text = "更新已有条目（StartItemUpdate）";
+            ModeText.Text = Loc.Get("Str.Workshop.ModeUpdate");
             OpenItemButton.IsEnabled = true;
-            OpenItemButton.Content = "打开工坊页";
+            OpenItemButton.Content = Loc.Get("Str.Workshop.OpenItem");
             OpenItemButton.ToolTip =
                 $"https://steamcommunity.com/sharedfiles/filedetails/?id={publishedFileId}";
             ChangeNoteBox.Text = "Update";
 
             if (!TryWritePublishedFileId(publishedFileId, out var error))
             {
-                StatusText.Text = $"上传成功，但写回 steamPublishedFileId 失败：{error}";
+                StatusText.Text = Loc.Format("Str.Workshop.CreateOkWriteFail", publishedFileId, error ?? string.Empty);
                 System.Windows.MessageBox.Show(
                     this,
-                    $"创意工坊上传成功（PublishedFileId={publishedFileId}），但写入 main.xml 失败：{error}",
-                    "上传到创意工坊",
+                    StatusText.Text,
+                    Loc.Get("Str.Workshop.Title"),
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
             }
@@ -193,20 +191,20 @@ public partial class WorkshopUploadWindow : Window
             {
                 uploadSucceeded = true;
                 StatusText.Text = result.WasCreate
-                    ? $"首次发布成功。PublishedFileId={publishedFileId}，已写入 main.xml。"
-                    : $"更新成功。PublishedFileId={publishedFileId}。";
+                    ? Loc.Format("Str.Workshop.CreateSuccess", publishedFileId)
+                    : Loc.Format("Str.Workshop.UpdateSuccess", publishedFileId);
             }
 
             ProgressBar.IsIndeterminate = false;
             ProgressBar.Value = 100;
-            ProgressText.Text = "完成";
+            ProgressText.Text = Loc.Get("Str.Workshop.Done");
 
             if (result.NeedsLegalAgreement)
             {
                 var agree = System.Windows.MessageBox.Show(
                     this,
-                    "Steam 要求你接受创意工坊协议后，条目才会完全公开。是否现在打开协议页面？",
-                    "创意工坊协议",
+                    Loc.Get("Str.Workshop.LegalPrompt"),
+                    Loc.Get("Str.Workshop.LegalTitle"),
                     MessageBoxButton.YesNo,
                     MessageBoxImage.Information);
                 if (agree == MessageBoxResult.Yes)
@@ -219,7 +217,7 @@ public partial class WorkshopUploadWindow : Window
                 System.Windows.MessageBox.Show(
                     this,
                     StatusText.Text,
-                    "上传到创意工坊",
+                    Loc.Get("Str.Workshop.Title"),
                     MessageBoxButton.OK,
                     MessageBoxImage.Information);
             }
@@ -227,9 +225,9 @@ public partial class WorkshopUploadWindow : Window
         catch (Exception ex)
         {
             ProgressBar.IsIndeterminate = false;
-            ProgressText.Text = "上传失败";
+            ProgressText.Text = Loc.Get("Str.Workshop.UploadFailed");
             StatusText.Text = ex.Message;
-            System.Windows.MessageBox.Show(this, ex.Message, "上传到创意工坊", MessageBoxButton.OK, MessageBoxImage.Error);
+            System.Windows.MessageBox.Show(this, ex.Message, Loc.Get("Str.Workshop.Title"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
         finally
         {

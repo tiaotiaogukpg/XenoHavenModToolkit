@@ -110,7 +110,8 @@ dist/win-x64/
 
 | 文档                                                     | 说明                                       |
 | ------------------------------------------------------ | ---------------------------------------- |
-| [docs/异星家园Mod制作完整教程.md](docs/异星家园Mod制作完整教程.md) | **完整跟做**：从创建 → 制作组件 → 测试 → 工坊上传 / 更新 |
+| [docs/异星家园Mod简易说明.md](docs/异星家园Mod简易说明.md)             | **玩家向简版**：可做类型、界面功能、上传与下载                |
+| [docs/异星家园Mod简易说明.docx](docs/异星家园Mod简易说明.docx)         | 同上 Word 版（含截图占位；配图见 `docs/简易说明配图/`）      |
 | [docs/SteamModDevGuide.md](docs/SteamModDevGuide.md)   | **Steam / 玩家向**：如何打开工具、创建 Mod、编辑 Mod 与组件 |
 | [docs/SteamModDevGuide.pdf](docs/SteamModDevGuide.pdf) | 同上内容的 PDF 版（含配图）                         |
 | [docs/ModDevGuide.md](docs/ModDevGuide.md)             | **技术向**：目录结构、XML 字段、图片命名与游戏对接约定          |

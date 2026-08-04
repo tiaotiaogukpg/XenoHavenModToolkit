@@ -1,0 +1,153 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:sys="clr-namespace:System;assembly=System.Runtime">
+
+    <!-- Common -->
+    <sys:String x:Key="Str.Ok">OK</sys:String>
+    <sys:String x:Key="Str.Cancel">Cancel</sys:String>
+    <sys:String x:Key="Str.Close">Close</sys:String>
+    <sys:String x:Key="Str.Save">Save</sys:String>
+    <sys:String x:Key="Str.Create">Create</sys:String>
+    <sys:String x:Key="Str.Import">Import</sys:String>
+    <sys:String x:Key="Str.Refresh">Refresh</sys:String>
+    <sys:String x:Key="Str.ConfirmTitle">Confirm</sys:String>
+    <sys:String x:Key="Str.NotSelected">Not selected</sys:String>
+    <sys:String x:Key="Str.Language">Language</sys:String>
+    <sys:String x:Key="Str.UnknownReason">Unknown reason</sys:String>
+    <sys:String x:Key="Str.InputError">Invalid input</sys:String>
+
+    <!-- MainWindow -->
+    <sys:String x:Key="Str.Main.OpenMod">Open Project</sys:String>
+    <sys:String x:Key="Str.Main.NewMod">New MOD</sys:String>
+    <sys:String x:Key="Str.Main.DeleteMod">Delete MOD</sys:String>
+    <sys:String x:Key="Str.Main.CleanMeta">Clean .meta</sys:String>
+    <sys:String x:Key="Str.Main.EditMod">Edit MOD</sys:String>
+    <sys:String x:Key="Str.Main.UploadWorkshop">Upload Workshop</sys:String>
+    <sys:String x:Key="Str.Main.UploadWorkshopTip">Upload or update the current mod to the Steam Workshop (Steam required)</sys:String>
+    <sys:String x:Key="Str.Main.AddBuilding">New Building</sys:String>
+    <sys:String x:Key="Str.Main.EditBuilding">Edit Building</sys:String>
+    <sys:String x:Key="Str.Main.DeleteBuilding">Delete Building</sys:String>
+    <sys:String x:Key="Str.Main.NoModOpen">No mod folder open</sys:String>
+    <sys:String x:Key="Str.Main.SteamDisconnected">Steam: disconnected</sys:String>
+    <sys:String x:Key="Str.Main.SteamDisconnectedWithReason">Steam: disconnected ({0})</sys:String>
+    <sys:String x:Key="Str.Main.SteamStatusTip">Local Steam client login status</sys:String>
+    <sys:String x:Key="Str.Main.SteamConnectedTip">Signed in via the local Steam client</sys:String>
+    <sys:String x:Key="Str.Main.SteamReconnect">Reconnect Steam</sys:String>
+    <sys:String x:Key="Str.Main.SteamReconnectTip">Retry after starting Steam and signing in</sys:String>
+    <sys:String x:Key="Str.Main.ConsoleTitle">CONSOLE / Log / Validation</sys:String>
+    <sys:String x:Key="Str.Main.SteamAccountTitle">Steam Account</sys:String>
+    <sys:String x:Key="Str.Main.SteamConnectFailed">Could not connect to Steam.
+
+{0}
+
+Please check:
+1. Steam client is running and signed in
+2. This PC can reach Steam
+3. AppID is correct (steam_appid.txt)
+
+You can still edit local mods; Workshop features require Steam.</sys:String>
+    <sys:String x:Key="Str.Main.ModsDirTitle">Mods Folder</sys:String>
+    <sys:String x:Key="Str.Main.SaveSettingsTitle">Save Settings</sys:String>
+    <sys:String x:Key="Str.Main.OpenModFolderDescription">Select the mod root folder (contains main.xml)</sys:String>
+    <sys:String x:Key="Str.Main.DeleteModConfirm">Are you sure you want to delete "{0}"?</sys:String>
+    <sys:String x:Key="Str.Main.DeleteBuildingTitle">Delete Building</sys:String>
+    <sys:String x:Key="Str.Main.DeleteBuildingConfirm">Are you sure you want to delete "{0}-{1}"?</sys:String>
+    <sys:String x:Key="Str.Main.DeleteBuildingSelectFirst">Select a Building tile first.</sys:String>
+    <sys:String x:Key="Str.Main.DeleteBuildingNotFound">No Buildings.xml entry found for id={0}.</sys:String>
+    <sys:String x:Key="Str.Main.CleanMetaConfirm">This will delete all *.meta files under the current mod. Recommended only for release packs. Continue?</sys:String>
+    <sys:String x:Key="Str.Main.ModInfoValidateTitle">MOD Info Validation Failed</sys:String>
+    <sys:String x:Key="Str.Main.ModInfoTitle">MOD Info</sys:String>
+    <sys:String x:Key="Str.Main.UploadValidateTitle">Upload Validation Failed</sys:String>
+    <sys:String x:Key="Str.Main.UploadNeedSteam">Steam is not connected. Start and sign in to Steam, then click Reconnect Steam.</sys:String>
+    <sys:String x:Key="Str.Main.UploadWorkshopTitle">Upload to Workshop</sys:String>
+    <sys:String x:Key="Str.Main.OpenModFirst">Open a mod folder first.</sys:String>
+
+    <!-- SteamSession -->
+    <sys:String x:Key="Str.Steam.PacksizeFail">Steamworks Packsize check failed (runtime architecture mismatch)</sys:String>
+    <sys:String x:Key="Str.Steam.DllMissing">Matching steam_api64.dll not found</sys:String>
+    <sys:String x:Key="Str.Steam.ClientNotRunning">Steam client is not running. Start Steam and sign in first</sys:String>
+    <sys:String x:Key="Str.Steam.InitFailed">SteamAPI.Init failed: {0}</sys:String>
+
+    <!-- Confirm / NewMod / ModInfo -->
+    <sys:String x:Key="Str.NewMod.Title">New Mod</sys:String>
+    <sys:String x:Key="Str.NewMod.IdTip">MOD base id, generated automatically</sys:String>
+    <sys:String x:Key="Str.NewMod.VersionTip">Defaults to the latest game version (currently 1.0.0)</sys:String>
+    <sys:String x:Key="Str.NewMod.DescriptionRequiredTip">Required</sys:String>
+    <sys:String x:Key="Str.ModInfo.Title">Edit MOD</sys:String>
+    <sys:String x:Key="Str.ModInfo.ImportIcon">Import / replace MOD icon</sys:String>
+    <sys:String x:Key="Str.ModInfo.ImportScreenshot">Import / replace MOD screenshot</sys:String>
+    <sys:String x:Key="Str.ModInfo.IconTip">MOD icon, saved to the mod root</sys:String>
+    <sys:String x:Key="Str.ModInfo.ScreenshotTip">MOD screenshot, saved to the mod root</sys:String>
+    <sys:String x:Key="Str.ModInfo.ExpandPreviewTip">Expand / collapse preview</sys:String>
+    <sys:String x:Key="Str.AddBuilding.Title">New Building</sys:String>
+    <sys:String x:Key="Str.AddBuilding.IdAuto">id (auto)</sys:String>
+    <sys:String x:Key="Str.AddBuilding.Hint">Creation only updates Buildings.xml in the editor (not disk). Use Save XML on the main window afterwards.</sys:String>
+
+    <!-- Workshop -->
+    <sys:String x:Key="Str.Workshop.Title">Upload to Workshop</sys:String>
+    <sys:String x:Key="Str.Workshop.Mode">Mode</sys:String>
+    <sys:String x:Key="Str.Workshop.ModeCreate">First publish (CreateItem)</sys:String>
+    <sys:String x:Key="Str.Workshop.ModeUpdate">Update existing item (StartItemUpdate)</sys:String>
+    <sys:String x:Key="Str.Workshop.PublishedFileIdTip">Workshop item ID (steamPublishedFileId)</sys:String>
+    <sys:String x:Key="Str.Workshop.PublishedFileIdNew">0 (written after successful upload)</sys:String>
+    <sys:String x:Key="Str.Workshop.TitleLabel">Title</sys:String>
+    <sys:String x:Key="Str.Workshop.DescriptionLabel">Description</sys:String>
+    <sys:String x:Key="Str.Workshop.ChangeNote">Change note</sys:String>
+    <sys:String x:Key="Str.Workshop.Visibility">Visibility</sys:String>
+    <sys:String x:Key="Str.Workshop.VisibilityPublic">Public</sys:String>
+    <sys:String x:Key="Str.Workshop.VisibilityFriends">Friends only</sys:String>
+    <sys:String x:Key="Str.Workshop.VisibilityPrivate">Private</sys:String>
+    <sys:String x:Key="Str.Workshop.Preview">Preview image</sys:String>
+    <sys:String x:Key="Str.Workshop.Content">Content folder</sys:String>
+    <sys:String x:Key="Str.Workshop.ExcludeMeta">Exclude .meta files on upload</sys:String>
+    <sys:String x:Key="Str.Workshop.Progress">Progress</sys:String>
+    <sys:String x:Key="Str.Workshop.Waiting">Waiting to start…</sys:String>
+    <sys:String x:Key="Str.Workshop.OpenHub">Open Workshop hub</sys:String>
+    <sys:String x:Key="Str.Workshop.OpenItem">Open Workshop page</sys:String>
+    <sys:String x:Key="Str.Workshop.StartUpload">Start upload</sys:String>
+    <sys:String x:Key="Str.Workshop.TitleRequired">Title is required.</sys:String>
+    <sys:String x:Key="Str.Workshop.DescriptionRequired">Description is required.</sys:String>
+    <sys:String x:Key="Str.Workshop.PreviewMissing">Preview image not found: {0}</sys:String>
+    <sys:String x:Key="Str.Workshop.UploadFailed">Upload failed</sys:String>
+    <sys:String x:Key="Str.Workshop.UploadFailedUnknown">Upload failed.</sys:String>
+    <sys:String x:Key="Str.Workshop.Starting">Starting upload…</sys:String>
+    <sys:String x:Key="Str.Workshop.Done">Done</sys:String>
+    <sys:String x:Key="Str.Workshop.LegalTitle">Workshop legal agreement</sys:String>
+    <sys:String x:Key="Str.Workshop.LegalPrompt">Steam requires you to accept the Workshop legal agreement before the item can be fully public. Open it now?</sys:String>
+    <sys:String x:Key="Str.Workshop.CreateOkWriteFail">Workshop upload succeeded (PublishedFileId={0}), but writing main.xml failed: {1}</sys:String>
+    <sys:String x:Key="Str.Workshop.CreateSuccess">First publish succeeded. PublishedFileId={0}, written to main.xml.</sys:String>
+    <sys:String x:Key="Str.Workshop.UpdateSuccess">Update succeeded. PublishedFileId={0}.</sys:String>
+    <sys:String x:Key="Str.Workshop.PartialCreateSaved">
+
+Created item PublishedFileId={0} and wrote main.xml. After fixing Steamworks settings, click Start upload again to submit content.</sys:String>
+    <sys:String x:Key="Str.Workshop.PartialCreateWriteFail">
+
+Created item PublishedFileId={0}, but writing main.xml failed: {1}</sys:String>
+
+    <!-- Building editor -->
+    <sys:String x:Key="Str.BuildingEditor.Title">Building Editor</sys:String>
+    <sys:String x:Key="Str.BuildingEditor.Collision">Collision</sys:String>
+    <sys:String x:Key="Str.BuildingEditor.Off">Off</sys:String>
+    <sys:String x:Key="Str.BuildingEditor.On">On</sys:String>
+    <sys:String x:Key="Str.BuildingEditor.Recipe">Crafting recipe</sys:String>
+    <sys:String x:Key="Str.BuildingEditor.AddMaterial">Add material</sys:String>
+    <sys:String x:Key="Str.BuildingEditor.DeleteSelected">Delete selected</sys:String>
+    <sys:String x:Key="Str.BuildingEditor.NoMaterials">(No materials required)</sys:String>
+    <sys:String x:Key="Str.BuildingEditor.InventoryIcon">Inventory icon</sys:String>
+    <sys:String x:Key="Str.BuildingEditor.ImportInventoryIcon">Import inventory icon</sys:String>
+    <sys:String x:Key="Str.BuildingEditor.BuildingImage">Building image</sys:String>
+    <sys:String x:Key="Str.BuildingEditor.ImportBuildingImage">Import building image</sys:String>
+
+    <!-- Validation (common dialogs) -->
+    <sys:String x:Key="Str.Validate.NameRequired">name is required.</sys:String>
+    <sys:String x:Key="Str.Validate.TypeRequired">type is required.</sys:String>
+    <sys:String x:Key="Str.Validate.SizePositive">size.x / size.y must be positive integers.</sys:String>
+    <sys:String x:Key="Str.Validate.PositiveInt">{0} must be a positive integer.</sys:String>
+    <sys:String x:Key="Str.Validate.ImportFailedTitle">Import failed</sys:String>
+    <sys:String x:Key="Str.Main.GameDataTitle">Game Data</sys:String>
+    <sys:String x:Key="Str.Main.GameDataNotReady">Game data tables are not ready.</sys:String>
+
+    <!-- AppSettings -->
+    <sys:String x:Key="Str.Settings.SaveFailed">Failed to save settings: {0}
+{1}</sys:String>
+</ResourceDictionary>

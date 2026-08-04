@@ -1,7 +1,7 @@
 <Window x:Class="XenoHavenModToolkit.AddBuildingWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="新建组件" Height="360" Width="520"
+        Title="{DynamicResource Str.AddBuilding.Title}" Height="360" Width="520"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         Background="{DynamicResource Theme.WindowBackground}">
@@ -26,7 +26,7 @@
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
-            <TextBlock Text="id（自动生成）" Grid.Row="0" Grid.Column="0" Margin="0,0,8,8"/>
+            <TextBlock Text="{DynamicResource Str.AddBuilding.IdAuto}" Grid.Row="0" Grid.Column="0" Margin="0,0,8,8"/>
             <TextBox x:Name="IdBox" Grid.Row="0" Grid.Column="1" Margin="0,0,0,8" IsReadOnly="True"/>
 
             <TextBlock Text="name" Grid.Row="1" Grid.Column="0" Margin="0,0,8,8"/>
@@ -44,14 +44,15 @@
             <TextBlock Text="health" Grid.Row="5" Grid.Column="0" Margin="0,0,8,8"/>
             <TextBox x:Name="HealthBox" Grid.Row="5" Grid.Column="1" Margin="0,0,0,8" Text="10" IsReadOnly="True"/>
 
-            <TextBlock Grid.Row="6" Grid.ColumnSpan="2" Foreground="{DynamicResource Theme.SecondaryTextColor}" TextWrapping="Wrap">
-                创建后只会把条目写入编辑器里的 Buildings.xml（不会立刻写磁盘），请再点击主界面的“保存 XML”。
-            </TextBlock>
+            <TextBlock Grid.Row="6" Grid.ColumnSpan="2"
+                       Text="{DynamicResource Str.AddBuilding.Hint}"
+                       Foreground="{DynamicResource Theme.SecondaryTextColor}"
+                       TextWrapping="Wrap"/>
         </Grid>
 
         <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
-            <Button Content="创建" Width="100" IsDefault="True" Click="Create_Click"/>
-            <Button Content="取消" Width="100" IsCancel="True"/>
+            <Button Content="{DynamicResource Str.Create}" Width="100" IsDefault="True" Click="Create_Click"/>
+            <Button Content="{DynamicResource Str.Cancel}" Width="100" IsCancel="True"/>
         </StackPanel>
     </Grid>
 </Window>

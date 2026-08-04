@@ -98,31 +98,31 @@ public partial class ModInfoWindow : Window
 
         if (string.IsNullOrWhiteSpace(name))
         {
-            System.Windows.MessageBox.Show(this, "name 不能为空。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(this, Loc.Get("Str.Validate.NameRequired"), Loc.Get("Str.InputError"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
         if (string.IsNullOrWhiteSpace(author))
         {
-            System.Windows.MessageBox.Show(this, "auth 不能为空。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(this, "auth 不能为空。", Loc.Get("Str.InputError"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
         if (string.IsNullOrWhiteSpace(version))
         {
-            System.Windows.MessageBox.Show(this, "version 不能为空。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(this, "version 不能为空。", Loc.Get("Str.InputError"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
         if (string.IsNullOrWhiteSpace(category))
         {
-            System.Windows.MessageBox.Show(this, "Category 不能为空。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(this, "Category 不能为空。", Loc.Get("Str.InputError"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
         if (string.IsNullOrWhiteSpace(description))
         {
-            System.Windows.MessageBox.Show(this, "description 不能为空。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(this, "description 不能为空。", Loc.Get("Str.InputError"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -217,13 +217,13 @@ public partial class ModInfoWindow : Window
         {
             if (!File.Exists(selectedPath))
             {
-                System.Windows.MessageBox.Show(this, $"{label}不存在：{selectedPath}", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+                System.Windows.MessageBox.Show(this, $"{label}不存在：{selectedPath}", Loc.Get("Str.InputError"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 return false;
             }
 
             if (!ModRootAssets.IsSupportedImage(selectedPath))
             {
-                System.Windows.MessageBox.Show(this, $"{label}只支持 png、jpg、jpeg、bmp、webp。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+                System.Windows.MessageBox.Show(this, $"{label}只支持 png、jpg、jpeg、bmp、webp。", Loc.Get("Str.InputError"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 return false;
             }
 
@@ -232,7 +232,7 @@ public partial class ModInfoWindow : Window
 
         if (!File.Exists(Path.Combine(modRoot, relativePath)))
         {
-            System.Windows.MessageBox.Show(this, $"请导入{label}。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(this, $"请导入{label}。", Loc.Get("Str.InputError"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return false;
         }
 

@@ -31,21 +31,21 @@ public partial class AddBuildingWindow : Window
         var name = NameBox.Text.Trim();
         if (string.IsNullOrWhiteSpace(name))
         {
-            WpfMessageBox.Show(this, "name 不能为空。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            WpfMessageBox.Show(this, Loc.Get("Str.Validate.NameRequired"), Loc.Get("Str.InputError"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
         var type = TypeBox.SelectedItem as string ?? string.Empty;
         if (string.IsNullOrWhiteSpace(type))
         {
-            WpfMessageBox.Show(this, "type 不能为空。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            WpfMessageBox.Show(this, Loc.Get("Str.Validate.TypeRequired"), Loc.Get("Str.InputError"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
         if (!int.TryParse(SizeXBox.Text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var sx) || sx <= 0 ||
             !int.TryParse(SizeYBox.Text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out var sy) || sy <= 0)
         {
-            WpfMessageBox.Show(this, "size.x / size.y 必须是正整数。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            WpfMessageBox.Show(this, Loc.Get("Str.Validate.SizePositive"), Loc.Get("Str.InputError"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 

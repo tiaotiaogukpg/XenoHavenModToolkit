@@ -34,16 +34,23 @@ public partial class MainWindow : Window
     private bool suppressTileClearOnTreeDeselect;
     private SteamSession? steamSession;
 
+    private bool suppressLanguageComboEvent;
+
     public MainWindow()
     {
         InitializeComponent();
         BuildingTiles.ItemsSource = buildings;
         Closed += MainWindow_Closed;
+        LocalizationManager.LanguageChanged += OnLanguageChanged;
+        InitLanguageCombo();
         UpdateTopBarState();
     }
 
     public void InitializeOnStartup()
     {
+        settings = AppSettings.Load();
+        SyncLanguageCombo(LocalizationManager.Parse(settings.Language));
+
         Log($"运行模式：{AppPaths.RunModeLabel}");
         Log($"应用基础目录：{AppPaths.GetApplicationBaseDirectory()}");
         Log($"配置文件路径：{AppPaths.GetConfigFilePath()}");
@@ -51,7 +58,6 @@ public partial class MainWindow : Window
 
         ConnectSteam(showFailureDialog: true);
 
-        settings = AppSettings.Load();
         if (!gameData.IsReady && !string.IsNullOrWhiteSpace(gameData.LoadError))
         {
             Log(gameData.LoadError);
@@ -77,6 +83,71 @@ public partial class MainWindow : Window
         UpdateTopBarState();
     }
 
+    private void InitLanguageCombo()
+    {
+        suppressLanguageComboEvent = true;
+        LanguageCombo.Items.Clear();
+        LanguageCombo.Items.Add(new ComboBoxItem
+        {
+            Content = LocalizationManager.ToDisplayName(AppLanguage.ZhCn),
+            Tag = AppLanguage.ZhCn
+        });
+        LanguageCombo.Items.Add(new ComboBoxItem
+        {
+            Content = LocalizationManager.ToDisplayName(AppLanguage.En),
+            Tag = AppLanguage.En
+        });
+        SyncLanguageCombo(LocalizationManager.Current);
+        suppressLanguageComboEvent = false;
+    }
+
+    private void SyncLanguageCombo(AppLanguage language)
+    {
+        suppressLanguageComboEvent = true;
+        foreach (ComboBoxItem item in LanguageCombo.Items)
+        {
+            if (item.Tag is AppLanguage lang && lang == language)
+            {
+                LanguageCombo.SelectedItem = item;
+                break;
+            }
+        }
+
+        suppressLanguageComboEvent = false;
+    }
+
+    private void LanguageCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (suppressLanguageComboEvent)
+        {
+            return;
+        }
+
+        if (LanguageCombo.SelectedItem is not ComboBoxItem { Tag: AppLanguage language })
+        {
+            return;
+        }
+
+        if (language == LocalizationManager.Current)
+        {
+            return;
+        }
+
+        LocalizationManager.ApplyLanguage(language);
+        settings.Language = LocalizationManager.ToSettingsValue(language);
+        SaveSettingsOrReport();
+    }
+
+    private void OnLanguageChanged(object? sender, EventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(currentModRoot))
+        {
+            CurrentModPathText.Text = Loc.Get("Str.Main.NoModOpen");
+        }
+
+        RefreshSteamStatusUi();
+    }
+
     private void ConnectSteam(bool showFailureDialog)
     {
         steamSession?.Dispose();
@@ -89,17 +160,14 @@ public partial class MainWindow : Window
             return;
         }
 
-        var reason = steamSession.FailureReason ?? "未知原因";
+        var reason = steamSession.FailureReason ?? Loc.Get("Str.UnknownReason");
         Log($"Steam 未连接：{reason}");
         if (showFailureDialog)
         {
             System.Windows.MessageBox.Show(
                 this,
-                "未能连接 Steam 账号。" + Environment.NewLine + Environment.NewLine +
-                reason + Environment.NewLine + Environment.NewLine +
-                "请确认：\n1. Steam 客户端已启动并登录\n2. 本机可访问 Steam\n3. AppID 配置正确（steam_appid.txt）\n\n" +
-                "工具仍可编辑本地 Mod；创意工坊相关功能需要 Steam。",
-                "Steam 账号",
+                Loc.Format("Str.Main.SteamConnectFailed", reason),
+                Loc.Get("Str.Main.SteamAccountTitle"),
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
         }
@@ -112,10 +180,10 @@ public partial class MainWindow : Window
             return;
         }
 
-        SteamStatusText.Text = steamSession?.StatusText ?? "Steam：未连接";
+        SteamStatusText.Text = steamSession?.StatusText ?? Loc.Get("Str.Main.SteamDisconnected");
         SteamStatusText.ToolTip = steamSession?.IsAvailable == true
-            ? "已通过本机 Steam 客户端登录"
-            : steamSession?.FailureReason ?? "Steam 未连接";
+            ? Loc.Get("Str.Main.SteamConnectedTip")
+            : steamSession?.FailureReason ?? Loc.Get("Str.Main.SteamDisconnected");
         if (SteamReconnectButton is not null)
         {
             SteamReconnectButton.IsEnabled = steamSession?.IsAvailable != true;
@@ -131,6 +199,7 @@ public partial class MainWindow : Window
 
     private void MainWindow_Closed(object? sender, EventArgs e)
     {
+        LocalizationManager.LanguageChanged -= OnLanguageChanged;
         steamSession?.Dispose();
         steamSession = null;
     }
@@ -160,7 +229,7 @@ public partial class MainWindow : Window
         {
             var message = $"无法创建 Mods 目录：{modsDir}{Environment.NewLine}{ex.Message}";
             Log(message);
-            System.Windows.MessageBox.Show(this, message, "Mods 目录", MessageBoxButton.OK, MessageBoxImage.Error);
+            System.Windows.MessageBox.Show(this, message, Loc.Get("Str.Main.ModsDirTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
             return false;
         }
     }
@@ -169,7 +238,7 @@ public partial class MainWindow : Window
     {
         using var dialog = new WinForms.FolderBrowserDialog
         {
-            Description = "选择 XenoHaven Mod 根目录（包含 main.xml）",
+            Description = Loc.Get("Str.Main.OpenModFolderDescription"),
             UseDescriptionForTitle = true
         };
 
@@ -290,7 +359,7 @@ public partial class MainWindow : Window
         }
 
         Log(error);
-        System.Windows.MessageBox.Show(this, error, "保存配置", MessageBoxButton.OK, MessageBoxImage.Error);
+        System.Windows.MessageBox.Show(this, error, Loc.Get("Str.Main.SaveSettingsTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
     }
 
     private void ClearSidebarSelection()
@@ -339,7 +408,7 @@ public partial class MainWindow : Window
 
         currentModRoot = null;
         currentModBaseId = null;
-        CurrentModPathText.Text = "未打开 Mod 文件夹";
+        CurrentModPathText.Text = Loc.Get("Str.Main.NoModOpen");
 
         buildings.Clear();
         BuildingTiles.SelectedItem = null;
@@ -480,8 +549,8 @@ public partial class MainWindow : Window
 
         System.Windows.MessageBox.Show(
             this,
-            gameData.LoadError ?? "游戏数据表未就绪。",
-            "游戏数据",
+            gameData.LoadError ?? Loc.Get("Str.Main.GameDataNotReady"),
+            Loc.Get("Str.Main.GameDataTitle"),
             MessageBoxButton.OK,
             MessageBoxImage.Warning);
         return false;
@@ -603,7 +672,7 @@ public partial class MainWindow : Window
             if (messages.Any(message => message.StartsWith("[错误]", StringComparison.Ordinal)))
             {
                 Log("main.xml 保存前校验失败：" + Environment.NewLine + string.Join(Environment.NewLine, messages));
-                System.Windows.MessageBox.Show(this, string.Join(Environment.NewLine, messages), "Mod 信息校验失败", MessageBoxButton.OK, MessageBoxImage.Warning);
+                System.Windows.MessageBox.Show(this, string.Join(Environment.NewLine, messages), Loc.Get("Str.Main.ModInfoValidateTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -617,7 +686,7 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             Log($"main.xml 更新失败：{ex.Message}");
-            System.Windows.MessageBox.Show(this, ex.Message, "Mod 信息", MessageBoxButton.OK, MessageBoxImage.Error);
+            System.Windows.MessageBox.Show(this, ex.Message, Loc.Get("Str.Main.ModInfoTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -632,8 +701,8 @@ public partial class MainWindow : Window
         {
             System.Windows.MessageBox.Show(
                 this,
-                "尚未连接 Steam。请先启动并登录 Steam 客户端，再点击「重连 Steam」。",
-                "上传到创意工坊",
+                Loc.Get("Str.Main.UploadNeedSteam"),
+                Loc.Get("Str.Main.UploadWorkshopTitle"),
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
             return;
@@ -647,7 +716,7 @@ public partial class MainWindow : Window
             System.Windows.MessageBox.Show(
                 this,
                 string.Join(Environment.NewLine, messages),
-                "上传前校验失败",
+                Loc.Get("Str.Main.UploadValidateTitle"),
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
             return;
@@ -707,7 +776,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (!ConfirmDialog.Show(this, "清理 .meta", "将删除当前 Mod 目录内所有 *.meta 文件。该操作只建议用于发布版 Mod。是否继续？"))
+        if (!ConfirmDialog.Show(this, Loc.Get("Str.Main.CleanMeta"), Loc.Get("Str.Main.CleanMetaConfirm")))
         {
             return;
         }
@@ -847,7 +916,7 @@ public partial class MainWindow : Window
         }
 
         var folderName = new DirectoryInfo(modRoot).Name;
-        if (!ConfirmDialog.Show(this, "删除 MOD", $"你确定要删除 “{folderName}“吗？"))
+        if (!ConfirmDialog.Show(this, Loc.Get("Str.Main.DeleteMod"), Loc.Format("Str.Main.DeleteModConfirm", folderName)))
         {
             return;
         }
@@ -869,7 +938,7 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             Log($"删除 MOD 失败：{ex.Message}");
-            System.Windows.MessageBox.Show(this, ex.Message, "删除 MOD", MessageBoxButton.OK, MessageBoxImage.Error);
+            System.Windows.MessageBox.Show(this, ex.Message, Loc.Get("Str.Main.DeleteMod"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -882,11 +951,11 @@ public partial class MainWindow : Window
 
         if (BuildingTiles.SelectedItem is not BuildingEntry selected)
         {
-            System.Windows.MessageBox.Show(this, "请先在磁贴区选中要删除的 Building。", "删除 Building", MessageBoxButton.OK, MessageBoxImage.Information);
+            System.Windows.MessageBox.Show(this, Loc.Get("Str.Main.DeleteBuildingSelectFirst"), Loc.Get("Str.Main.DeleteBuildingTitle"), MessageBoxButton.OK, MessageBoxImage.Information);
             return;
         }
 
-        if (!ConfirmDialog.Show(this, "删除 Building", $"你确定要删除 “{selected.Id}-{selected.Name}” 吗？"))
+        if (!ConfirmDialog.Show(this, Loc.Get("Str.Main.DeleteBuildingTitle"), Loc.Format("Str.Main.DeleteBuildingConfirm", selected.Id, selected.Name)))
         {
             return;
         }
@@ -895,7 +964,7 @@ public partial class MainWindow : Window
         {
             if (!RemoveBuildingFromBuildingsXml(selected.Id))
             {
-                System.Windows.MessageBox.Show(this, $"未在 Buildings.xml 中找到 id={selected.Id} 的条目。", "删除 Building", MessageBoxButton.OK, MessageBoxImage.Warning);
+                System.Windows.MessageBox.Show(this, Loc.Format("Str.Main.DeleteBuildingNotFound", selected.Id), Loc.Get("Str.Main.DeleteBuildingTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -910,7 +979,7 @@ public partial class MainWindow : Window
         catch (Exception ex)
         {
             Log($"删除 Building 失败：{ex.Message}");
-            System.Windows.MessageBox.Show(this, ex.Message, "删除 Building", MessageBoxButton.OK, MessageBoxImage.Error);
+            System.Windows.MessageBox.Show(this, ex.Message, Loc.Get("Str.Main.DeleteBuildingTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
@@ -1719,7 +1788,7 @@ public partial class MainWindow : Window
 
         if (showMessage)
         {
-            Log("请先打开一个 Mod 文件夹。");
+            Log(Loc.Get("Str.Main.OpenModFirst"));
         }
 
         return false;

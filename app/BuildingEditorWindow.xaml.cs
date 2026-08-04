@@ -115,13 +115,13 @@ public partial class BuildingEditorWindow : Window
         var name = NameBox.Text.Trim();
         if (string.IsNullOrWhiteSpace(name))
         {
-            System.Windows.MessageBox.Show(this, "name 不能为空。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(this, Loc.Get("Str.Validate.NameRequired"), Loc.Get("Str.InputError"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
         if (!FieldPicker.TryValidate(out var fieldError))
         {
-            System.Windows.MessageBox.Show(this, fieldError, "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(this, fieldError, Loc.Get("Str.InputError"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -163,7 +163,7 @@ public partial class BuildingEditorWindow : Window
     {
         if (gameData.Materials.Count == 0)
         {
-            System.Windows.MessageBox.Show(this, "材料表为空，无法新增材料。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(this, "材料表为空，无法新增材料。", Loc.Get("Str.InputError"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return;
         }
 
@@ -255,7 +255,7 @@ public partial class BuildingEditorWindow : Window
         {
             if (!File.Exists(sourceImagePath))
             {
-                System.Windows.MessageBox.Show(this, $"{slotName}导入失败：文件不存在。", "导入失败", MessageBoxButton.OK, MessageBoxImage.Warning);
+                System.Windows.MessageBox.Show(this, $"{slotName}导入失败：文件不存在。", Loc.Get("Str.Validate.ImportFailedTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
 
@@ -266,7 +266,7 @@ public partial class BuildingEditorWindow : Window
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show(this, $"{slotName}导入失败：{ex.Message}", "导入失败", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(this, $"{slotName}导入失败：{ex.Message}", Loc.Get("Str.Validate.ImportFailedTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
         }
     }
 
@@ -351,21 +351,21 @@ public partial class BuildingEditorWindow : Window
         {
             if (material.Id <= 0)
             {
-                System.Windows.MessageBox.Show(this, "制造公式里的材料必须从列表中选择。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+                System.Windows.MessageBox.Show(this, "制造公式里的材料必须从列表中选择。", Loc.Get("Str.InputError"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 result = [];
                 return false;
             }
 
             if (gameData.FindMaterial(material.Id) is null)
             {
-                System.Windows.MessageBox.Show(this, $"材料 {material.Id} 不在可用材料表中，请重新选择。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+                System.Windows.MessageBox.Show(this, $"材料 {material.Id} 不在可用材料表中，请重新选择。", Loc.Get("Str.InputError"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 result = [];
                 return false;
             }
 
             if (material.Count <= 0 || material.Count > MaxMaterialCount)
             {
-                System.Windows.MessageBox.Show(this, $"制造公式里的材料数量必须是 1 到 {MaxMaterialCount} 之间的整数。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+                System.Windows.MessageBox.Show(this, $"制造公式里的材料数量必须是 1 到 {MaxMaterialCount} 之间的整数。", Loc.Get("Str.InputError"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 result = [];
                 return false;
             }
@@ -397,7 +397,7 @@ public partial class BuildingEditorWindow : Window
     {
         if (!int.TryParse(text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out value) || value <= 0)
         {
-            System.Windows.MessageBox.Show(this, $"{field} 必须是正整数。", "输入错误", MessageBoxButton.OK, MessageBoxImage.Warning);
+            System.Windows.MessageBox.Show(this, $"{field} 必须是正整数。", Loc.Get("Str.InputError"), MessageBoxButton.OK, MessageBoxImage.Warning);
             return false;
         }
 
@@ -411,7 +411,7 @@ public partial class BuildingEditorWindow : Window
             System.Windows.MessageBox.Show(
                 this,
                 $"{field}（容量）必须是 {BuildingFieldOptions.MinCapbility}–{BuildingFieldOptions.MaxCapbility} 之间的整数。",
-                "输入错误",
+                Loc.Get("Str.InputError"),
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
             return false;
@@ -422,7 +422,7 @@ public partial class BuildingEditorWindow : Window
             System.Windows.MessageBox.Show(
                 this,
                 $"{field}（容量）必须在 {BuildingFieldOptions.MinCapbility}–{BuildingFieldOptions.MaxCapbility} 之间。",
-                "输入错误",
+                Loc.Get("Str.InputError"),
                 MessageBoxButton.OK,
                 MessageBoxImage.Warning);
             return false;

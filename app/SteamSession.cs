@@ -32,8 +32,8 @@ internal sealed class SteamSession : IDisposable
             }
 
             return string.IsNullOrWhiteSpace(FailureReason)
-                ? "Steam：未连接"
-                : $"Steam：未连接（{FailureReason}）";
+                ? Loc.Get("Str.Main.SteamDisconnected")
+                : Loc.Format("Str.Main.SteamDisconnectedWithReason", FailureReason);
         }
     }
 
@@ -57,19 +57,19 @@ internal sealed class SteamSession : IDisposable
 
             if (!Packsize.Test())
             {
-                FailureReason = "Steamworks Packsize 检测失败（运行时架构不匹配）";
+                FailureReason = Loc.Get("Str.Steam.PacksizeFail");
                 return;
             }
 
             if (!DllCheck.Test())
             {
-                FailureReason = "未找到匹配的 steam_api64.dll";
+                FailureReason = Loc.Get("Str.Steam.DllMissing");
                 return;
             }
 
             if (!SteamAPI.IsSteamRunning())
             {
-                FailureReason = "Steam 客户端未运行，请先启动并登录 Steam";
+                FailureReason = Loc.Get("Str.Steam.ClientNotRunning");
                 return;
             }
 
@@ -77,7 +77,7 @@ internal sealed class SteamSession : IDisposable
             if (initResult != ESteamAPIInitResult.k_ESteamAPIInitResult_OK)
             {
                 FailureReason = string.IsNullOrWhiteSpace(errMsg)
-                    ? $"SteamAPI.Init 失败：{initResult}"
+                    ? Loc.Format("Str.Steam.InitFailed", initResult)
                     : errMsg.Trim();
                 return;
             }

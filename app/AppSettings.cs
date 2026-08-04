@@ -8,6 +8,8 @@ internal sealed class AppSettings
     public string? LastModPath { get; set; }
     public bool OpenLastModOnStartup { get; set; } = true;
     public string Theme { get; set; } = nameof(AppTheme.Light);
+    /// <summary>UI 语言：zh-CN / en</summary>
+    public string Language { get; set; } = "zh-CN";
 
     public static string GetConfigFilePath() => AppPaths.GetConfigFilePath();
 
@@ -51,7 +53,7 @@ internal sealed class AppSettings
         }
         catch (Exception ex)
         {
-            return $"保存配置失败：{path}{Environment.NewLine}{ex.Message}";
+            return Loc.Format("Str.Settings.SaveFailed", path, ex.Message);
         }
     }
 }

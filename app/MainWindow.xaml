@@ -2,6 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="XenoHavenModTool" Height="760" Width="1220"
+        Loaded="MainWindow_Loaded"
         MinHeight="640" MinWidth="980"
         Background="{DynamicResource Theme.WindowBackground}">
     <Window.Resources>
@@ -37,6 +38,8 @@
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
@@ -76,22 +79,36 @@
                     <ComboBox x:Name="LanguageCombo"
                               Width="96"
                               MinHeight="26"
-                              Margin="0,0,10,0"
                               VerticalContentAlignment="Center"
                               SelectionChanged="LanguageCombo_SelectionChanged"/>
-                    <TextBlock x:Name="SteamStatusText"
-                               Text="{DynamicResource Str.Main.SteamDisconnected}"
-                               Foreground="{DynamicResource Theme.SecondaryTextColor}"
-                               TextTrimming="CharacterEllipsis"
-                               MaxWidth="360"
-                               VerticalAlignment="Center"
-                               ToolTip="{DynamicResource Str.Main.SteamStatusTip}"/>
+                </StackPanel>
+
+                <DockPanel Grid.Column="3"
+                           Margin="10,0,0,0"
+                           LastChildFill="True"
+                           VerticalAlignment="Center">
                     <Button x:Name="SteamReconnectButton"
+                            DockPanel.Dock="Right"
                             Content="{DynamicResource Str.Main.SteamReconnect}"
                             Margin="8,0,0,0"
                             Click="SteamReconnect_Click"
                             ToolTip="{DynamicResource Str.Main.SteamReconnectTip}"/>
-                </StackPanel>
+                    <TextBlock x:Name="SteamStatusText"
+                               Text="{DynamicResource Str.Main.SteamDisconnected}"
+                               Foreground="{DynamicResource Theme.SecondaryTextColor}"
+                               TextTrimming="CharacterEllipsis"
+                               MaxWidth="220"
+                               VerticalAlignment="Center"
+                               ToolTip="{DynamicResource Str.Main.SteamStatusTip}"/>
+                </DockPanel>
+
+                <Button x:Name="AboutButton"
+                        Grid.Column="4"
+                        Content="{DynamicResource Str.Main.About}"
+                        Margin="8,0,0,0"
+                        VerticalAlignment="Center"
+                        Click="About_Click"
+                        ToolTip="{DynamicResource Str.Main.AboutTip}"/>
             </Grid>
         </Border>
 

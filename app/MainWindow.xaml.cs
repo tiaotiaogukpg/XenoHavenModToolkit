@@ -43,7 +43,13 @@ public partial class MainWindow : Window
         Closed += MainWindow_Closed;
         LocalizationManager.LanguageChanged += OnLanguageChanged;
         InitLanguageCombo();
+        UpdateWindowTitle();
         UpdateTopBarState();
+    }
+
+    private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+    {
+        UpdateWindowTitle();
     }
 
     public void InitializeOnStartup()
@@ -51,6 +57,7 @@ public partial class MainWindow : Window
         settings = AppSettings.Load();
         SyncLanguageCombo(LocalizationManager.Resolve(settings.Language));
 
+        Log($"版本：{AppVersion.Display}");
         Log($"运行模式：{AppPaths.RunModeLabel}");
         Log($"应用基础目录：{AppPaths.GetApplicationBaseDirectory()}");
         Log($"配置文件路径：{AppPaths.GetConfigFilePath()}");
@@ -140,12 +147,24 @@ public partial class MainWindow : Window
 
     private void OnLanguageChanged(object? sender, EventArgs e)
     {
+        UpdateWindowTitle();
+
         if (string.IsNullOrWhiteSpace(currentModRoot))
         {
             CurrentModPathText.Text = Loc.Get("Str.Main.NoModOpen");
         }
 
         RefreshSteamStatusUi();
+    }
+
+    private void UpdateWindowTitle()
+    {
+        Title = AppVersion.WindowTitle;
+    }
+
+    private void About_Click(object sender, RoutedEventArgs e)
+    {
+        AboutWindow.Show(this);
     }
 
     private void ConnectSteam(bool showFailureDialog)
@@ -332,7 +351,9 @@ public partial class MainWindow : Window
             var category = string.Empty;
             if (hasMainXml)
             {
-                category = TryReadMainXmlRootValue(mainXmlPath, "Category") ?? string.Empty;
+                category = TryReadMainXmlRootValue(mainXmlPath, "category")
+                    ?? TryReadMainXmlRootValue(mainXmlPath, "Category")
+                    ?? string.Empty;
             }
 
             overviewMods.Add(new OverviewModEntry(
@@ -1039,8 +1060,8 @@ public partial class MainWindow : Window
             <defs xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
               <id>70000000</id>
               <steamPublishedFileId>0</steamPublishedFileId>
-              <SupportVersion>1</SupportVersion>
-              <Category>Building</Category>
+              <supportVersion>1</supportVersion>
+              <category>Building</category>
               <name>New Mod</name>
               <auth>Author</auth>
               <version>1.0.0</version>

@@ -377,6 +377,14 @@ internal static class SteamWorkshopPublisher
                 "创建条目失败：k_EResultAccessDenied。通常表示该 App 尚未在 Steamworks 开通创意工坊，或当前账号无发布权限。",
             EResult.k_EResultInsufficientPrivilege =>
                 "创建条目失败：权限不足。请确认已接受创意工坊协议，且账号有该 App 的工坊发布权限。",
+            EResult.k_EResultNotLoggedOn =>
+                "创建条目失败：k_EResultNotLoggedOn。\n\n" +
+                "Steam 认为当前未登录，无法创建工坊条目。\n" +
+                "右上角 SteamID 只表示 API 曾读到本地信息，与 UGC 登录态不是同一检查。\n\n" +
+                "请确认：\n" +
+                "1. Steam 客户端在线登录（关闭离线模式）\n" +
+                "2. 点击「重连 Steam」后重试\n" +
+                "3. 当前账号拥有 XenoHaven（App 3461270）或在 Steamworks 有开发者权限",
             _ => $"创建条目失败：{result}"
         };
 
@@ -394,6 +402,13 @@ internal static class SteamWorkshopPublisher
                 "提交更新失败：k_EResultLimitExceeded。预览图必须 < 1 MB，或 Steam Cloud 配额不足。",
             EResult.k_EResultFileNotFound =>
                 "提交更新失败：k_EResultFileNotFound。请检查预览图路径与内容目录是否可读。",
+            EResult.k_EResultNoConnection =>
+                "提交更新失败：k_EResultNoConnection。\n\n" +
+                "Steam 客户端与上传服务器连接失败。常见处理：\n" +
+                "1. 确认 Steam 已登录且网络正常，可重启 Steam 后重试\n" +
+                "2. 若 CreateItem 已成功，直接再次点击「开始上传」（会走更新而非新建）\n" +
+                "3. 检查 Steamworks → App 3461270 → Workshop 是否已启用 ISteamUGC 内容上传\n" +
+                "4. 查看 Steam\\logs\\Workshop_log.txt 获取详细原因",
             _ => $"提交更新失败：{result}"
         };
 
@@ -449,7 +464,9 @@ internal static class SteamWorkshopPublisher
 
         foreach (var file in Directory.EnumerateFiles(sourceDir))
         {
-            if (file.EndsWith(".meta", StringComparison.OrdinalIgnoreCase))
+            var fileName = Path.GetFileName(file);
+            if (file.EndsWith(".meta", StringComparison.OrdinalIgnoreCase) ||
+                ModPublishedFileIdStore.ShouldExcludeFromPublish(fileName))
             {
                 continue;
             }

@@ -34,6 +34,8 @@
     <sys:String x:Key="Str.Main.SteamConnectedTip">已通过本机 Steam 客户端登录</sys:String>
     <sys:String x:Key="Str.Main.SteamReconnect">重连 Steam</sys:String>
     <sys:String x:Key="Str.Main.SteamReconnectTip">在启动 Steam 并登录后重试连接</sys:String>
+    <sys:String x:Key="Str.Main.About">关于</sys:String>
+    <sys:String x:Key="Str.Main.AboutTip">查看应用名称与版本号</sys:String>
     <sys:String x:Key="Str.Main.ConsoleTitle">CONSOLE / 日志 / 校验结果</sys:String>
     <sys:String x:Key="Str.Main.SteamAccountTitle">Steam 账号</sys:String>
     <sys:String x:Key="Str.Main.SteamConnectFailed">未能连接 Steam 账号。
@@ -150,4 +152,11 @@
     <!-- AppSettings -->
     <sys:String x:Key="Str.Settings.SaveFailed">保存配置失败：{0}
 {1}</sys:String>
+
+    <!-- About -->
+    <sys:String x:Key="Str.About.Title">关于</sys:String>
+    <sys:String x:Key="Str.About.Version">版本 {0}</sys:String>
+    <sys:String x:Key="Str.About.Runtime">运行时：.NET {0}</sys:String>
+    <sys:String x:Key="Str.About.RunMode">运行模式：{0}</sys:String>
+    <sys:String x:Key="Str.About.Description">异星家园 Mod 制作工具。发版后可在此核对版本号是否已升级。</sys:String>
 </ResourceDictionary>

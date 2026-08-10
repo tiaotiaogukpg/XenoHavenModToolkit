@@ -117,7 +117,7 @@
                          Foreground="{DynamicResource Theme.SecondaryTextColor}"/>
 
                 <TextBlock Grid.Row="1" Grid.Column="0" Text="steamPublishedFileId" Style="{DynamicResource BuildingEditorLabelStyle}"
-                           ToolTip="Steam 创意工坊 ID，无则为 0"/>
+                           ToolTip="来自同目录 steamPublishedFileId.id；main.xml 中恒为 0"/>
                 <TextBox Grid.Row="1" Grid.Column="1" x:Name="SteamPublishedFileIdBox" Margin="0,0,0,8" MinHeight="32"
                          Text="0" IsReadOnly="True" VerticalContentAlignment="Center"
                          Foreground="{DynamicResource Theme.SecondaryTextColor}"/>

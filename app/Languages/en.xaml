@@ -34,6 +34,8 @@
     <sys:String x:Key="Str.Main.SteamConnectedTip">Signed in via the local Steam client</sys:String>
     <sys:String x:Key="Str.Main.SteamReconnect">Reconnect Steam</sys:String>
     <sys:String x:Key="Str.Main.SteamReconnectTip">Retry after starting Steam and signing in</sys:String>
+    <sys:String x:Key="Str.Main.About">About</sys:String>
+    <sys:String x:Key="Str.Main.AboutTip">Show app name and version</sys:String>
     <sys:String x:Key="Str.Main.ConsoleTitle">CONSOLE / Log / Validation</sys:String>
     <sys:String x:Key="Str.Main.SteamAccountTitle">Steam Account</sys:String>
     <sys:String x:Key="Str.Main.SteamConnectFailed">Could not connect to Steam.
@@ -150,4 +152,11 @@ Created item PublishedFileId={0}, but writing main.xml failed: {1}</sys:String>
     <!-- AppSettings -->
     <sys:String x:Key="Str.Settings.SaveFailed">Failed to save settings: {0}
 {1}</sys:String>
+
+    <!-- About -->
+    <sys:String x:Key="Str.About.Title">About</sys:String>
+    <sys:String x:Key="Str.About.Version">Version {0}</sys:String>
+    <sys:String x:Key="Str.About.Runtime">Runtime: .NET {0}</sys:String>
+    <sys:String x:Key="Str.About.RunMode">Run mode: {0}</sys:String>
+    <sys:String x:Key="Str.About.Description">XenoHaven mod authoring tool. Use this dialog to verify the installed version after an upgrade.</sys:String>
 </ResourceDictionary>

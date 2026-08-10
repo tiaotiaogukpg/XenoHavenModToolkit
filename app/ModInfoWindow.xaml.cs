@@ -18,25 +18,25 @@ public partial class ModInfoWindow : Window
     {
         InitializeComponent();
         this.modRoot = modRoot;
-        var (baseId, steamId) = TryPrefill(existingMainXml);
+        var (baseId, _) = TryPrefill(existingMainXml);
         modBaseId = baseId;
         IdBox.Text = modBaseId.ToString();
-        SteamPublishedFileIdBox.Text = steamId.ToString();
+        SteamPublishedFileIdBox.Text = FormatPublishedFileIdDisplay(
+            ModPublishedFileIdStore.ReadOrZero(modRoot, existingMainXml));
         SupportVersionBox.Text = "1";
         RefreshRootImageStatus();
     }
 
-    private (int modBaseId, long steamPublishedFileId) TryPrefill(string existingMainXml)
+    private (int modBaseId, long _) TryPrefill(string existingMainXml)
     {
         var baseId = Random.Shared.Next(100000, 900001) * 100;
-        long steamId = 0;
 
         try
         {
             var doc = XDocument.Parse(existingMainXml);
             if (doc.Root?.Name.LocalName != "defs")
             {
-                return (baseId, steamId);
+                return (baseId, 0);
             }
 
             var idText = doc.Root.Elements().FirstOrDefault(e => e.Name.LocalName == "id")?.Value;
@@ -46,25 +46,30 @@ public partial class ModInfoWindow : Window
                 baseId = parsedBaseId;
             }
 
-            var steamText = doc.Root.Elements().FirstOrDefault(e => e.Name.LocalName == "steamPublishedFileId")?.Value;
-            if (long.TryParse(steamText?.Trim(), out var parsedSteamId) && parsedSteamId >= 0)
-            {
-                steamId = parsedSteamId;
-            }
-
             NameBox.Text = doc.Root.Element("name")?.Value ?? NameBox.Text;
             AuthorBox.Text = doc.Root.Element("auth")?.Value ?? AuthorBox.Text;
             VersionBox.Text = doc.Root.Element("version")?.Value ?? VersionBox.Text;
             DescriptionBox.Text = doc.Root.Element("description")?.Value ?? DescriptionBox.Text;
-            CategoryBox.Text = doc.Root.Elements().FirstOrDefault(e => e.Name.LocalName == "Category")?.Value ?? CategoryBox.Text;
+            CategoryBox.Text =
+                doc.Root.Elements().FirstOrDefault(e =>
+                    e.Name.LocalName is "category" or "Category")?.Value
+                ?? CategoryBox.Text;
+            var supportVersionText =
+                doc.Root.Elements().FirstOrDefault(e =>
+                    e.Name.LocalName is "supportVersion" or "SupportVersion")?.Value;
+            if (!string.IsNullOrWhiteSpace(supportVersionText))
+                SupportVersionBox.Text = supportVersionText;
         }
         catch
         {
             // ignore invalid xml while user is editing
         }
 
-        return (baseId, steamId);
+        return (baseId, 0);
     }
+
+    private static string FormatPublishedFileIdDisplay(ulong publishedFileId)
+        => publishedFileId == 0 ? "0" : publishedFileId.ToString();
 
     private void ImportIcon_Click(object sender, RoutedEventArgs e)
     {
@@ -132,20 +137,15 @@ public partial class ModInfoWindow : Window
             return;
         }
 
-        if (!long.TryParse(SteamPublishedFileIdBox.Text.Trim(), out var steamPublishedFileId))
-        {
-            steamPublishedFileId = 0;
-        }
-
         var doc = new XDocument(
             new XDeclaration("1.0", "utf-8", null),
             new XElement("defs",
                 new XAttribute(XNamespace.Xmlns + "xsd", "http://www.w3.org/2001/XMLSchema"),
                 new XAttribute(XNamespace.Xmlns + "xsi", "http://www.w3.org/2001/XMLSchema-instance"),
                 new XElement("id", modBaseId),
-                new XElement("steamPublishedFileId", steamPublishedFileId),
-                new XElement("SupportVersion", 1),
-                new XElement("Category", category),
+                new XElement("steamPublishedFileId", 0),
+                new XElement("supportVersion", 1),
+                new XElement("category", category),
                 new XElement("name", name),
                 new XElement("auth", author),
                 new XElement("version", version),

@@ -35,7 +35,7 @@ public partial class WorkshopUploadWindow : Window
     {
         string title = string.Empty;
         string description = string.Empty;
-        publishedFileId = 0;
+        publishedFileId = ModPublishedFileIdStore.ReadOrZero(modRoot, mainXmlText);
 
         try
         {
@@ -44,11 +44,6 @@ public partial class WorkshopUploadWindow : Window
             {
                 title = doc.Root.Elements().FirstOrDefault(e => e.Name.LocalName == "name")?.Value?.Trim() ?? string.Empty;
                 description = doc.Root.Elements().FirstOrDefault(e => e.Name.LocalName == "description")?.Value?.Trim() ?? string.Empty;
-                var idText = doc.Root.Elements().FirstOrDefault(e => e.Name.LocalName == "steamPublishedFileId")?.Value;
-                if (ulong.TryParse(idText?.Trim(), out var id))
-                {
-                    publishedFileId = id;
-                }
             }
         }
         catch
@@ -268,37 +263,42 @@ public partial class WorkshopUploadWindow : Window
 
     private bool TryWritePublishedFileId(ulong id, out string? error)
     {
-        error = null;
+        // PublishedFileId 写入旁路文件；main.xml 中 steamPublishedFileId 保持 0。
+        if (!ModPublishedFileIdStore.TryWrite(modRoot, id, out error))
+        {
+            return false;
+        }
+
         try
         {
             var doc = XDocument.Parse(mainXmlText);
-            if (doc.Root is null || doc.Root.Name.LocalName != "defs")
+            if (doc.Root is not null && doc.Root.Name.LocalName == "defs")
             {
-                error = "main.xml 根节点无效。";
-                return false;
-            }
+                var element = doc.Root.Elements().FirstOrDefault(e => e.Name.LocalName == "steamPublishedFileId");
+                if (element is null)
+                {
+                    doc.Root.Add(new XElement("steamPublishedFileId", 0));
+                }
+                else
+                {
+                    element.Value = "0";
+                }
 
-            var element = doc.Root.Elements().FirstOrDefault(e => e.Name.LocalName == "steamPublishedFileId");
-            if (element is null)
-            {
-                doc.Root.Add(new XElement("steamPublishedFileId", id.ToString()));
+                var serialized = ModXmlFormatter.Serialize(doc);
+                if (!string.Equals(serialized, mainXmlText, StringComparison.Ordinal))
+                {
+                    ModXmlIO.WriteAllText(mainXmlPath, serialized);
+                    mainXmlText = serialized;
+                    UpdatedMainXml = serialized;
+                }
             }
-            else
-            {
-                element.Value = id.ToString();
-            }
-
-            var serialized = ModXmlFormatter.Serialize(doc);
-            ModXmlIO.WriteAllText(mainXmlPath, serialized);
-            mainXmlText = serialized;
-            UpdatedMainXml = serialized;
-            return true;
         }
-        catch (Exception ex)
+        catch
         {
-            error = ex.Message;
-            return false;
+            // 旁路文件已写成功即可；main.xml 规范化失败不阻断
         }
+
+        return true;
     }
 
     private void SetBusy(bool busy)

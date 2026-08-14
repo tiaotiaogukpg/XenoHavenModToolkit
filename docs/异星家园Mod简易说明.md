@@ -11,7 +11,14 @@ Word 版（含截图占位）：[异星家园Mod简易说明.docx](./异星家�
 
 ## 1. 可以制作哪些 Mod
 
-当前版本主要支持 **建筑类 Mod**（`Thing/Buildings`），可制作的组件类型包括：
+当前版本主要支持两类 Thing：
+
+| 分类 | 目录 | 说明 |
+|------|------|------|
+| **Buildings** | `Thing/Buildings/` | 建筑/可放置物体 |
+| **Dynamic** | `Thing/Dynamic/`（与 Buildings 同级） | 生物类（当前含农业傀儡） |
+
+### Buildings 类型
 
 | 类型 | 说明 |
 |------|------|
@@ -20,6 +27,12 @@ Word 版（含截图占位）：[异星家园Mod简易说明.docx](./异星家�
 | **SMALL_LAMP** | 小型灯具 |
 | **STREET_LIGHT** | 路灯 |
 | **PRODUCTION_LINE** | 自定义外观的生产线（需选择模拟的原版生产线） |
+
+### Dynamic 类型
+
+| 类型 | 说明 |
+|------|------|
+| **FARMING_GOLEM** | 农业傀儡（需选择模拟的原版傀儡角色，并导入 1026×1026 拆分图） |
 
 暂不支持脚本、Prefab 编辑等更复杂扩展。
 
@@ -88,27 +101,53 @@ Word 版（含截图占位）：[异星家园Mod简易说明.docx](./异星家�
 |------|------|
 | **id** | 组件本地序号（1、2、3…），只读；同时决定图片文件名。不要改成「Mod基础ID+序号」。 |
 | **name** | 组件显示名称（必填）。 |
-| **type** | 建筑类型：`BOX` / `SIMPLE_OBJECT` / `SMALL_LAMP` / `STREET_LIGHT` / `PRODUCTION_LINE`。 |
-| **direction** | 朝向。箱子、装饰物、灯类固定为 `1`；生产线可选 `1` 或 `3`。 |
+| **type** | Buildings：`BOX` / `SIMPLE_OBJECT` / `SMALL_LAMP` / `STREET_LIGHT` / `PRODUCTION_LINE`。Dynamic：`FARMING_GOLEM`。 |
+| **direction** | 朝向。箱子、装饰物、灯类、农业傀儡固定为 `1`；生产线可选 `1` 或 `3`。 |
 | **workbenchId** | 在哪张工作台制造。请从下拉列表选择（界面显示「名称-ID」）。 |
-| **simulateId** | 仅 **PRODUCTION_LINE** 需要：选择要模拟的原版生产线。 |
-| **capbility** | 容量，范围 **16～96**。装饰物 / 灯 / 生产线不显示此字段。拼写固定为 `capbility`（不要写成 capability）。 |
+| **simulateId** | **PRODUCTION_LINE**：选择要模拟的原版生产线；**FARMING_GOLEM**：选择农业傀儡角色（伐木 20191 / 采矿 20192 / 收割 20193）。 |
+| **capbility** | 容量，范围 **16～96**。装饰物 / 灯 / 生产线 / 农业傀儡不显示此字段。拼写固定为 `capbility`（不要写成 capability）。 |
 | **health** | 固定为 `10`，一般无需修改。 |
 | **size.x / size.y** | 占地格子数，须为正整数。 |
 | **制造公式（materials）** | 建造消耗的材料列表；材料从下拉选择，单条数量 **1～200**。 |
 | **碰撞（barrier）** | 开启后角色无法穿过；`BOX` 默认开启，其它类型默认关闭。 |
-| **组件图片** | 地图上显示的外观，保存为 `images/<id>.png`。 |
-| **物品栏图标** | 背包中的小图标，保存为 `images/icon/<id>.png`。 |
+| **组件图片** | Buildings：`Thing/Buildings/images/<id>.png`。`FARMING_GOLEM` 为拆分图，见下。 |
+| **物品栏图标** | Buildings：`images/icon/<id>.png`；Dynamic：`Thing/Dynamic/images/icon/<id>.png`。 |
 
 类型与字段关系简表：
 
-| type | direction | 容量 | simulateId | 默认碰撞 |
-|------|-----------|------|------------|----------|
-| BOX | 固定 1 | 需要（16～96） | 无 | 开 |
-| SIMPLE_OBJECT | 固定 1 | 无 | 无 | 关 |
-| SMALL_LAMP | 固定 1 | 无 | 无 | 关 |
-| STREET_LIGHT | 固定 1 | 无 | 无 | 关 |
-| PRODUCTION_LINE | 1 或 3 | 无 | 必填 | 编辑时默认开 |
+| type | 分类 | direction | 容量 | simulateId | 默认碰撞 |
+|------|------|-----------|------|------------|----------|
+| BOX | Buildings | 固定 1 | 需要（16～96） | 无 | 开 |
+| SIMPLE_OBJECT | Buildings | 固定 1 | 无 | 无 | 关 |
+| SMALL_LAMP | Buildings | 固定 1 | 无 | 无 | 关 |
+| STREET_LIGHT | Buildings | 固定 1 | 无 | 无 | 关 |
+| PRODUCTION_LINE | Buildings | 1 或 3 | 无 | 必填（生产线） | 关 |
+| FARMING_GOLEM | Dynamic | 固定 1 | 无 | 必填（傀儡角色） | 关 |
+
+#### FARMING_GOLEM 拆分图约定（Thing/Dynamic）
+
+- 在树中选中 `Thing/Dynamic/Dynamics.xml` → **新建组件**。
+- 导入 PSD/PNG；若边长不是 1026（例如 1024），工具会缩放到 **1026×1026**（须为正方形）。
+- 参考模板：`templates/FarmingGolem/PartsSheetTemplate.png`。
+- 落盘：
+
+```text
+Thing/Dynamic/
+  Dynamics.xml
+  images/<id>.png
+  images/icon/<id>.png
+  images/parts/<id>/Head1.png …
+```
+
+- Spine 挂靠坐标：
+
+| 部件 | 起点 | 大小 |
+|------|------|------|
+| Head1 / Head2 / Head3 | (0,0) / (342,0) / (684,0) | 342×342 |
+| HandR / Body / HandL | (0,342) / (342,342) / (684,342) | 342×409 |
+| FootR / FootL | (309,751) / (513,751) | 202×275 |
+
+- 若只有一只脚区域有像素，则两脚共用同一张图。
 
 ---
 

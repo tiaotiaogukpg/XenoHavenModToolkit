@@ -21,7 +21,7 @@
         <TextBlock Grid.Row="1" Grid.Column="0" x:Name="DirectionLabel" Text="direction" Style="{DynamicResource BuildingEditorLabelStyle}"/>
         <ComboBox Grid.Row="1" Grid.Column="1" x:Name="DirectionCombo" MinHeight="32" VerticalContentAlignment="Center" Margin="0,0,0,8" Padding="8,4"/>
 
-        <TextBlock Grid.Row="2" Grid.Column="0" Text="workbenchId" Style="{DynamicResource BuildingEditorLabelStyle}"/>
+        <TextBlock Grid.Row="2" Grid.Column="0" x:Name="WorkbenchIdLabel" Text="workbenchId" Style="{DynamicResource BuildingEditorLabelStyle}"/>
         <ComboBox Grid.Row="2" Grid.Column="1" x:Name="WorkbenchIdCombo" MinHeight="32" VerticalContentAlignment="Center" Margin="0,0,0,8" Padding="8,4"/>
 
         <TextBlock Grid.Row="3" Grid.Column="0" x:Name="SimulateIdLabel" Text="simulateId" Style="{DynamicResource BuildingEditorLabelStyle}"/>

@@ -24,7 +24,7 @@ public partial class NewModWindow : Window
         NameBox.Focus();
     }
 
-    internal sealed record NewModResult(string Name, string MainXml, string BuildingsXml, string IconSourcePath, string ScreenshotSourcePath);
+    internal sealed record NewModResult(string Name, string MainXml, string BuildingsXml, string DynamicsXml, string IconSourcePath, string ScreenshotSourcePath);
 
     private void ImportIcon_Click(object sender, RoutedEventArgs e)
     {
@@ -114,10 +114,17 @@ public partial class NewModWindow : Window
                 new XAttribute(XNamespace.Xmlns + "xsd", "http://www.w3.org/2001/XMLSchema"),
                 new XAttribute(XNamespace.Xmlns + "xsi", "http://www.w3.org/2001/XMLSchema-instance")));
 
+        var dynamicsDoc = new XDocument(
+            new XDeclaration("1.0", "utf-8", null),
+            new XElement("ArrayOfModDynamicXML",
+                new XAttribute(XNamespace.Xmlns + "xsd", "http://www.w3.org/2001/XMLSchema"),
+                new XAttribute(XNamespace.Xmlns + "xsi", "http://www.w3.org/2001/XMLSchema-instance")));
+
         Result = new NewModResult(
             name,
             ModXmlFormatter.Serialize(mainDoc),
             ModXmlFormatter.Serialize(buildingsDoc),
+            ModXmlFormatter.Serialize(dynamicsDoc),
             iconSourcePath!,
             screenshotSourcePath!);
         DialogResult = true;

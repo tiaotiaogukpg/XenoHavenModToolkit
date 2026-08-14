@@ -19,20 +19,36 @@ public partial class BuildingEditorWindow : Window
 
     private static readonly string BuildingImagesRelativePath = Path.Combine("Thing", "Buildings", "images");
     private static readonly string BuildingIconsRelativePath = Path.Combine("Thing", "Buildings", "images", "icon");
+    private static readonly string DynamicImagesRelativePath = Path.Combine("Thing", "Dynamic", "images");
+    private static readonly string DynamicIconsRelativePath = Path.Combine("Thing", "Dynamic", "images", "icon");
 
     private readonly string modRoot;
     private readonly int buildingId;
     private readonly GameDataCatalog gameData;
+    private readonly bool isDynamicCategory;
     private readonly ObservableCollection<MainWindow.CraftMaterial> materials;
     private readonly List<LabeledIdOption> materialOptions;
+
+    private string ImagesRelativePath => isDynamicCategory ? DynamicImagesRelativePath : BuildingImagesRelativePath;
+    private string IconsRelativePath => isDynamicCategory ? DynamicIconsRelativePath : BuildingIconsRelativePath;
 
     internal MainWindow.EditableBuilding? Result { get; private set; }
 
     internal BuildingEditorWindow(MainWindow.EditableBuilding initial, string modRoot, GameDataCatalog gameData)
+        : this(initial, modRoot, gameData, isDynamicCategory: false)
+    {
+    }
+
+    internal BuildingEditorWindow(
+        MainWindow.EditableBuilding initial,
+        string modRoot,
+        GameDataCatalog gameData,
+        bool isDynamicCategory)
     {
         InitializeComponent();
         this.modRoot = modRoot;
         this.gameData = gameData;
+        this.isDynamicCategory = isDynamicCategory;
         buildingId = initial.Id;
         materialOptions = BuildMaterialOptions(initial.Materials);
         materials = new ObservableCollection<MainWindow.CraftMaterial>(
@@ -40,19 +56,37 @@ public partial class BuildingEditorWindow : Window
         IdBox.Text = buildingId.ToString(CultureInfo.InvariantCulture);
         NameBox.Text = initial.Name;
         FieldPicker.InitializeWorkbenches(gameData);
-        FieldPicker.InitializeProductionLines(gameData);
+        if (isDynamicCategory)
+        {
+            FieldPicker.UseDynamicFarmingGolemMode();
+            Title = Loc.Get("Str.DynamicEditor.Title");
+        }
+        else
+        {
+            FieldPicker.InitializeProductionLines(gameData);
+        }
+
         FieldPicker.SetValues(initial.Type, initial.Direction, initial.WorkbenchId, initial.SimulateId);
         FieldPicker.TypeChanged += (_, _) =>
         {
             ApplyCapbilityVisibility();
-            BarrierToggle.IsChecked = BuildingFieldOptions.DefaultBarrier(FieldPicker.SelectedType);
+            ApplyWorldImageUiForType();
+            ApplyFarmingGolemLayoutUi();
+            BarrierToggle.IsChecked = isDynamicCategory
+                ? DynamicFieldOptions.DefaultBarrier(FieldPicker.SelectedType)
+                : BuildingFieldOptions.DefaultBarrier(FieldPicker.SelectedType);
         };
         CapbilityBox.Text = ClampCapbility(initial.Capbility).ToString(CultureInfo.InvariantCulture);
         ApplyCapbilityVisibility();
+        ApplyWorldImageUiForType();
         BarrierToggle.IsChecked = initial.Barrier;
-        HealthBox.Text = BuildingFieldOptions.FixedHealth.ToString(CultureInfo.InvariantCulture);
+        HealthBox.Text = (isDynamicCategory ? DynamicFieldOptions.FixedHealth : BuildingFieldOptions.FixedHealth)
+            .ToString(CultureInfo.InvariantCulture);
         SizeXBox.Text = initial.SizeX.ToString(CultureInfo.InvariantCulture);
         SizeYBox.Text = initial.SizeY.ToString(CultureInfo.InvariantCulture);
+        ScaleBox.Text = initial.Scale.ToString("0.###", CultureInfo.InvariantCulture);
+        ScaleBox.TextChanged += (_, _) => RefreshScaledPlaceSizeFromScaleBox();
+        ApplyFarmingGolemLayoutUi();
         ConfigureMaterialsGrid();
         MaterialsGrid.ItemsSource = materials;
         RefreshMaterialsEmptyState();
@@ -129,7 +163,9 @@ public partial class BuildingEditorWindow : Window
         var direction = FieldPicker.EffectiveDirection;
         var workbenchId = FieldPicker.SelectedWorkbenchId;
         var simulateId = FieldPicker.SelectedSimulateId;
-        var capbilityVisible = BuildingFieldOptions.ShowsCapbility(type);
+        var capbilityVisible = isDynamicCategory
+            ? DynamicFieldOptions.ShowsCapbility(type)
+            : BuildingFieldOptions.ShowsCapbility(type);
 
         var capbility = BuildingFieldOptions.DefaultCapbility;
         if (capbilityVisible && !TryReadCapbility(CapbilityBox.Text, out capbility, "capbility"))
@@ -137,26 +173,127 @@ public partial class BuildingEditorWindow : Window
             return;
         }
 
-        if (!TryReadPositiveInt(SizeXBox.Text, out var sx, "size.x") ||
-            !TryReadPositiveInt(SizeYBox.Text, out var sy, "size.y") ||
-            !TryReadMaterials(out var materialSnapshot))
+        int sx;
+        int sy;
+        var scale = DynamicFieldOptions.DefaultVisualScale;
+        if (isDynamicCategory && DynamicFieldOptions.ShowsVisualScale(type))
+        {
+            if (!TryReadVisualScale(ScaleBox.Text, out scale))
+            {
+                return;
+            }
+        }
+
+        if (isDynamicCategory && DynamicFieldOptions.UsesScaledPlaceSize(type))
+        {
+            (sx, sy) = DynamicFieldOptions.ComputeScaledPlaceSize(scale);
+        }
+        else if (!TryReadPositiveInt(SizeXBox.Text, out sx, "size.x") ||
+                 !TryReadPositiveInt(SizeYBox.Text, out sy, "size.y"))
         {
             return;
         }
 
+        if (!TryReadMaterials(out var materialSnapshot))
+        {
+            return;
+        }
+
+        if (isDynamicCategory && DynamicFieldOptions.IsFarmingGolem(type))
+        {
+            var sheetError = FarmingGolemPartsSheet.ValidateExportedAssets(modRoot, buildingId);
+            if (sheetError is not null)
+            {
+                System.Windows.MessageBox.Show(this, sheetError, Loc.Get("Str.InputError"), MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+        }
+
+        var health = isDynamicCategory ? DynamicFieldOptions.FixedHealth : BuildingFieldOptions.FixedHealth;
         Result = new MainWindow.EditableBuilding(
-            buildingId, name, type, direction, capbility, workbenchId, simulateId, BuildingFieldOptions.FixedHealth, sx, sy, materialSnapshot,
-            BarrierToggle.IsChecked == true);
+            buildingId, name, type, direction, capbility, workbenchId, simulateId, health, sx, sy, materialSnapshot,
+            BarrierToggle.IsChecked == true, scale);
         DialogResult = true;
     }
 
     private void ApplyCapbilityVisibility()
     {
-        var visibility = BuildingFieldOptions.ShowsCapbility(FieldPicker.SelectedType)
-            ? Visibility.Visible
-            : Visibility.Collapsed;
+        var shows = isDynamicCategory
+            ? DynamicFieldOptions.ShowsCapbility(FieldPicker.SelectedType)
+            : BuildingFieldOptions.ShowsCapbility(FieldPicker.SelectedType);
+        var visibility = shows ? Visibility.Visible : Visibility.Collapsed;
         CapbilityLabel.Visibility = visibility;
         CapbilityBox.Visibility = visibility;
+    }
+
+    private void ApplyFarmingGolemLayoutUi()
+    {
+        var farming = isDynamicCategory && DynamicFieldOptions.IsFarmingGolem(FieldPicker.SelectedType);
+        var scaleVisibility = farming && DynamicFieldOptions.ShowsVisualScale(FieldPicker.SelectedType)
+            ? Visibility.Visible
+            : Visibility.Collapsed;
+        ScaleLabel.Visibility = scaleVisibility;
+        ScaleBox.Visibility = scaleVisibility;
+
+        // 农业傀儡：size 只读展示，由原版基准占地 × scale 推导。
+        if (farming && DynamicFieldOptions.UsesScaledPlaceSize(FieldPicker.SelectedType))
+        {
+            SizeXLabel.Visibility = Visibility.Visible;
+            SizeXBox.Visibility = Visibility.Visible;
+            SizeYLabel.Visibility = Visibility.Visible;
+            SizeYBox.Visibility = Visibility.Visible;
+            SizeXBox.IsReadOnly = true;
+            SizeYBox.IsReadOnly = true;
+            SizeXLabel.ToolTip = Loc.Get("Str.DynamicEditor.SizeScaledTip");
+            SizeYLabel.ToolTip = Loc.Get("Str.DynamicEditor.SizeScaledTip");
+            SizeXBox.ToolTip = Loc.Get("Str.DynamicEditor.SizeScaledTip");
+            SizeYBox.ToolTip = Loc.Get("Str.DynamicEditor.SizeScaledTip");
+            BarrierLabel.ToolTip = DynamicFieldOptions.FarmingGolemColliderHint;
+            RefreshScaledPlaceSizeFromScaleBox();
+        }
+        else
+        {
+            SizeXLabel.Visibility = Visibility.Visible;
+            SizeXBox.Visibility = Visibility.Visible;
+            SizeYLabel.Visibility = Visibility.Visible;
+            SizeYBox.Visibility = Visibility.Visible;
+            SizeXBox.IsReadOnly = false;
+            SizeYBox.IsReadOnly = false;
+            SizeXLabel.ToolTip = null;
+            SizeYLabel.ToolTip = null;
+            SizeXBox.ToolTip = null;
+            SizeYBox.ToolTip = null;
+            BarrierLabel.ToolTip = "是否具备实体碰撞（不可穿过）";
+        }
+    }
+
+    private void RefreshScaledPlaceSizeFromScaleBox()
+    {
+        if (!isDynamicCategory || !DynamicFieldOptions.UsesScaledPlaceSize(FieldPicker.SelectedType))
+        {
+            return;
+        }
+
+        var scale = DynamicFieldOptions.DefaultVisualScale;
+        if (double.TryParse(ScaleBox.Text.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed))
+        {
+            scale = parsed;
+        }
+
+        var (sx, sy) = DynamicFieldOptions.ComputeScaledPlaceSize(scale);
+        SizeXBox.Text = sx.ToString(CultureInfo.InvariantCulture);
+        SizeYBox.Text = sy.ToString(CultureInfo.InvariantCulture);
+    }
+
+    private void ApplyWorldImageUiForType()
+    {
+        var farming = isDynamicCategory && DynamicFieldOptions.IsFarmingGolem(FieldPicker.SelectedType);
+        WorldImageLabel.Text = farming
+            ? Loc.Get("Str.BuildingEditor.FarmingGolemSheet")
+            : Loc.Get("Str.BuildingEditor.BuildingImage");
+        WorldImageImportButton.Content = farming
+            ? Loc.Get("Str.BuildingEditor.ImportFarmingGolemSheet")
+            : Loc.Get("Str.BuildingEditor.ImportBuildingImage");
     }
 
     private void AddMaterial_Click(object sender, RoutedEventArgs e)
@@ -185,27 +322,42 @@ public partial class BuildingEditorWindow : Window
 
     private void ImportWorldImage_Click(object sender, RoutedEventArgs e)
     {
-        ImportImageToCurrentBuilding(BuildingImagesRelativePath, "组件图片");
+        if (isDynamicCategory && DynamicFieldOptions.IsFarmingGolem(FieldPicker.SelectedType))
+        {
+            ImportFarmingGolemSheet();
+            return;
+        }
+
+        ImportImageToCurrentBuilding(ImagesRelativePath, "组件图片");
     }
 
     private void ImportIconImage_Click(object sender, RoutedEventArgs e)
     {
-        ImportImageToCurrentBuilding(BuildingIconsRelativePath, "物品栏图标");
+        ImportImageToCurrentBuilding(IconsRelativePath, "物品栏图标");
     }
 
     private void WorldImage_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
-        ImportImageToCurrentBuilding(BuildingImagesRelativePath, "组件图片");
+        if (isDynamicCategory && DynamicFieldOptions.IsFarmingGolem(FieldPicker.SelectedType))
+        {
+            ImportFarmingGolemSheet();
+            return;
+        }
+
+        ImportImageToCurrentBuilding(ImagesRelativePath, "组件图片");
     }
 
     private void IconImage_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
     {
-        ImportImageToCurrentBuilding(BuildingIconsRelativePath, "物品栏图标");
+        ImportImageToCurrentBuilding(IconsRelativePath, "物品栏图标");
     }
 
     private void WorldImage_DragEnter(object sender, WpfDragEventArgs e)
     {
-        HandleImageDragEnter(e, WorldImageDropBorder);
+        HandleImageDragEnter(
+            e,
+            WorldImageDropBorder,
+            allowPsd: isDynamicCategory && DynamicFieldOptions.IsFarmingGolem(FieldPicker.SelectedType));
     }
 
     private void WorldImage_DragLeave(object sender, WpfDragEventArgs e)
@@ -215,7 +367,25 @@ public partial class BuildingEditorWindow : Window
 
     private void WorldImage_Drop(object sender, WpfDragEventArgs e)
     {
-        HandleImageDrop(e, BuildingImagesRelativePath, "组件图片", WorldImageDropBorder);
+        if (isDynamicCategory && DynamicFieldOptions.IsFarmingGolem(FieldPicker.SelectedType))
+        {
+            try
+            {
+                var path = TryGetSingleImagePathFromDrag(e, allowPsd: true);
+                if (path is not null)
+                {
+                    ImportFarmingGolemSheet(path);
+                }
+            }
+            finally
+            {
+                ResetDropBorder(WorldImageDropBorder);
+            }
+
+            return;
+        }
+
+        HandleImageDrop(e, ImagesRelativePath, "组件图片", WorldImageDropBorder);
     }
 
     private void IconImage_DragEnter(object sender, WpfDragEventArgs e)
@@ -230,7 +400,44 @@ public partial class BuildingEditorWindow : Window
 
     private void IconImage_Drop(object sender, WpfDragEventArgs e)
     {
-        HandleImageDrop(e, BuildingIconsRelativePath, "物品栏图标", IconImageDropBorder);
+        HandleImageDrop(e, IconsRelativePath, "物品栏图标", IconImageDropBorder);
+    }
+
+    private void ImportFarmingGolemSheet(string? sourceImagePath = null)
+    {
+        if (string.IsNullOrWhiteSpace(sourceImagePath))
+        {
+            var dialog = new Microsoft.Win32.OpenFileDialog
+            {
+                Title = Loc.Get("Str.BuildingEditor.ImportFarmingGolemSheet"),
+                Filter = FarmingGolemPartsSheet.DialogFilter
+            };
+
+            if (dialog.ShowDialog(this) != true)
+            {
+                return;
+            }
+
+            sourceImagePath = dialog.FileName;
+        }
+
+        try
+        {
+            // 先释放预览对 PNG 的引用，避免覆盖写出时文件被占用。
+            WorldImagePreview.Source = null;
+            FarmingGolemPartsSheet.ImportAndExport(sourceImagePath, modRoot, buildingId);
+            RefreshImagePreview();
+        }
+        catch (Exception ex)
+        {
+            RefreshImagePreview();
+            System.Windows.MessageBox.Show(
+                this,
+                $"农业傀儡拆分图导入失败：{ex.Message}",
+                Loc.Get("Str.Validate.ImportFailedTitle"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+        }
     }
 
     private void ImportImageToCurrentBuilding(string targetRelativeFolder, string slotName, string? sourceImagePath = null)
@@ -259,9 +466,19 @@ public partial class BuildingEditorWindow : Window
                 return;
             }
 
+            if (string.Equals(targetRelativeFolder, ImagesRelativePath, StringComparison.OrdinalIgnoreCase))
+            {
+                WorldImagePreview.Source = null;
+            }
+            else if (string.Equals(targetRelativeFolder, IconsRelativePath, StringComparison.OrdinalIgnoreCase))
+            {
+                IconImagePreview.Source = null;
+            }
+
             var targetFolder = Path.Combine(modRoot, targetRelativeFolder);
             Directory.CreateDirectory(targetFolder);
-            File.Copy(sourceImagePath, Path.Combine(targetFolder, $"{buildingId}.png"), overwrite: true);
+            var targetPath = Path.Combine(targetFolder, $"{buildingId}.png");
+            File.Copy(sourceImagePath, targetPath, overwrite: true);
             RefreshImagePreview();
         }
         catch (Exception ex)
@@ -270,9 +487,9 @@ public partial class BuildingEditorWindow : Window
         }
     }
 
-    private static void HandleImageDragEnter(WpfDragEventArgs e, Border border)
+    private static void HandleImageDragEnter(WpfDragEventArgs e, Border border, bool allowPsd = false)
     {
-        if (TryGetSingleImagePathFromDrag(e) is not null)
+        if (TryGetSingleImagePathFromDrag(e, allowPsd) is not null)
         {
             e.Effects = WpfDragDropEffects.Copy;
             border.BorderBrush = System.Windows.Media.Brushes.DodgerBlue;
@@ -306,7 +523,7 @@ public partial class BuildingEditorWindow : Window
         border.BorderBrush = System.Windows.Media.Brushes.LightGray;
     }
 
-    private static string? TryGetSingleImagePathFromDrag(WpfDragEventArgs e)
+    private static string? TryGetSingleImagePathFromDrag(WpfDragEventArgs e, bool allowPsd = false)
     {
         if (!e.Data.GetDataPresent(WpfDataFormats.FileDrop) ||
             e.Data.GetData(WpfDataFormats.FileDrop) is not string[] files ||
@@ -317,6 +534,11 @@ public partial class BuildingEditorWindow : Window
 
         var file = files[0];
         var ext = Path.GetExtension(file);
+        if (allowPsd && string.Equals(ext, ".psd", StringComparison.OrdinalIgnoreCase))
+        {
+            return file;
+        }
+
         return string.Equals(ext, ".png", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(ext, ".jpg", StringComparison.OrdinalIgnoreCase) ||
                string.Equals(ext, ".jpeg", StringComparison.OrdinalIgnoreCase) ||
@@ -328,8 +550,8 @@ public partial class BuildingEditorWindow : Window
 
     private void RefreshImagePreview()
     {
-        var worldPath = Path.Combine(modRoot, BuildingImagesRelativePath, $"{buildingId}.png");
-        var iconPath = Path.Combine(modRoot, BuildingIconsRelativePath, $"{buildingId}.png");
+        var worldPath = Path.Combine(modRoot, ImagesRelativePath, $"{buildingId}.png");
+        var iconPath = Path.Combine(modRoot, IconsRelativePath, $"{buildingId}.png");
         WorldImagePathText.Text = Path.GetRelativePath(modRoot, worldPath);
         IconImagePathText.Text = Path.GetRelativePath(modRoot, iconPath);
         WorldImagePreview.Source = LoadBitmapIfExists(worldPath);
@@ -378,26 +600,35 @@ public partial class BuildingEditorWindow : Window
     }
 
     private static BitmapImage? LoadBitmapIfExists(string path)
-    {
-        if (!File.Exists(path))
-        {
-            return null;
-        }
-
-        var bitmap = new BitmapImage();
-        bitmap.BeginInit();
-        bitmap.CacheOption = BitmapCacheOption.OnLoad;
-        bitmap.UriSource = new Uri(path, UriKind.Absolute);
-        bitmap.EndInit();
-        bitmap.Freeze();
-        return bitmap;
-    }
+        => ImagePreviewLoader.Load(path);
 
     private bool TryReadPositiveInt(string text, out int value, string field)
     {
         if (!int.TryParse(text.Trim(), NumberStyles.Integer, CultureInfo.InvariantCulture, out value) || value <= 0)
         {
             System.Windows.MessageBox.Show(this, $"{field} 必须是正整数。", Loc.Get("Str.InputError"), MessageBoxButton.OK, MessageBoxImage.Warning);
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool TryReadVisualScale(string text, out double value)
+    {
+        if (!double.TryParse(text.Trim(), NumberStyles.Float, CultureInfo.InvariantCulture, out value) ||
+            value < DynamicFieldOptions.MinVisualScale ||
+            value > DynamicFieldOptions.MaxVisualScale)
+        {
+            System.Windows.MessageBox.Show(
+                this,
+                Loc.Format(
+                    "Str.Validate.ScaleRange",
+                    DynamicFieldOptions.MinVisualScale.ToString(CultureInfo.InvariantCulture),
+                    DynamicFieldOptions.MaxVisualScale.ToString(CultureInfo.InvariantCulture)),
+                Loc.Get("Str.InputError"),
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+            value = DynamicFieldOptions.DefaultVisualScale;
             return false;
         }
 

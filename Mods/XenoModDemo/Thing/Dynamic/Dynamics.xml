@@ -1,0 +1,3 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ArrayOfModDynamicXML xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<ModDynamicXML><id>1</id><name>Farming_Golem_Demo</name><type>FARMING_GOLEM</type><direction>1</direction><workbenchId>100083</workbenchId><simulateId>20191</simulateId><health>10</health><size><x>1</x><y>1</y></size><scale>1</scale><materials><ModCraftMaterialData><id>100055</id><count>1</count></ModCraftMaterialData></materials><barrier>true</barrier></ModDynamicXML></ArrayOfModDynamicXML>

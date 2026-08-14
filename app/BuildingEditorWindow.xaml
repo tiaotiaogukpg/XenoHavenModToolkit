@@ -205,6 +205,7 @@
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
                 <TextBlock Grid.Row="0" Grid.Column="0" Text="id" Style="{DynamicResource BuildingEditorLabelStyle}"/>
@@ -223,15 +224,23 @@
                 <TextBox Grid.Row="4" Grid.Column="1" x:Name="HealthBox" Style="{StaticResource EditorTextBoxStyle}" Text="10" IsReadOnly="True"
                          ToolTip="生命值固定为 10"/>
 
-                <TextBlock Grid.Row="5" Grid.Column="0" Text="size.x" Style="{DynamicResource BuildingEditorLabelStyle}"/>
+                <TextBlock Grid.Row="5" Grid.Column="0" x:Name="SizeXLabel" Text="size.x" Style="{DynamicResource BuildingEditorLabelStyle}"/>
                 <TextBox Grid.Row="5" Grid.Column="1" x:Name="SizeXBox" Style="{StaticResource EditorTextBoxStyle}" Text="1"/>
 
-                <TextBlock Grid.Row="6" Grid.Column="0" Text="size.y" Style="{DynamicResource BuildingEditorLabelStyle}"/>
+                <TextBlock Grid.Row="6" Grid.Column="0" x:Name="SizeYLabel" Text="size.y" Style="{DynamicResource BuildingEditorLabelStyle}"/>
                 <TextBox Grid.Row="6" Grid.Column="1" x:Name="SizeYBox" Style="{StaticResource EditorTextBoxStyle}" Text="1"/>
 
-                <TextBlock Grid.Row="7" Grid.Column="0" Text="{DynamicResource Str.BuildingEditor.Collision}" Style="{DynamicResource BuildingEditorLabelStyle}"
+                <TextBlock Grid.Row="7" Grid.Column="0" x:Name="ScaleLabel" Text="{DynamicResource Str.DynamicEditor.Scale}" Style="{DynamicResource BuildingEditorLabelStyle}"
+                           Visibility="Collapsed"
+                           ToolTip="{DynamicResource Str.DynamicEditor.ScaleTip}"/>
+                <TextBox Grid.Row="7" Grid.Column="1" x:Name="ScaleBox" Style="{StaticResource EditorTextBoxStyle}" Text="1"
+                         Visibility="Collapsed"
+                         ToolTip="{DynamicResource Str.DynamicEditor.ScaleTip}"/>
+
+                <TextBlock Grid.Row="8" Grid.Column="0" x:Name="BarrierLabel" Text="{DynamicResource Str.BuildingEditor.Collision}" Style="{DynamicResource BuildingEditorLabelStyle}"
                            ToolTip="是否具备实体碰撞（不可穿过）"/>
-                <StackPanel Grid.Row="7" Grid.Column="1"
+                <StackPanel Grid.Row="8" Grid.Column="1"
+                            x:Name="BarrierPanel"
                             Orientation="Horizontal"
                             Margin="0,0,0,8"
                             MinHeight="32"
@@ -248,8 +257,8 @@
                                Style="{StaticResource EditorHintTextStyle}"/>
                 </StackPanel>
 
-                <TextBlock Grid.Row="8" Grid.Column="0" Text="{DynamicResource Str.BuildingEditor.Recipe}" Style="{DynamicResource BuildingEditorLabelStyle}" VerticalAlignment="Top"/>
-                <StackPanel Grid.Row="8" Grid.Column="1" Margin="0,0,0,8">
+                <TextBlock Grid.Row="9" Grid.Column="0" Text="{DynamicResource Str.BuildingEditor.Recipe}" Style="{DynamicResource BuildingEditorLabelStyle}" VerticalAlignment="Top"/>
+                <StackPanel Grid.Row="9" Grid.Column="1" Margin="0,0,0,8">
                     <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                         <Button Content="{DynamicResource Str.BuildingEditor.AddMaterial}" Style="{StaticResource EditorSectionButtonStyle}" Click="AddMaterial_Click" Margin="0,0,8,0"/>
                         <Button Content="{DynamicResource Str.BuildingEditor.DeleteSelected}" Style="{StaticResource EditorSectionButtonStyle}" Click="DeleteMaterial_Click"/>
@@ -280,14 +289,14 @@
                                Style="{StaticResource EditorHintTextStyle}"/>
                 </StackPanel>
 
-                <TextBlock Grid.Row="9" Grid.Column="0" Text="{DynamicResource Str.BuildingEditor.InventoryIcon}" Style="{DynamicResource BuildingEditorLabelStyle}"/>
-                <Button Grid.Row="9" Grid.Column="1"
+                <TextBlock Grid.Row="10" Grid.Column="0" Text="{DynamicResource Str.BuildingEditor.InventoryIcon}" Style="{DynamicResource BuildingEditorLabelStyle}"/>
+                <Button Grid.Row="10" Grid.Column="1"
                         Content="{DynamicResource Str.BuildingEditor.ImportInventoryIcon}"
                         Style="{StaticResource EditorSectionButtonStyle}"
                         Click="ImportIconImage_Click"
                         Margin="0,0,0,8"/>
 
-                <Grid Grid.Row="10" Grid.Column="1" Margin="0,0,0,8">
+                <Grid Grid.Row="11" Grid.Column="1" Margin="0,0,0,8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
@@ -302,7 +311,7 @@
                                Style="{StaticResource EditorHintTextStyle}"/>
                 </Grid>
 
-                <Border Grid.Row="11" Grid.Column="1"
+                <Border Grid.Row="12" Grid.Column="1"
                         x:Name="IconImagePreviewHost"
                         Margin="0,0,0,8"
                         Visibility="{Binding IsChecked, ElementName=IconPreviewExpandToggle, Converter={StaticResource BooleanToVisibilityConverter}}">
@@ -316,14 +325,15 @@
                     </Border>
                 </Border>
 
-                <TextBlock Grid.Row="12" Grid.Column="0" Text="{DynamicResource Str.BuildingEditor.BuildingImage}" Style="{DynamicResource BuildingEditorLabelStyle}"/>
-                <Button Grid.Row="12" Grid.Column="1"
+                <TextBlock Grid.Row="13" Grid.Column="0" x:Name="WorldImageLabel" Text="{DynamicResource Str.BuildingEditor.BuildingImage}" Style="{DynamicResource BuildingEditorLabelStyle}"/>
+                <Button Grid.Row="13" Grid.Column="1"
+                        x:Name="WorldImageImportButton"
                         Content="{DynamicResource Str.BuildingEditor.ImportBuildingImage}"
                         Style="{StaticResource EditorSectionButtonStyle}"
                         Click="ImportWorldImage_Click"
                         Margin="0,0,0,8"/>
 
-                <Grid Grid.Row="13" Grid.Column="1" Margin="0,0,0,8">
+                <Grid Grid.Row="14" Grid.Column="1" Margin="0,0,0,8">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
@@ -338,7 +348,7 @@
                                Style="{StaticResource EditorHintTextStyle}"/>
                 </Grid>
 
-                <Border Grid.Row="14" Grid.Column="1"
+                <Border Grid.Row="15" Grid.Column="1"
                         x:Name="WorldImagePreviewHost"
                         Visibility="{Binding IsChecked, ElementName=WorldPreviewExpandToggle, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <Border x:Name="WorldImageDropBorder"

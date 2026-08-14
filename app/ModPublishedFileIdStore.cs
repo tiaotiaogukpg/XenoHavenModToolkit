@@ -1,68 +1,102 @@
 using System.IO;
-using System.Xml.Linq;
 
 namespace XenoHavenModToolkit;
 
 /// <summary>
-/// 本地 PublishedFileId 旁路存储：Mod 根目录 <c>steamPublishedFileId.id</c>。
-/// <c>main.xml</c> 中 <c>steamPublishedFileId</c> 恒为 0，上传时排除该旁路文件。
+/// 创意工坊 PublishedFileId 侧车文件，与 main.xml 同目录。
+/// main.xml 中 steamPublishedFileId 恒为 0，实际上传 ID 仅存于此文件。
 /// </summary>
 internal static class ModPublishedFileIdStore
 {
     public const string FileName = "steamPublishedFileId.id";
 
-    public static string GetFilePath(string modRoot)
+    public static string GetPath(string modRoot)
         => Path.Combine(modRoot, FileName);
 
-    public static bool ShouldExcludeFromPublish(string fileName)
-        => string.Equals(fileName, FileName, StringComparison.OrdinalIgnoreCase);
-
-    /// <summary>
-    /// 优先读旁路文件；若不存在则回退解析 main.xml（便于旧工程迁移）。
-    /// </summary>
     public static ulong ReadOrZero(string modRoot, string? mainXmlText = null)
     {
-        var path = GetFilePath(modRoot);
-        if (File.Exists(path))
+        if (TryRead(modRoot, out var id))
         {
-            try
-            {
-                var text = File.ReadAllText(path).Trim();
-                if (ulong.TryParse(text, out var fromFile))
-                {
-                    return fromFile;
-                }
-            }
-            catch
-            {
-                // fall through to main.xml
-            }
+            return id;
         }
 
+        if (TryParseFromMainXml(mainXmlText, out id) && id > 0)
+        {
+            Write(modRoot, id);
+            return id;
+        }
+
+        return 0;
+    }
+
+    public static bool TryParseFromMainXml(string? mainXmlText, out ulong publishedFileId)
+    {
+        publishedFileId = 0;
         if (string.IsNullOrWhiteSpace(mainXmlText))
         {
-            var mainXmlPath = Path.Combine(modRoot, "main.xml");
-            if (File.Exists(mainXmlPath))
-            {
-                try
-                {
-                    mainXmlText = ModXmlIO.ReadAllText(mainXmlPath);
-                }
-                catch
-                {
-                    return 0;
-                }
-            }
+            return false;
         }
 
-        return TryReadFromMainXml(mainXmlText);
+        try
+        {
+            var doc = System.Xml.Linq.XDocument.Parse(mainXmlText);
+            var steamText = doc.Root?.Elements()
+                .FirstOrDefault(e => e.Name.LocalName == "steamPublishedFileId")?.Value;
+            return ulong.TryParse(steamText?.Trim(), out publishedFileId) && publishedFileId > 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>将 main.xml 中的 steamPublishedFileId 重置为 0（若曾被写入）。</summary>
+    public static bool TryClearMainXmlField(string mainXmlPath, ref string mainXmlText, out string? error)
+    {
+        error = null;
+        try
+        {
+            var doc = System.Xml.Linq.XDocument.Parse(mainXmlText);
+            if (doc.Root is null || doc.Root.Name.LocalName != "defs")
+            {
+                return false;
+            }
+
+            var element = doc.Root.Elements().FirstOrDefault(e => e.Name.LocalName == "steamPublishedFileId");
+            if (element is null || element.Value.Trim() == "0")
+            {
+                return false;
+            }
+
+            element.Value = "0";
+            var serialized = ModXmlFormatter.Serialize(doc);
+            ModXmlIO.WriteAllText(mainXmlPath, serialized);
+            mainXmlText = serialized;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            error = ex.Message;
+            return false;
+        }
+    }
+
+    public static bool TryRead(string modRoot, out ulong publishedFileId)
+    {
+        publishedFileId = 0;
+        var path = GetPath(modRoot);
+        if (!File.Exists(path))
+        {
+            return false;
+        }
+
+        var text = File.ReadAllText(path).Trim();
+        return ulong.TryParse(text, out publishedFileId) && publishedFileId > 0;
     }
 
     public static void Write(string modRoot, ulong publishedFileId)
     {
-        Directory.CreateDirectory(modRoot);
-        var path = GetFilePath(modRoot);
-        File.WriteAllText(path, publishedFileId.ToString() + Environment.NewLine);
+        File.WriteAllText(GetPath(modRoot), publishedFileId.ToString() + Environment.NewLine);
     }
 
     public static bool TryWrite(string modRoot, ulong publishedFileId, out string? error)
@@ -80,29 +114,9 @@ internal static class ModPublishedFileIdStore
         }
     }
 
-    private static ulong TryReadFromMainXml(string? mainXmlText)
-    {
-        if (string.IsNullOrWhiteSpace(mainXmlText))
-        {
-            return 0;
-        }
+    public static bool IsSidecarFile(string fileName)
+        => string.Equals(fileName, FileName, StringComparison.OrdinalIgnoreCase);
 
-        try
-        {
-            var doc = XDocument.Parse(mainXmlText);
-            if (doc.Root?.Name.LocalName != "defs")
-            {
-                return 0;
-            }
-
-            var idText = doc.Root.Elements()
-                .FirstOrDefault(e => e.Name.LocalName == "steamPublishedFileId")
-                ?.Value;
-            return ulong.TryParse(idText?.Trim(), out var id) ? id : 0;
-        }
-        catch
-        {
-            return 0;
-        }
-    }
+    public static bool ShouldExcludeFromPublish(string fileName)
+        => IsSidecarFile(fileName);
 }

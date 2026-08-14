@@ -7,7 +7,12 @@ internal enum TreeSelectionKind
     OverviewModFolder,
     ModRoot,
     MainXml,
+    ThingFolder,
     BuildingsXml,
     BuildingNode,
+    BuildingsFolder,
+    DynamicsXml,
+    DynamicNode,
+    DynamicFolder,
     ModOther
 }

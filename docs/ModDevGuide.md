@@ -115,6 +115,7 @@ XenoHaven MOD Toolkit 会在 Building 编辑窗中从 `DOC/K-可用材料表.xls
 - `workbenchId` 必须从 `DOC/K-可用工作台.xlsx` 中选择（界面显示 `木工桌-100083`，保存 XML 时写入 `100083`）。
 - `type` 可为 `BOX`、`SIMPLE_OBJECT`、`SMALL_LAMP`、`STREET_LIGHT`、`PRODUCTION_LINE`；`SMALL_LAMP` / `STREET_LIGHT` 与 `SIMPLE_OBJECT` 一样固定 `direction = 1`，且不写入 `capbility`。
 - `type` 为 `PRODUCTION_LINE` 时必须填写 `simulateId`，它表示这个 Mod 建筑要模拟哪一条原版生产线；XenoHaven MOD Toolkit 会从 `DOC/S-生产线定义.xlsx` 加载下拉（界面显示 `炼油厂-302323`，保存 XML 时写入 `302323`）。
+- **农业傀儡 `FARMING_GOLEM` 不属于 Buildings**，见 `Thing/Dynamic`（下节）。
 - `barrier` 表示是否作为阻挡/障碍处理（`true` = 实体碰撞，不可穿过）。工具在 Building 编辑窗提供 **碰撞** 开关；新建时 `BOX` 默认开启，其它类型默认关闭。游戏端对应 `collider.isTrigger = !barrier`，且 `barrier=true` 时会切到 `Barrier` 层（灯类模板默认在 `Static` 层且 isTrigger，仅改字段不够）。
 
 注意：字段名 `capbility` 按当前可行样例保留拼写，不要自行改成 `capability`，否则游戏端可能无法反序列化。
@@ -146,7 +147,24 @@ Thing/Buildings/images/icon/1.png
 - `images/<id>.png`：建筑/物体在地图上的显示图（文件名为本地序号，如 `1.png`、`2.png`）。
 - `images/icon/<id>.png`：建筑被拆除后进入背包、或作为物品显示时的图标。
 
-游戏运行时可用 `ModId + 本地序号` 合成最终物品 ID；磁盘上的图片仍只按本地 `id` 命名。这个规则也适用于其它 Thing 类型。当前工具第一版优先支持 `Thing/Buildings`。
+### FARMING_GOLEM（Thing/Dynamic）
+
+农业傀儡属于 **Dynamic** 生物分类，与 Buildings 同级，位于 `Thing/` 下：
+
+```text
+Thing/Dynamic/
+  Dynamics.xml                 # ArrayOfModDynamicXML / ModDynamicXML
+  images/<id>.png              # 1026×1026 拆分总图
+  images/icon/<id>.png
+  images/parts/<id>/...        # Head1-3 / HandR / Body / HandL / FootR / FootL
+```
+
+- `type=FARMING_GOLEM`；固定 `direction=1`；必填 `simulateId`∈{20191,20192,20193}。
+- 参考模板：`templates/FarmingGolem/PartsSheetTemplate.png`。
+- 游戏端通过 `ModDynamicHandler` 读取 `Thing/Dynamic/Dynamics.xml`，按 `workbenchId` 注册制造配方；最终物品 ID = `main.xml` 的 `id` + `1000` + 本地 `id`（与 Buildings 的 `id + 本地 id` 错开）。外观先复用 `simulateId` 原版 Prefab，部件换皮另开任务。
+- `FARMING_GOLEM` 与原版一致：物品类型为 `MONSTER` + `PET`，制造完成后直接刷出受邀工人（不可背包放置）；体力耗尽后必须绑定 **农业傀儡充电站（303671）** 才能继续工作。
+
+游戏运行时 Buildings 用 `ModId + 本地序号`，Dynamic 用 `ModId + 1000 + 本地序号`；磁盘上的图片仍只按本地 `id` 命名。当前工具支持 `Thing/Buildings` 与 `Thing/Dynamic`。
 
 ## 6. Unity .meta 文件
 

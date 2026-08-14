@@ -139,11 +139,24 @@ Created item PublishedFileId={0}, but writing main.xml failed: {1}</sys:String>
     <sys:String x:Key="Str.BuildingEditor.ImportInventoryIcon">Import inventory icon</sys:String>
     <sys:String x:Key="Str.BuildingEditor.BuildingImage">Building image</sys:String>
     <sys:String x:Key="Str.BuildingEditor.ImportBuildingImage">Import building image</sys:String>
+    <sys:String x:Key="Str.BuildingEditor.FarmingGolemSheet">Golem parts sheet</sys:String>
+    <sys:String x:Key="Str.BuildingEditor.ImportFarmingGolemSheet">Import parts sheet (PSD/PNG)</sys:String>
+    <sys:String x:Key="Str.DynamicEditor.Title">Edit Dynamic</sys:String>
+    <sys:String x:Key="Str.DynamicEditor.ProductionSite">Production site</sys:String>
+    <sys:String x:Key="Str.DynamicEditor.Scale">scale (ratio)</sys:String>
+    <sys:String x:Key="Str.DynamicEditor.ScaleTip">Scale relative to the vanilla farming golem footprint (1×1). size.x/y are rounded from this ratio.</sys:String>
+    <sys:String x:Key="Str.DynamicEditor.SizeFixedTip">Footprint is fixed at 1×1 from the vanilla creature collider. Use scale for visual size.</sys:String>
+    <sys:String x:Key="Str.DynamicEditor.SizeScaledTip">Computed from vanilla footprint (1×1) × scale. Not editable.</sys:String>
+    <sys:String x:Key="Str.Main.DeleteDynamicTitle">Delete Dynamic</sys:String>
+    <sys:String x:Key="Str.Main.DeleteDynamicSelectFirst">Select a Dynamic entry to delete.</sys:String>
+    <sys:String x:Key="Str.Main.DeleteDynamicConfirm">Delete Dynamic {0} - {1}? This cannot be undone.</sys:String>
+    <sys:String x:Key="Str.Main.DeleteDynamicNotFound">Dynamic id={0} was not found.</sys:String>
 
     <!-- Validation (common dialogs) -->
     <sys:String x:Key="Str.Validate.NameRequired">name is required.</sys:String>
     <sys:String x:Key="Str.Validate.TypeRequired">type is required.</sys:String>
     <sys:String x:Key="Str.Validate.SizePositive">size.x / size.y must be positive integers.</sys:String>
+    <sys:String x:Key="Str.Validate.ScaleRange">scale must be a number between {0} and {1}.</sys:String>
     <sys:String x:Key="Str.Validate.PositiveInt">{0} must be a positive integer.</sys:String>
     <sys:String x:Key="Str.Validate.ImportFailedTitle">Import failed</sys:String>
     <sys:String x:Key="Str.Main.GameDataTitle">Game Data</sys:String>
@@ -158,5 +171,5 @@ Created item PublishedFileId={0}, but writing main.xml failed: {1}</sys:String>
     <sys:String x:Key="Str.About.Version">Version {0}</sys:String>
     <sys:String x:Key="Str.About.Runtime">Runtime: .NET {0}</sys:String>
     <sys:String x:Key="Str.About.RunMode">Run mode: {0}</sys:String>
-    <sys:String x:Key="Str.About.Description">XenoHaven mod authoring tool. Use this dialog to verify the installed version after an upgrade.</sys:String>
+    <sys:String x:Key="Str.About.Description">XenoHaven mod authoring tool.</sys:String>
 </ResourceDictionary>

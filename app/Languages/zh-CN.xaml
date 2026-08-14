@@ -139,11 +139,24 @@
     <sys:String x:Key="Str.BuildingEditor.ImportInventoryIcon">导入物品栏图标</sys:String>
     <sys:String x:Key="Str.BuildingEditor.BuildingImage">组件图片</sys:String>
     <sys:String x:Key="Str.BuildingEditor.ImportBuildingImage">导入组件图片</sys:String>
+    <sys:String x:Key="Str.BuildingEditor.FarmingGolemSheet">傀儡拆分图</sys:String>
+    <sys:String x:Key="Str.BuildingEditor.ImportFarmingGolemSheet">导入拆分图 (PSD/PNG)</sys:String>
+    <sys:String x:Key="Str.DynamicEditor.Title">编辑 Dynamic</sys:String>
+    <sys:String x:Key="Str.DynamicEditor.ProductionSite">生产地</sys:String>
+    <sys:String x:Key="Str.DynamicEditor.Scale">scale（比例）</sys:String>
+    <sys:String x:Key="Str.DynamicEditor.ScaleTip">相对原版农业傀儡占地（1×1）的缩放比例；size.x/y 会按此比例自动取整。</sys:String>
+    <sys:String x:Key="Str.DynamicEditor.SizeFixedTip">占地按原版生物碰撞箱固定为 1×1，不可修改。视觉大小请用 scale。</sys:String>
+    <sys:String x:Key="Str.DynamicEditor.SizeScaledTip">由原版农业傀儡占地（1×1）× scale 自动计算，不可手改。</sys:String>
+    <sys:String x:Key="Str.Main.DeleteDynamicTitle">删除 Dynamic</sys:String>
+    <sys:String x:Key="Str.Main.DeleteDynamicSelectFirst">请先选中要删除的 Dynamic 条目。</sys:String>
+    <sys:String x:Key="Str.Main.DeleteDynamicConfirm">确定删除 Dynamic {0} - {1}？此操作不可恢复。</sys:String>
+    <sys:String x:Key="Str.Main.DeleteDynamicNotFound">未找到 Dynamic id={0}。</sys:String>
 
     <!-- Validation (common dialogs) -->
     <sys:String x:Key="Str.Validate.NameRequired">name 不能为空。</sys:String>
     <sys:String x:Key="Str.Validate.TypeRequired">type 不能为空。</sys:String>
     <sys:String x:Key="Str.Validate.SizePositive">size.x / size.y 必须是正整数。</sys:String>
+    <sys:String x:Key="Str.Validate.ScaleRange">scale 必须是 {0}–{1} 之间的数字。</sys:String>
     <sys:String x:Key="Str.Validate.PositiveInt">{0} 必须是正整数。</sys:String>
     <sys:String x:Key="Str.Validate.ImportFailedTitle">导入失败</sys:String>
     <sys:String x:Key="Str.Main.GameDataTitle">游戏数据</sys:String>
@@ -158,5 +171,5 @@
     <sys:String x:Key="Str.About.Version">版本 {0}</sys:String>
     <sys:String x:Key="Str.About.Runtime">运行时：.NET {0}</sys:String>
     <sys:String x:Key="Str.About.RunMode">运行模式：{0}</sys:String>
-    <sys:String x:Key="Str.About.Description">异星家园 Mod 制作工具。发版后可在此核对版本号是否已升级。</sys:String>
+    <sys:String x:Key="Str.About.Description">异星家园 Mod 制作工具。</sys:String>
 </ResourceDictionary>

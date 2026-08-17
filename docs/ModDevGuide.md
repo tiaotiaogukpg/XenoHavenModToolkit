@@ -227,7 +227,7 @@ XenoHaven MOD Toolkit 提供：
 
 - `MapLayer.CARPET`（原未使用的 `DECORATE = 20`）与 `CarpetLayer`（Tilemap，独立于 `FLOOR`）。
 - `ModBuildingType` 增加 `CARPET`；`ModUtils.ConvertCategory` 归为 `ItemCategory.FLOOR`（支持按住连铺）。
-- `ModBuildingHandler` 注册时 `layer = MapLayer.CARPET`，运行时用贴图创建 `Tile`（无 Creature 模板，不需要 `mod_template_type_carpet_1.prefab`）。地图贴图用 `LoadSpriteNormalizedToUnit` 缩放到约 1×1 格，避免大图溢出。
+- `ModBuildingHandler` 注册时 `layer = MapLayer.CARPET`，运行时用贴图创建 `Tile`（无 Creature 模板，不需要 `mod_template_type_carpet_1.prefab`）。
 - `MapManager.CanAddCarpetObject`：占地格已有地毯则不可放；不检查静物层（可铺在桌子下）；桌子仍可放在地毯上。
 - Unity：`Map.prefab` 需挂 `CarpetLayer` + Tilemap 子节点，并绑定到 `MapManager.carpetLayer`。
 

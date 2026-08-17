@@ -23,9 +23,14 @@ public partial class BuildingEditorWindow : Window
     private static readonly string DynamicIconsRelativePath = Path.Combine("Thing", "Dynamic", "images", "icon");
 
     private readonly string modRoot;
-    private readonly int buildingId;
+    private int buildingId;
     private readonly GameDataCatalog gameData;
-    private readonly bool isDynamicCategory;
+    private readonly bool allowCategoryChange;
+    private readonly Func<(int id, string name)>? suggestBuildingDefaults;
+    private readonly Func<(int id, string name)>? suggestDynamicDefaults;
+    private readonly Func<int>? preferDynamicWorkbenchId;
+    private bool isDynamicCategory;
+    private bool suppressCategoryChanged;
     private readonly ObservableCollection<MainWindow.CraftMaterial> materials;
     private readonly List<LabeledIdOption> materialOptions;
 
@@ -33,6 +38,8 @@ public partial class BuildingEditorWindow : Window
     private string IconsRelativePath => isDynamicCategory ? DynamicIconsRelativePath : BuildingIconsRelativePath;
 
     internal MainWindow.EditableBuilding? Result { get; private set; }
+
+    internal bool IsDynamicCategory => isDynamicCategory;
 
     internal BuildingEditorWindow(MainWindow.EditableBuilding initial, string modRoot, GameDataCatalog gameData)
         : this(initial, modRoot, gameData, isDynamicCategory: false)
@@ -44,10 +51,27 @@ public partial class BuildingEditorWindow : Window
         string modRoot,
         GameDataCatalog gameData,
         bool isDynamicCategory)
+        : this(initial, modRoot, gameData, isDynamicCategory, allowCategoryChange: false)
+    {
+    }
+
+    internal BuildingEditorWindow(
+        MainWindow.EditableBuilding initial,
+        string modRoot,
+        GameDataCatalog gameData,
+        bool isDynamicCategory,
+        bool allowCategoryChange,
+        Func<(int id, string name)>? suggestBuildingDefaults = null,
+        Func<(int id, string name)>? suggestDynamicDefaults = null,
+        Func<int>? preferDynamicWorkbenchId = null)
     {
         InitializeComponent();
         this.modRoot = modRoot;
         this.gameData = gameData;
+        this.allowCategoryChange = allowCategoryChange;
+        this.suggestBuildingDefaults = suggestBuildingDefaults;
+        this.suggestDynamicDefaults = suggestDynamicDefaults;
+        this.preferDynamicWorkbenchId = preferDynamicWorkbenchId;
         this.isDynamicCategory = isDynamicCategory;
         buildingId = initial.Id;
         materialOptions = BuildMaterialOptions(initial.Materials);
@@ -56,20 +80,13 @@ public partial class BuildingEditorWindow : Window
         IdBox.Text = buildingId.ToString(CultureInfo.InvariantCulture);
         NameBox.Text = initial.Name;
         FieldPicker.InitializeWorkbenches(gameData);
-        if (isDynamicCategory)
-        {
-            FieldPicker.UseDynamicFarmingGolemMode();
-            Title = Loc.Get("Str.DynamicEditor.Title");
-        }
-        else
-        {
-            FieldPicker.InitializeProductionLines(gameData);
-        }
-
+        FieldPicker.InitializeProductionLines(gameData);
+        ApplyCategoryMode(isDynamicCategory, resetIdentity: false, applyFieldDefaults: false);
         FieldPicker.SetValues(initial.Type, initial.Direction, initial.WorkbenchId, initial.SimulateId);
         FieldPicker.TypeChanged += (_, _) =>
         {
             ApplyCapbilityVisibility();
+            ApplyBarrierVisibility();
             ApplyWorldImageUiForType();
             ApplyFarmingGolemLayoutUi();
             BarrierToggle.IsChecked = isDynamicCategory
@@ -78,6 +95,7 @@ public partial class BuildingEditorWindow : Window
         };
         CapbilityBox.Text = ClampCapbility(initial.Capbility).ToString(CultureInfo.InvariantCulture);
         ApplyCapbilityVisibility();
+        ApplyBarrierVisibility();
         ApplyWorldImageUiForType();
         BarrierToggle.IsChecked = initial.Barrier;
         HealthBox.Text = (isDynamicCategory ? DynamicFieldOptions.FixedHealth : BuildingFieldOptions.FixedHealth)
@@ -91,8 +109,125 @@ public partial class BuildingEditorWindow : Window
         MaterialsGrid.ItemsSource = materials;
         RefreshMaterialsEmptyState();
         RefreshImagePreview();
+        SetupCategorySelector(isDynamicCategory);
         NameBox.SelectAll();
         NameBox.Focus();
+    }
+
+    private void SetupCategorySelector(bool selectedDynamic)
+    {
+        if (!allowCategoryChange)
+        {
+            CategoryLabel.Visibility = Visibility.Collapsed;
+            CategoryCombo.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        CategoryLabel.Visibility = Visibility.Visible;
+        CategoryCombo.Visibility = Visibility.Visible;
+        Title = Loc.Get("Str.AddBuilding.Title");
+
+        suppressCategoryChanged = true;
+        CategoryCombo.Items.Clear();
+        CategoryCombo.Items.Add(Loc.Get("Str.BuildingEditor.CategoryBuildings"));
+        CategoryCombo.Items.Add(Loc.Get("Str.BuildingEditor.CategoryDynamic"));
+        CategoryCombo.SelectedIndex = selectedDynamic ? 1 : 0;
+        suppressCategoryChanged = false;
+    }
+
+    private void CategoryCombo_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (suppressCategoryChanged || !allowCategoryChange)
+        {
+            return;
+        }
+
+        var wantDynamic = CategoryCombo.SelectedIndex == 1;
+        if (wantDynamic == isDynamicCategory)
+        {
+            return;
+        }
+
+        ApplyCategoryMode(wantDynamic, resetIdentity: true, applyFieldDefaults: true);
+    }
+
+    private void ApplyCategoryMode(bool dynamic, bool resetIdentity, bool applyFieldDefaults)
+    {
+        isDynamicCategory = dynamic;
+        if (dynamic)
+        {
+            FieldPicker.UseDynamicFarmingGolemMode();
+            if (!allowCategoryChange)
+            {
+                Title = Loc.Get("Str.DynamicEditor.Title");
+            }
+        }
+        else
+        {
+            FieldPicker.UseBuildingMode();
+            if (!allowCategoryChange)
+            {
+                Title = Loc.Get("Str.BuildingEditor.Title");
+            }
+        }
+
+        if (resetIdentity)
+        {
+            var suggest = dynamic ? suggestDynamicDefaults : suggestBuildingDefaults;
+            if (suggest is not null)
+            {
+                var (nextId, nextName) = suggest();
+                buildingId = nextId;
+                IdBox.Text = buildingId.ToString(CultureInfo.InvariantCulture);
+                NameBox.Text = nextName;
+            }
+        }
+
+        if (applyFieldDefaults)
+        {
+            materials.Clear();
+            if (dynamic)
+            {
+                foreach (var m in DynamicFieldOptions.CreateDefaultMaterials())
+                {
+                    materials.Add(m);
+                }
+
+                var workbenchId = preferDynamicWorkbenchId?.Invoke()
+                    ?? gameData.DefaultWorkbenchId;
+                FieldPicker.SetValues(
+                    "FARMING_GOLEM",
+                    1,
+                    workbenchId,
+                    FarmingGolemOptions.DefaultSimulateId);
+                CapbilityBox.Text = BuildingFieldOptions.DefaultCapbility.ToString(CultureInfo.InvariantCulture);
+                HealthBox.Text = DynamicFieldOptions.FixedHealth.ToString(CultureInfo.InvariantCulture);
+                ScaleBox.Text = DynamicFieldOptions.DefaultVisualScale.ToString("0.###", CultureInfo.InvariantCulture);
+                BarrierToggle.IsChecked = DynamicFieldOptions.DefaultBarrier("FARMING_GOLEM");
+                RefreshScaledPlaceSizeFromScaleBox();
+            }
+            else
+            {
+                FieldPicker.SetValues(
+                    "BOX",
+                    1,
+                    gameData.DefaultWorkbenchId,
+                    0);
+                CapbilityBox.Text = BuildingFieldOptions.DefaultCapbility.ToString(CultureInfo.InvariantCulture);
+                HealthBox.Text = BuildingFieldOptions.FixedHealth.ToString(CultureInfo.InvariantCulture);
+                SizeXBox.Text = "1";
+                SizeYBox.Text = "1";
+                ScaleBox.Text = DynamicFieldOptions.DefaultVisualScale.ToString("0.###", CultureInfo.InvariantCulture);
+                BarrierToggle.IsChecked = BuildingFieldOptions.DefaultBarrier("BOX");
+            }
+
+            RefreshMaterialsEmptyState();
+            ApplyCapbilityVisibility();
+            ApplyBarrierVisibility();
+            ApplyWorldImageUiForType();
+            ApplyFarmingGolemLayoutUi();
+            RefreshImagePreview();
+        }
     }
 
     private void ConfigureMaterialsGrid()
@@ -210,9 +345,12 @@ public partial class BuildingEditorWindow : Window
         }
 
         var health = isDynamicCategory ? DynamicFieldOptions.FixedHealth : BuildingFieldOptions.FixedHealth;
+        var barrier = isDynamicCategory || BuildingFieldOptions.ShowsBarrier(type)
+            ? BarrierToggle.IsChecked == true
+            : false;
         Result = new MainWindow.EditableBuilding(
             buildingId, name, type, direction, capbility, workbenchId, simulateId, health, sx, sy, materialSnapshot,
-            BarrierToggle.IsChecked == true, scale);
+            barrier, scale);
         DialogResult = true;
     }
 
@@ -224,6 +362,14 @@ public partial class BuildingEditorWindow : Window
         var visibility = shows ? Visibility.Visible : Visibility.Collapsed;
         CapbilityLabel.Visibility = visibility;
         CapbilityBox.Visibility = visibility;
+    }
+
+    private void ApplyBarrierVisibility()
+    {
+        var shows = isDynamicCategory || BuildingFieldOptions.ShowsBarrier(FieldPicker.SelectedType);
+        var visibility = shows ? Visibility.Visible : Visibility.Collapsed;
+        BarrierLabel.Visibility = visibility;
+        BarrierToggle.Visibility = visibility;
     }
 
     private void ApplyFarmingGolemLayoutUi()

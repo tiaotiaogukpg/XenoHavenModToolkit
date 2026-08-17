@@ -38,6 +38,20 @@ public partial class BuildingFieldPicker : WpfUserControl
         ApplyTypeVisibility();
     }
 
+    /// <summary>
+    /// Buildings 编辑器用：恢复建筑类型列表与生产线 simulateId。
+    /// </summary>
+    internal void UseBuildingMode()
+    {
+        useFarmingGolemSimulateIds = false;
+        BindStringCombo(TypeCombo, BuildingFieldOptions.DefaultTypes);
+        BindIntCombo(DirectionCombo, BuildingFieldOptions.DefaultDirections);
+        WorkbenchIdLabel.Text = "workbenchId";
+        WorkbenchIdCombo.IsEnabled = true;
+        RefreshSimulateOptions(preserveSelection: false);
+        ApplyTypeVisibility();
+    }
+
     public string SelectedType => TypeCombo.SelectedValue as string ?? string.Empty;
 
     public int SelectedDirection => DirectionCombo.SelectedItem is int value ? value : 0;

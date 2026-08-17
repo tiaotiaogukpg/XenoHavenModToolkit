@@ -128,6 +128,9 @@
 
     <!-- Building editor -->
     <sys:String x:Key="Str.BuildingEditor.Title">Building 编辑</sys:String>
+    <sys:String x:Key="Str.BuildingEditor.Category">大类</sys:String>
+    <sys:String x:Key="Str.BuildingEditor.CategoryBuildings">Buildings</sys:String>
+    <sys:String x:Key="Str.BuildingEditor.CategoryDynamic">Dynamic</sys:String>
     <sys:String x:Key="Str.BuildingEditor.Collision">碰撞</sys:String>
     <sys:String x:Key="Str.BuildingEditor.Off">关</sys:String>
     <sys:String x:Key="Str.BuildingEditor.On">开</sys:String>

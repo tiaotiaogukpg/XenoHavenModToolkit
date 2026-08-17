@@ -1393,71 +1393,52 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (ClassifyCurrentSelection() is TreeSelectionKind.DynamicsXml or TreeSelectionKind.DynamicFolder)
-        {
-            AddDynamic_Click(sender, e);
-            return;
-        }
-
         try
         {
-            var (nextId, nextName) = SuggestNewBuildingDefaults();
-            var initial = new EditableBuilding(
-                nextId,
-                nextName,
-                "BOX",
-                1,
-                BuildingFieldOptions.DefaultCapbility,
-                gameData.DefaultWorkbenchId,
-                0,
-                BuildingFieldOptions.FixedHealth,
-                1,
-                1,
-                [],
-                BuildingFieldOptions.DefaultBarrier("BOX"));
+            var preferDynamic = ClassifyCurrentSelection() is TreeSelectionKind.DynamicsXml
+                or TreeSelectionKind.DynamicFolder
+                or TreeSelectionKind.DynamicNode;
+            var (nextId, nextName) = preferDynamic
+                ? SuggestNewDynamicDefaults()
+                : SuggestNewBuildingDefaults();
+            var initial = preferDynamic
+                ? new EditableBuilding(
+                    nextId,
+                    nextName,
+                    "FARMING_GOLEM",
+                    1,
+                    BuildingFieldOptions.DefaultCapbility,
+                    PreferFarmingGolemWorkbenchOrDefault(),
+                    FarmingGolemOptions.DefaultSimulateId,
+                    DynamicFieldOptions.FixedHealth,
+                    DynamicFieldOptions.FixedPlaceSizeX,
+                    DynamicFieldOptions.FixedPlaceSizeY,
+                    DynamicFieldOptions.CreateDefaultMaterials(),
+                    DynamicFieldOptions.DefaultBarrier("FARMING_GOLEM"),
+                    DynamicFieldOptions.DefaultVisualScale)
+                : new EditableBuilding(
+                    nextId,
+                    nextName,
+                    "BOX",
+                    1,
+                    BuildingFieldOptions.DefaultCapbility,
+                    gameData.DefaultWorkbenchId,
+                    0,
+                    BuildingFieldOptions.FixedHealth,
+                    1,
+                    1,
+                    [],
+                    BuildingFieldOptions.DefaultBarrier("BOX"));
 
-            var dialog = new BuildingEditorWindow(initial, currentModRoot!, gameData) { Owner = this };
-            if (dialog.ShowDialog() != true || dialog.Result is null)
-            {
-                return;
-            }
-
-            UpsertBuildingToBuildingsXml(dialog.Result);
-            SaveBuildingsXmlToDisk();
-            ParseBuildingsFromEditor();
-            RefreshBuildingNodesInTree();
-            RefreshTileBoardAfterMutation(TreeSelectionKind.BuildingsXml);
-            SyncBuildingTileSelection(dialog.Result.Id);
-            UpdateTopBarState();
-            Log($"已新增 Building：{dialog.Result.Id} - {dialog.Result.Name} ({dialog.Result.Type})。");
-        }
-        catch (Exception ex)
-        {
-            Log($"新增 Building 失败：{ex.Message}");
-        }
-    }
-
-    private void AddDynamic_Click(object sender, RoutedEventArgs e)
-    {
-        try
-        {
-            var (nextId, nextName) = SuggestNewDynamicDefaults();
-            var initial = new EditableBuilding(
-                nextId,
-                nextName,
-                "FARMING_GOLEM",
-                1,
-                BuildingFieldOptions.DefaultCapbility,
-                PreferFarmingGolemWorkbenchOrDefault(),
-                FarmingGolemOptions.DefaultSimulateId,
-                DynamicFieldOptions.FixedHealth,
-                DynamicFieldOptions.FixedPlaceSizeX,
-                DynamicFieldOptions.FixedPlaceSizeY,
-                DynamicFieldOptions.CreateDefaultMaterials(),
-                DynamicFieldOptions.DefaultBarrier("FARMING_GOLEM"),
-                DynamicFieldOptions.DefaultVisualScale);
-
-            var dialog = new BuildingEditorWindow(initial, currentModRoot!, gameData, isDynamicCategory: true)
+            var dialog = new BuildingEditorWindow(
+                initial,
+                currentModRoot!,
+                gameData,
+                isDynamicCategory: preferDynamic,
+                allowCategoryChange: true,
+                suggestBuildingDefaults: SuggestNewBuildingDefaults,
+                suggestDynamicDefaults: SuggestNewDynamicDefaults,
+                preferDynamicWorkbenchId: PreferFarmingGolemWorkbenchOrDefault)
             {
                 Owner = this
             };
@@ -1466,20 +1447,37 @@ public partial class MainWindow : Window
                 return;
             }
 
-            UpsertDynamicToDynamicsXml(dialog.Result);
-            SaveDynamicsXmlToDisk();
-            ParseDynamicsFromEditor();
-            RefreshDynamicNodesInTree();
-            RefreshTileBoardAfterMutation(TreeSelectionKind.DynamicsXml);
-            SyncDynamicTileSelection(dialog.Result.Id);
+            if (dialog.IsDynamicCategory)
+            {
+                UpsertDynamicToDynamicsXml(dialog.Result);
+                SaveDynamicsXmlToDisk();
+                ParseDynamicsFromEditor();
+                RefreshDynamicNodesInTree();
+                RefreshTileBoardAfterMutation(TreeSelectionKind.DynamicsXml);
+                SyncDynamicTileSelection(dialog.Result.Id);
+                Log($"已新增 Dynamic：{dialog.Result.Id} - {dialog.Result.Name} ({dialog.Result.Type})。");
+            }
+            else
+            {
+                UpsertBuildingToBuildingsXml(dialog.Result);
+                SaveBuildingsXmlToDisk();
+                ParseBuildingsFromEditor();
+                RefreshBuildingNodesInTree();
+                RefreshTileBoardAfterMutation(TreeSelectionKind.BuildingsXml);
+                SyncBuildingTileSelection(dialog.Result.Id);
+                Log($"已新增 Building：{dialog.Result.Id} - {dialog.Result.Name} ({dialog.Result.Type})。");
+            }
+
             UpdateTopBarState();
-            Log($"已新增 Dynamic：{dialog.Result.Id} - {dialog.Result.Name} ({dialog.Result.Type})。");
         }
         catch (Exception ex)
         {
-            Log($"新增 Dynamic 失败：{ex.Message}");
+            Log($"新增组件失败：{ex.Message}");
         }
     }
+
+    private void AddDynamic_Click(object sender, RoutedEventArgs e)
+        => AddBuilding_Click(sender, e);
 
     private bool TryGetSelectedBuildingId(out int id, out string name)
     {
@@ -2723,7 +2721,8 @@ public partial class MainWindow : Window
                 new XElement("x", b.SizeX),
                 new XElement("y", b.SizeY)),
             CreateMaterialsElement(b.Materials),
-            new XElement("barrier", b.Barrier ? "true" : "false"));
+            new XElement("barrier",
+                (BuildingFieldOptions.IsCarpet(b.Type) ? false : b.Barrier) ? "true" : "false"));
 
     private static XElement CreateModDynamicXmlElement(EditableBuilding b) =>
         new(

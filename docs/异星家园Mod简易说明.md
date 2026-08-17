@@ -101,7 +101,7 @@ Word 版（含截图占位）：[异星家园Mod简易说明.docx](./异星家�
 |------|------|
 | **id** | 组件本地序号（1、2、3…），只读；同时决定图片文件名。不要改成「Mod基础ID+序号」。 |
 | **name** | 组件显示名称（必填）。 |
-| **type** | Buildings：`BOX` / `SIMPLE_OBJECT` / `SMALL_LAMP` / `STREET_LIGHT` / `PRODUCTION_LINE`。Dynamic：`FARMING_GOLEM`。 |
+| **type** | Buildings：`BOX` / `SIMPLE_OBJECT` / `SMALL_LAMP` / `STREET_LIGHT` / `PRODUCTION_LINE` / `CARPET`。Dynamic：`FARMING_GOLEM`。 |
 | **direction** | 朝向。箱子、装饰物、灯类、农业傀儡固定为 `1`；生产线可选 `1` 或 `3`。 |
 | **workbenchId** | 在哪张工作台制造。请从下拉列表选择（界面显示「名称-ID」）。 |
 | **simulateId** | **PRODUCTION_LINE**：选择要模拟的原版生产线；**FARMING_GOLEM**：选择农业傀儡角色（伐木 20191 / 采矿 20192 / 收割 20193）。 |

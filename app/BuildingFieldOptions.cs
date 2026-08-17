@@ -8,7 +8,8 @@ internal static class BuildingFieldOptions
         "SIMPLE_OBJECT",
         "SMALL_LAMP",
         "STREET_LIGHT",
-        "PRODUCTION_LINE"
+        "PRODUCTION_LINE",
+        "CARPET"
     ];
 
     internal static readonly int[] DefaultDirections =
@@ -29,10 +30,14 @@ internal static class BuildingFieldOptions
     internal static bool IsProductionLine(string type)
         => string.Equals(type, "PRODUCTION_LINE", StringComparison.OrdinalIgnoreCase);
 
+    internal static bool IsCarpet(string type)
+        => string.Equals(type, "CARPET", StringComparison.OrdinalIgnoreCase);
+
     internal static bool IsSimpleDecorType(string type)
         => string.Equals(type, "SIMPLE_OBJECT", StringComparison.OrdinalIgnoreCase) ||
            string.Equals(type, "SMALL_LAMP", StringComparison.OrdinalIgnoreCase) ||
-           string.Equals(type, "STREET_LIGHT", StringComparison.OrdinalIgnoreCase);
+           string.Equals(type, "STREET_LIGHT", StringComparison.OrdinalIgnoreCase) ||
+           IsCarpet(type);
 
     internal static bool RequiresSimulateId(string type)
         => IsProductionLine(type);
@@ -41,8 +46,11 @@ internal static class BuildingFieldOptions
         => !IsSimpleDecorType(type) &&
            !IsProductionLine(type);
 
+    internal static bool ShowsBarrier(string type)
+        => !IsCarpet(type);
+
     /// <summary>
-    /// BOX 默认开启碰撞；其它类型（含灯）默认关闭，由编辑窗 On/Off 滑块控制。
+    /// BOX 默认开启碰撞；其它类型（含灯、地毯）默认关闭，由编辑窗 On/Off 滑块控制。
     /// </summary>
     internal static bool DefaultBarrier(string type)
         => string.Equals(type, "BOX", StringComparison.OrdinalIgnoreCase);

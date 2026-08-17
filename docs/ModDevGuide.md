@@ -113,7 +113,8 @@ XenoHaven MOD Toolkit 会以 UTF-8（无 BOM）写回 XML，并保持多行缩�
 - `materials` 表示建造材料列表，每个 `ModCraftMaterialData` 包含材料 `id` 与数量 `count`。
 XenoHaven MOD Toolkit 会在 Building 编辑窗中从 `DOC/K-可用材料表.xlsx` 加载材料下拉（界面显示 `木头-100055`，保存 XML 时写入 `100055`）；数量必须为 1–200 的正整数。
 - `workbenchId` 必须从 `DOC/K-可用工作台.xlsx` 中选择（界面显示 `木工桌-100083`，保存 XML 时写入 `100083`）。
-- `type` 可为 `BOX`、`SIMPLE_OBJECT`、`SMALL_LAMP`、`STREET_LIGHT`、`PRODUCTION_LINE`；`SMALL_LAMP` / `STREET_LIGHT` 与 `SIMPLE_OBJECT` 一样固定 `direction = 1`，且不写入 `capbility`。
+- `type` 可为 `BOX`、`SIMPLE_OBJECT`、`SMALL_LAMP`、`STREET_LIGHT`、`PRODUCTION_LINE`、`CARPET`；`SMALL_LAMP` / `STREET_LIGHT` / `CARPET` 与 `SIMPLE_OBJECT` 一样固定 `direction = 1`，且不写入 `capbility`。
+- `type` 为 `CARPET` 时走独立地毯层：铺在普通地板之上，桌子等静物可叠在地毯上；同格已有地毯则不可再放（预览为红）。不写入碰撞（`barrier` 固定为 `false`）。
 - `type` 为 `PRODUCTION_LINE` 时必须填写 `simulateId`，它表示这个 Mod 建筑要模拟哪一条原版生产线；XenoHaven MOD Toolkit 会从 `DOC/S-生产线定义.xlsx` 加载下拉（界面显示 `炼油厂-302323`，保存 XML 时写入 `302323`）。
 - **农业傀儡 `FARMING_GOLEM` 不属于 Buildings**，见 `Thing/Dynamic`（下节）。
 - `barrier` 表示是否作为阻挡/障碍处理（`true` = 实体碰撞，不可穿过）。工具在 Building 编辑窗提供 **碰撞** 开关；新建时 `BOX` 默认开启，其它类型默认关闭。游戏端对应 `collider.isTrigger = !barrier`，且 `barrier=true` 时会切到 `Barrier` 层（灯类模板默认在 `Static` 层且 isTrigger，仅改字段不够）。
@@ -218,7 +219,19 @@ XenoHaven MOD Toolkit 提供：
 - `ModBuildingData.SetupCreature` 在单向分支中把 `STREET_LIGHT` 与 `SMALL_LAMP` 同等处理（含缺电 UI 对齐贴图中心）。
 - 在 `Assets/Resources/Mod/Prefabs/` 增加 `mod_template_type_street_light_1.prefab`，基于原版 `303486_building_303486` 剥离 `ColonyProsperComponent` 等无关组件，保留 `SortingGroup`、`PowerSupplyConsumer`（耗电 100）、大范围 `Point Light 2D`（内径 3 / 外径 12）与缺电提示 `Low Power UI`。
 
-## 11. 使用 XenoHaven MOD Toolkit
+## 11. 游戏端 CARPET 对接
+
+`CARPET` 的工具端 XML 字段与 `SIMPLE_OBJECT` 一致：固定 `direction = 1`，不需要 `simulateId`，也不写入 `capbility`；碰撞固定关闭。
+
+游戏端配套：
+
+- `MapLayer.CARPET`（原未使用的 `DECORATE = 20`）与 `CarpetLayer`（Tilemap，独立于 `FLOOR`）。
+- `ModBuildingType` 增加 `CARPET`；`ModUtils.ConvertCategory` 归为 `ItemCategory.FLOOR`（支持按住连铺）。
+- `ModBuildingHandler` 注册时 `layer = MapLayer.CARPET`，运行时用贴图创建 `Tile`（无 Creature 模板，不需要 `mod_template_type_carpet_1.prefab`）。地图贴图用 `LoadSpriteNormalizedToUnit` 缩放到约 1×1 格，避免大图溢出。
+- `MapManager.CanAddCarpetObject`：占地格已有地毯则不可放；不检查静物层（可铺在桌子下）；桌子仍可放在地毯上。
+- Unity：`Map.prefab` 需挂 `CarpetLayer` + Tilemap 子节点，并绑定到 `MapManager.carpetLayer`。
+
+## 12. 使用 XenoHaven MOD Toolkit
 
 基本流程：
 
@@ -235,7 +248,7 @@ XenoHaven MOD Toolkit 提供：
 7. 保存 XML。
 8. 导出发布版 Mod 或清理 `.meta`。
 
-## 12. 当前限制
+## 13. 当前限制
 
 - 当前游戏端大概率不支持热重载。修改 Mod 后通常需要重启游戏或重新进入存档。
 - 当前工具第一版优先支持 `Thing/Buildings`。

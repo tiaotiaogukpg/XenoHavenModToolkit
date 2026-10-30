@@ -41,6 +41,7 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
 
                 <WrapPanel Grid.Column="0"
@@ -102,8 +103,15 @@
                                ToolTip="{DynamicResource Str.Main.SteamStatusTip}"/>
                 </DockPanel>
 
-                <Button x:Name="AboutButton"
+                <Button x:Name="SettingsButton"
                         Grid.Column="4"
+                        Content="{DynamicResource Str.Main.Settings}"
+                        Margin="8,0,0,0"
+                        VerticalAlignment="Center"
+                        Click="Settings_Click"
+                        ToolTip="{DynamicResource Str.Main.SettingsTip}"/>
+                <Button x:Name="AboutButton"
+                        Grid.Column="5"
                         Content="{DynamicResource Str.Main.About}"
                         Margin="8,0,0,0"
                         VerticalAlignment="Center"

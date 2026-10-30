@@ -101,14 +101,14 @@ internal static class FarmingGolemPartsSheet
         var sheetPath = Path.Combine(modRoot, GetSheetRelativePath(buildingId));
         if (!File.Exists(sheetPath))
         {
-            return $"缺少农业傀儡拆分图：{GetSheetRelativePath(buildingId)}";
+            return $"Missing farming golem parts sheet: {GetSheetRelativePath(buildingId)}";
         }
 
         using (var sheet = new MagickImage(sheetPath))
         {
             if (sheet.Width != TargetSize || sheet.Height != TargetSize)
             {
-                return $"农业傀儡拆分图尺寸必须是 {TargetSize}×{TargetSize}，当前为 {sheet.Width}×{sheet.Height}。";
+                return $"Farming golem parts sheet must be {TargetSize}×{TargetSize}, found {sheet.Width}×{sheet.Height}.";
             }
         }
 
@@ -118,13 +118,13 @@ internal static class FarmingGolemPartsSheet
             var path = Path.Combine(partsDir, $"{part.Name}.png");
             if (!File.Exists(path))
             {
-                return $"缺少部件：parts/{buildingId}/{part.Name}.png";
+                return $"Missing part: parts/{buildingId}/{part.Name}.png";
             }
 
             using var partImage = new MagickImage(path);
             if (partImage.Width != part.Width || partImage.Height != part.Height)
             {
-                return $"部件 {part.Name} 尺寸应为 {part.Width}×{part.Height}，当前为 {partImage.Width}×{partImage.Height}。";
+                return $"Part {part.Name} must be {part.Width}×{part.Height}, found {partImage.Width}×{partImage.Height}.";
             }
         }
 
@@ -132,7 +132,7 @@ internal static class FarmingGolemPartsSheet
         var footL = Path.Combine(partsDir, "FootL.png");
         if (!File.Exists(footR) || !File.Exists(footL))
         {
-            return $"缺少脚部件：parts/{buildingId}/FootR.png 与 FootL.png";
+            return $"Missing foot parts: parts/{buildingId}/FootR.png and FootL.png";
         }
 
         return null;

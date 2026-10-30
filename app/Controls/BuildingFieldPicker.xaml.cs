@@ -21,7 +21,40 @@ public partial class BuildingFieldPicker : WpfUserControl
         BindStringCombo(TypeCombo, BuildingFieldOptions.DefaultTypes);
         BindIntCombo(DirectionCombo, BuildingFieldOptions.DefaultDirections);
         TypeCombo.SelectionChanged += TypeCombo_SelectionChanged;
+        LocalizationManager.LanguageChanged += OnLanguageChanged;
         ApplyTypeVisibility();
+    }
+
+    private void OnLanguageChanged(object? sender, EventArgs e)
+    {
+        RefreshWorkbenchLabel();
+        RefreshLocalizedComboDisplays();
+    }
+
+    private void RefreshWorkbenchLabel()
+    {
+        WorkbenchIdLabel.Text = useFarmingGolemSimulateIds
+            ? Loc.Get("Str.DynamicEditor.ProductionSite")
+            : "workbenchId";
+    }
+
+    private void RefreshLocalizedComboDisplays()
+    {
+        var workbenchId = SelectedWorkbenchId;
+        WorkbenchIdCombo.ItemsSource = null;
+        WorkbenchIdCombo.ItemsSource = workbenchOptions;
+        if (workbenchId > 0)
+        {
+            SelectWorkbench(workbenchId);
+        }
+
+        var simulateId = SelectedSimulateId;
+        SimulateIdCombo.ItemsSource = null;
+        SimulateIdCombo.ItemsSource = simulateOptions;
+        if (simulateId > 0)
+        {
+            SelectSimulateId(simulateId);
+        }
     }
 
     /// <summary>
@@ -32,7 +65,7 @@ public partial class BuildingFieldPicker : WpfUserControl
         useFarmingGolemSimulateIds = true;
         BindStringCombo(TypeCombo, DynamicFieldOptions.DefaultTypes);
         BindIntCombo(DirectionCombo, DynamicFieldOptions.DefaultDirections);
-        WorkbenchIdLabel.Text = Loc.Get("Str.DynamicEditor.ProductionSite");
+        RefreshWorkbenchLabel();
         WorkbenchIdCombo.IsEnabled = true;
         RefreshSimulateOptions(preserveSelection: false);
         ApplyTypeVisibility();
@@ -46,7 +79,7 @@ public partial class BuildingFieldPicker : WpfUserControl
         useFarmingGolemSimulateIds = false;
         BindStringCombo(TypeCombo, BuildingFieldOptions.DefaultTypes);
         BindIntCombo(DirectionCombo, BuildingFieldOptions.DefaultDirections);
-        WorkbenchIdLabel.Text = "workbenchId";
+        RefreshWorkbenchLabel();
         WorkbenchIdCombo.IsEnabled = true;
         RefreshSimulateOptions(preserveSelection: false);
         ApplyTypeVisibility();

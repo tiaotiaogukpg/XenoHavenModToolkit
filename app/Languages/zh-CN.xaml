@@ -36,6 +36,8 @@
     <sys:String x:Key="Str.Main.SteamReconnectTip">在启动 Steam 并登录后重试连接</sys:String>
     <sys:String x:Key="Str.Main.About">关于</sys:String>
     <sys:String x:Key="Str.Main.AboutTip">查看应用名称与版本号</sys:String>
+    <sys:String x:Key="Str.Main.Settings">设置</sys:String>
+    <sys:String x:Key="Str.Main.SettingsTip">应用设置（按住 Alt 打开可显示开发选项）</sys:String>
     <sys:String x:Key="Str.Main.ConsoleTitle">CONSOLE / 日志 / 校验结果</sys:String>
     <sys:String x:Key="Str.Main.SteamAccountTitle">Steam 账号</sys:String>
     <sys:String x:Key="Str.Main.SteamConnectFailed">未能连接 Steam 账号。
@@ -168,6 +170,12 @@
     <!-- AppSettings -->
     <sys:String x:Key="Str.Settings.SaveFailed">保存配置失败：{0}
 {1}</sys:String>
+    <sys:String x:Key="Str.Settings.Title">设置</sys:String>
+    <sys:String x:Key="Str.Settings.OpenLastMod">启动时打开上次工程</sys:String>
+    <sys:String x:Key="Str.Settings.Advanced">开发选项</sys:String>
+    <sys:String x:Key="Str.Settings.EnableDynamicDev">启用 Dynamic / 农业傀儡功能</sys:String>
+    <sys:String x:Key="Str.Settings.EnableDynamicDevTip">关闭时隐藏 Dynamic 目录、傀儡编辑与新建大类切换（默认关闭）。</sys:String>
+    <sys:String x:Key="Str.Settings.UnlockHint">按住 Alt 再点「设置」可显示开发选项。</sys:String>
 
     <!-- About -->
     <sys:String x:Key="Str.About.Title">关于</sys:String>

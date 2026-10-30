@@ -75,11 +75,11 @@ public partial class MainWindow : Window
         settings = AppSettings.Load();
         SyncLanguageCombo(LocalizationManager.Resolve(settings.Language));
 
-        Log($"版本：{AppVersion.Display}");
-        Log($"运行模式：{AppPaths.RunModeLabel}");
-        Log($"应用基础目录：{AppPaths.GetApplicationBaseDirectory()}");
-        Log($"配置文件路径：{AppPaths.GetConfigFilePath()}");
-        Log($"Mods 目录路径：{AppPaths.GetModsDirectory()}");
+        Log($"Version: {AppVersion.Display}");
+        Log($"Run mode: {AppPaths.RunModeLabel}");
+        Log($"App base directory: {AppPaths.GetApplicationBaseDirectory()}");
+        Log($"Config path: {AppPaths.GetConfigFilePath()}");
+        Log($"Mods directory: {AppPaths.GetModsDirectory()}");
 
         ConnectSteam(showFailureDialog: true);
 
@@ -96,7 +96,7 @@ public partial class MainWindow : Window
 
         RefreshOverviewList();
         BuildOverviewNavigationTree();
-        Log($"扫描到的工程数量：{overviewMods.Count}");
+        Log($"Projects found: {overviewMods.Count}");
 
         if (settings.OpenLastModOnStartup &&
             !string.IsNullOrWhiteSpace(settings.LastModPath) &&
@@ -185,6 +185,50 @@ public partial class MainWindow : Window
         AboutWindow.Show(this);
     }
 
+    private void Settings_Click(object sender, RoutedEventArgs e)
+    {
+        var showAdvanced = (Keyboard.Modifiers & ModifierKeys.Alt) == ModifierKeys.Alt;
+        var dialog = new SettingsWindow(settings, showAdvanced) { Owner = this };
+        if (dialog.ShowDialog() != true)
+        {
+            return;
+        }
+
+        SaveSettingsOrReport();
+        if (dialog.DynamicDevFeaturesChanged)
+        {
+            ApplyDynamicDevFeatureVisibility();
+            Log(settings.EnableDynamicDevFeatures
+                ? "Dynamic / Farming Golem features enabled."
+                : "Dynamic / Farming Golem features hidden.");
+        }
+    }
+
+    private bool IsDynamicDevEnabled => settings.EnableDynamicDevFeatures;
+
+    private void ApplyDynamicDevFeatureVisibility()
+    {
+        if (!IsDynamicDevEnabled)
+        {
+            if (tileBoardMode is TileBoardMode.Dynamics or TileBoardMode.Combined)
+            {
+                tileBoardMode = TileBoardMode.Buildings;
+                BuildingTiles.SelectedItem = null;
+                BuildingTiles.ItemsSource = buildings;
+            }
+
+            dynamics.Clear();
+        }
+        else if (!string.IsNullOrWhiteSpace(currentModRoot))
+        {
+            EnsureDynamicScaffoldOnDisk();
+            ParseDynamicsFromEditor();
+        }
+
+        BuildOverviewNavigationTree();
+        UpdateTopBarState();
+    }
+
     private void ConnectSteam(bool showFailureDialog)
     {
         steamSession?.Dispose();
@@ -193,12 +237,12 @@ public partial class MainWindow : Window
 
         if (steamSession.IsAvailable)
         {
-            Log($"Steam 已连接：{steamSession.PersonaName}（SteamID {steamSession.SteamId64}，AppID {steamSession.AppId}）");
+            Log($"Steam connected: {steamSession.PersonaName} (SteamID {steamSession.SteamId64}, AppID {steamSession.AppId})");
             return;
         }
 
         var reason = steamSession.FailureReason ?? Loc.Get("Str.UnknownReason");
-        Log($"Steam 未连接：{reason}");
+        Log($"Steam not connected: {reason}");
         if (showFailureDialog)
         {
             System.Windows.MessageBox.Show(
@@ -257,14 +301,14 @@ public partial class MainWindow : Window
             if (!Directory.Exists(modsDir))
             {
                 Directory.CreateDirectory(modsDir);
-                Log($"已创建 Mods 目录：{modsDir}");
+                Log($"Created Mods directory: {modsDir}");
             }
 
             return true;
         }
         catch (Exception ex)
         {
-            var message = $"无法创建 Mods 目录：{modsDir}{Environment.NewLine}{ex.Message}";
+            var message = $"Failed to create Mods directory: {modsDir}{Environment.NewLine}{ex.Message}";
             Log(message);
             System.Windows.MessageBox.Show(this, message, Loc.Get("Str.Main.ModsDirTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
             return false;
@@ -307,7 +351,7 @@ public partial class MainWindow : Window
             RefreshDynamicNodesInTree();
         }
 
-        Log($"已刷新 Mod 总览列表（工程数：{overviewMods.Count}）。");
+        Log($"Refreshed Mod overview ({overviewMods.Count} projects).");
     }
 
     private void ModFileTree_PreviewMouseDown(object sender, MouseButtonEventArgs e)
@@ -356,7 +400,7 @@ public partial class MainWindow : Window
         }
         else if (item.Tag is DynamicTreeTag)
         {
-            if (EnsureModOpen() && EnsureGameDataReady())
+            if (IsDynamicDevEnabled && EnsureModOpen() && EnsureGameDataReady())
             {
                 OpenDynamicEditor_Click(sender, e);
             }
@@ -445,7 +489,7 @@ public partial class MainWindow : Window
         ParseBuildingsFromEditor();
         ParseDynamicsFromEditor();
         currentModBaseId = TryDetermineCurrentModBaseId();
-        Log($"已打开 Mod：{folder}");
+        Log($"Opened Mod: {folder}");
         BuildOverviewNavigationTree();
         TrySelectModInTree(folder);
         UpdateTopBarState();
@@ -456,7 +500,7 @@ public partial class MainWindow : Window
     /// </summary>
     private void EnsureDynamicScaffoldOnDisk()
     {
-        if (string.IsNullOrWhiteSpace(currentModRoot))
+        if (!IsDynamicDevEnabled || string.IsNullOrWhiteSpace(currentModRoot))
         {
             return;
         }
@@ -488,7 +532,7 @@ public partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            Log($"补齐 Dynamic 目录失败：{ex.Message}");
+            Log($"Failed to prepare Dynamic folder: {ex.Message}");
         }
     }
 
@@ -543,7 +587,7 @@ public partial class MainWindow : Window
         }
 
         UpdateTopBarState();
-        Log("已返回总览状态。");
+        Log("Returned to overview.");
     }
 
     private void UpdateTopBarState()
@@ -649,6 +693,7 @@ public partial class MainWindow : Window
             TreeSelectionKind.DynamicFolder
                 or TreeSelectionKind.DynamicsXml
                 or TreeSelectionKind.DynamicNode
+                when IsDynamicDevEnabled
                 => TileBoardMode.Dynamics,
             TreeSelectionKind.BuildingsFolder
                 or TreeSelectionKind.BuildingsXml
@@ -658,7 +703,7 @@ public partial class MainWindow : Window
                 or TreeSelectionKind.OverviewModFolder
                 or TreeSelectionKind.MainXml
                 or TreeSelectionKind.ThingFolder
-                => TileBoardMode.Combined,
+                => IsDynamicDevEnabled ? TileBoardMode.Combined : TileBoardMode.Buildings,
             _ => TileBoardMode.Buildings
         };
 
@@ -685,9 +730,12 @@ public partial class MainWindow : Window
             combinedTiles.Add(building);
         }
 
-        foreach (var dynamic in dynamics)
+        if (IsDynamicDevEnabled)
         {
-            combinedTiles.Add(dynamic);
+            foreach (var dynamic in dynamics)
+            {
+                combinedTiles.Add(dynamic);
+            }
         }
 
         return combinedTiles;
@@ -877,8 +925,6 @@ public partial class MainWindow : Window
 
             Directory.CreateDirectory(targetFolder);
             Directory.CreateDirectory(Path.Combine(targetFolder, "Thing", "Buildings", "images", "icon"));
-            Directory.CreateDirectory(Path.Combine(targetFolder, "Thing", "Dynamic", "images", "icon"));
-            Directory.CreateDirectory(Path.Combine(targetFolder, "Thing", "Dynamic", "images", "parts"));
 
             ModXmlIO.WriteAllText(Path.Combine(targetFolder, MainXmlRelativePath), dialog.Result.MainXml);
             ModRootAssets.CopyToRoot(dialog.Result.IconSourcePath, targetFolder, ModRootAssets.IconRelativePath);
@@ -888,18 +934,23 @@ public partial class MainWindow : Window
             Directory.CreateDirectory(buildingsXmlFolder);
             ModXmlIO.WriteAllText(Path.Combine(buildingsXmlFolder, "Buildings.xml"), dialog.Result.BuildingsXml);
 
-            var dynamicsXmlFolder = Path.Combine(targetFolder, "Thing", "Dynamic");
-            Directory.CreateDirectory(dynamicsXmlFolder);
-            ModXmlIO.WriteAllText(Path.Combine(dynamicsXmlFolder, "Dynamics.xml"), dialog.Result.DynamicsXml);
+            if (IsDynamicDevEnabled)
+            {
+                Directory.CreateDirectory(Path.Combine(targetFolder, "Thing", "Dynamic", "images", "icon"));
+                Directory.CreateDirectory(Path.Combine(targetFolder, "Thing", "Dynamic", "images", "parts"));
+                var dynamicsXmlFolder = Path.Combine(targetFolder, "Thing", "Dynamic");
+                Directory.CreateDirectory(dynamicsXmlFolder);
+                ModXmlIO.WriteAllText(Path.Combine(dynamicsXmlFolder, "Dynamics.xml"), dialog.Result.DynamicsXml);
+            }
 
             RefreshOverviewList();
             BuildOverviewNavigationTree();
             TrySelectModInTree(targetFolder);
-            Log($"已新建 Mod：{folderName}");
+            Log($"Created Mod: {folderName}");
         }
         catch (Exception ex)
         {
-            Log($"新建 Mod 失败：{ex.Message}");
+            Log($"Failed to create Mod: {ex.Message}");
         }
     }
 
@@ -959,9 +1010,9 @@ public partial class MainWindow : Window
 
             var messages = new List<string>();
             ValidateModMetadata(currentModRoot!, generatedXml, messages);
-            if (messages.Any(message => message.StartsWith("[错误]", StringComparison.Ordinal)))
+            if (messages.Any(message => message.StartsWith("[Error]", StringComparison.Ordinal)))
             {
-                Log("main.xml 保存前校验失败：" + Environment.NewLine + string.Join(Environment.NewLine, messages));
+                Log("main.xml validation failed before save:" + Environment.NewLine + string.Join(Environment.NewLine, messages));
                 System.Windows.MessageBox.Show(this, string.Join(Environment.NewLine, messages), Loc.Get("Str.Main.ModInfoValidateTitle"), MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
@@ -971,11 +1022,11 @@ public partial class MainWindow : Window
             currentModBaseId = TryDetermineCurrentModBaseId();
             RefreshOverviewList();
             BuildOverviewNavigationTree();
-            Log("main.xml 已更新。");
+            Log("main.xml updated.");
         }
         catch (Exception ex)
         {
-            Log($"main.xml 更新失败：{ex.Message}");
+            Log($"Failed to update main.xml: {ex.Message}");
             System.Windows.MessageBox.Show(this, ex.Message, Loc.Get("Str.Main.ModInfoTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
@@ -1000,9 +1051,9 @@ public partial class MainWindow : Window
 
         var messages = new List<string>();
         ValidateModMetadata(currentModRoot!, mainXmlText, messages);
-        if (messages.Any(message => message.StartsWith("[错误]", StringComparison.Ordinal)))
+        if (messages.Any(message => message.StartsWith("[Error]", StringComparison.Ordinal)))
         {
-            Log("上传前校验失败：" + Environment.NewLine + string.Join(Environment.NewLine, messages));
+            Log("Upload validation failed:" + Environment.NewLine + string.Join(Environment.NewLine, messages));
             System.Windows.MessageBox.Show(
                 this,
                 string.Join(Environment.NewLine, messages),
@@ -1027,13 +1078,13 @@ public partial class MainWindow : Window
 
         if (dialog.UploadSucceeded)
         {
-            Log($"创意工坊上传成功：PublishedFileId={dialog.ResultPublishedFileId}");
+            Log($"Workshop upload succeeded: PublishedFileId={dialog.ResultPublishedFileId}");
         }
     }
 
     private void OpenBuildingEditor_Click(object sender, RoutedEventArgs e)
     {
-        if (ClassifyCurrentSelection() == TreeSelectionKind.DynamicNode)
+        if (IsDynamicDevEnabled && ClassifyCurrentSelection() == TreeSelectionKind.DynamicNode)
         {
             OpenDynamicEditor_Click(sender, e);
             return;
@@ -1060,16 +1111,21 @@ public partial class MainWindow : Window
             RefreshTileBoardAfterMutation(TreeSelectionKind.BuildingNode);
             SyncBuildingTileSelection(dialog.Result.Id);
             UpdateTopBarState();
-            Log($"已更新 Building：{dialog.Result.Id} - {dialog.Result.Name}。");
+            Log($"Updated Building: {dialog.Result.Id} - {dialog.Result.Name}.");
         }
         catch (Exception ex)
         {
-            Log($"打开 Building 编辑失败：{ex.Message}");
+            Log($"Failed to open Building editor: {ex.Message}");
         }
     }
 
     private void OpenDynamicEditor_Click(object sender, RoutedEventArgs e)
     {
+        if (!IsDynamicDevEnabled)
+        {
+            return;
+        }
+
         if (!EnsureModOpen() || !EnsureGameDataReady())
         {
             return;
@@ -1094,11 +1150,11 @@ public partial class MainWindow : Window
             RefreshTileBoardAfterMutation(TreeSelectionKind.DynamicNode);
             SyncDynamicTileSelection(dialog.Result.Id);
             UpdateTopBarState();
-            Log($"已更新 Dynamic：{dialog.Result.Id} - {dialog.Result.Name}。");
+            Log($"Updated Dynamic: {dialog.Result.Id} - {dialog.Result.Name}.");
         }
         catch (Exception ex)
         {
-            Log($"打开 Dynamic 编辑失败：{ex.Message}");
+            Log($"Failed to open Dynamic editor: {ex.Message}");
         }
     }
 
@@ -1118,11 +1174,11 @@ public partial class MainWindow : Window
         {
             var deleted = DeleteMetaFiles(currentModRoot!);
             BuildOverviewNavigationTree();
-            Log($"已删除 {deleted} 个 .meta 文件。");
+            Log($"Deleted {deleted} .meta file(s).");
         }
         catch (Exception ex)
         {
-            Log($"清理 .meta 失败：{ex.Message}");
+            Log($"Failed to clean .meta files: {ex.Message}");
         }
     }
 
@@ -1210,11 +1266,11 @@ public partial class MainWindow : Window
                             ApplyTileBoardForSelection(ClassifyTreeItem(item));
                         }
 
-                        Log($"已载入 XML：{relativePath}");
+                        Log($"Loaded XML: {relativePath}");
                     }
                     catch (Exception ex)
                     {
-                        Log($"载入 XML 失败：{ex.Message}");
+                        Log($"Failed to load XML: {ex.Message}");
                     }
                 }
                 else
@@ -1293,11 +1349,11 @@ public partial class MainWindow : Window
             RefreshOverviewList();
             BuildOverviewNavigationTree();
             UpdateTopBarState();
-            Log($"已删除 MOD：{folderName}");
+            Log($"Deleted Mod: {folderName}");
         }
         catch (Exception ex)
         {
-            Log($"删除 MOD 失败：{ex.Message}");
+            Log($"Failed to delete Mod: {ex.Message}");
             System.Windows.MessageBox.Show(this, ex.Message, Loc.Get("Str.Main.DeleteMod"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
@@ -1309,7 +1365,7 @@ public partial class MainWindow : Window
             return;
         }
 
-        if (ClassifyCurrentSelection() == TreeSelectionKind.DynamicNode)
+        if (IsDynamicDevEnabled && ClassifyCurrentSelection() == TreeSelectionKind.DynamicNode)
         {
             DeleteDynamic_Click(sender, e);
             return;
@@ -1340,11 +1396,11 @@ public partial class MainWindow : Window
             ParseBuildingsFromEditor();
             RefreshBuildingNodesInTree();
             UpdateTopBarState();
-            Log($"已删除 Building：id={selectedId} - {selectedName}。");
+            Log($"Deleted Building: id={selectedId} - {selectedName}.");
         }
         catch (Exception ex)
         {
-            Log($"删除 Building 失败：{ex.Message}");
+            Log($"Failed to delete Building: {ex.Message}");
             System.Windows.MessageBox.Show(this, ex.Message, Loc.Get("Str.Main.DeleteBuildingTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
@@ -1377,11 +1433,11 @@ public partial class MainWindow : Window
             RefreshDynamicNodesInTree();
             RefreshTileBoardAfterMutation(TreeSelectionKind.DynamicsXml);
             UpdateTopBarState();
-            Log($"已删除 Dynamic：id={selectedId} - {selectedName}。");
+            Log($"Deleted Dynamic: id={selectedId} - {selectedName}.");
         }
         catch (Exception ex)
         {
-            Log($"删除 Dynamic 失败：{ex.Message}");
+            Log($"Failed to delete Dynamic: {ex.Message}");
             System.Windows.MessageBox.Show(this, ex.Message, Loc.Get("Str.Main.DeleteDynamicTitle"), MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
@@ -1395,9 +1451,10 @@ public partial class MainWindow : Window
 
         try
         {
-            var preferDynamic = ClassifyCurrentSelection() is TreeSelectionKind.DynamicsXml
-                or TreeSelectionKind.DynamicFolder
-                or TreeSelectionKind.DynamicNode;
+            var preferDynamic = IsDynamicDevEnabled &&
+                                ClassifyCurrentSelection() is TreeSelectionKind.DynamicsXml
+                                    or TreeSelectionKind.DynamicFolder
+                                    or TreeSelectionKind.DynamicNode;
             var (nextId, nextName) = preferDynamic
                 ? SuggestNewDynamicDefaults()
                 : SuggestNewBuildingDefaults();
@@ -1435,7 +1492,7 @@ public partial class MainWindow : Window
                 currentModRoot!,
                 gameData,
                 isDynamicCategory: preferDynamic,
-                allowCategoryChange: true,
+                allowCategoryChange: IsDynamicDevEnabled,
                 suggestBuildingDefaults: SuggestNewBuildingDefaults,
                 suggestDynamicDefaults: SuggestNewDynamicDefaults,
                 preferDynamicWorkbenchId: PreferFarmingGolemWorkbenchOrDefault)
@@ -1447,7 +1504,7 @@ public partial class MainWindow : Window
                 return;
             }
 
-            if (dialog.IsDynamicCategory)
+            if (IsDynamicDevEnabled && dialog.IsDynamicCategory)
             {
                 UpsertDynamicToDynamicsXml(dialog.Result);
                 SaveDynamicsXmlToDisk();
@@ -1455,7 +1512,7 @@ public partial class MainWindow : Window
                 RefreshDynamicNodesInTree();
                 RefreshTileBoardAfterMutation(TreeSelectionKind.DynamicsXml);
                 SyncDynamicTileSelection(dialog.Result.Id);
-                Log($"已新增 Dynamic：{dialog.Result.Id} - {dialog.Result.Name} ({dialog.Result.Type})。");
+                Log($"Added Dynamic: {dialog.Result.Id} - {dialog.Result.Name} ({dialog.Result.Type}).");
             }
             else
             {
@@ -1465,14 +1522,14 @@ public partial class MainWindow : Window
                 RefreshBuildingNodesInTree();
                 RefreshTileBoardAfterMutation(TreeSelectionKind.BuildingsXml);
                 SyncBuildingTileSelection(dialog.Result.Id);
-                Log($"已新增 Building：{dialog.Result.Id} - {dialog.Result.Name} ({dialog.Result.Type})。");
+                Log($"Added Building: {dialog.Result.Id} - {dialog.Result.Name} ({dialog.Result.Type}).");
             }
 
             UpdateTopBarState();
         }
         catch (Exception ex)
         {
-            Log($"新增组件失败：{ex.Message}");
+            Log($"Failed to add component: {ex.Message}");
         }
     }
 
@@ -1596,9 +1653,9 @@ public partial class MainWindow : Window
 
         var messages = new List<string>();
         ValidateBuildingsXml(messages);
-        if (messages.Any(message => message.StartsWith("[错误]", StringComparison.Ordinal)))
+        if (messages.Any(message => message.StartsWith("[Error]", StringComparison.Ordinal)))
         {
-            Log("Buildings.xml 写盘前校验发现问题：" + Environment.NewLine + string.Join(Environment.NewLine, messages));
+            Log("Buildings.xml validation issues before save:" + Environment.NewLine + string.Join(Environment.NewLine, messages));
         }
 
         var path = GetFullPath(BuildingsXmlRelativePath);
@@ -1632,9 +1689,9 @@ public partial class MainWindow : Window
 
         var messages = new List<string>();
         ValidateDynamicsXml(messages);
-        if (messages.Any(message => message.StartsWith("[错误]", StringComparison.Ordinal)))
+        if (messages.Any(message => message.StartsWith("[Error]", StringComparison.Ordinal)))
         {
-            Log("Dynamics.xml 写盘前校验发现问题：" + Environment.NewLine + string.Join(Environment.NewLine, messages));
+            Log("Dynamics.xml validation issues before save:" + Environment.NewLine + string.Join(Environment.NewLine, messages));
         }
 
         var path = GetFullPath(DynamicsXmlRelativePath);
@@ -1651,24 +1708,24 @@ public partial class MainWindow : Window
         }
         catch (Exception ex) when (ex is XmlException or InvalidOperationException)
         {
-            messages.Add($"[错误] main.xml 不是合法 XML：{ex.Message}");
+            messages.Add($"[Error] main.xml is not valid XML: {ex.Message}");
             return;
         }
 
         if (document.Root?.Name.LocalName != "defs")
         {
-            messages.Add($"[错误] main.xml 根节点应为 <defs>，当前为 <{document.Root?.Name.LocalName ?? "空"}>。");
+            messages.Add($"[Error] main.xml root must be <defs>, found <{document.Root?.Name.LocalName ?? "null"}>.");
             return;
         }
 
         var description = document.Root.Elements().FirstOrDefault(e => e.Name.LocalName == "description")?.Value;
         if (string.IsNullOrWhiteSpace(description))
         {
-            messages.Add("[错误] main.xml 的 <description> 为必填项。");
+            messages.Add("[Error] main.xml <description> is required.");
         }
 
-        ValidateRequiredRootImage(modRoot, ModRootAssets.IconRelativePath, "MOD 图标 icon.png", messages);
-        ValidateRequiredRootImage(modRoot, ModRootAssets.ScreenshotRelativePath, "MOD 截图 screenshot.png", messages);
+        ValidateRequiredRootImage(modRoot, ModRootAssets.IconRelativePath, "mod icon icon.png", messages);
+        ValidateRequiredRootImage(modRoot, ModRootAssets.ScreenshotRelativePath, "mod screenshot screenshot.png", messages);
     }
 
     private static void ValidateRequiredRootImage(string modRoot, string relativePath, string label, List<string> messages)
@@ -1676,7 +1733,7 @@ public partial class MainWindow : Window
         var path = Path.Combine(modRoot, relativePath);
         if (!File.Exists(path))
         {
-            messages.Add($"[错误] 缺少{label}：{relativePath}。");
+            messages.Add($"[Error] Missing {label}: {relativePath}.");
         }
     }
 
@@ -1689,13 +1746,13 @@ public partial class MainWindow : Window
         }
         catch (Exception ex) when (ex is XmlException or InvalidOperationException)
         {
-            messages.Add($"[错误] Buildings.xml 不是合法 XML：{ex.Message}");
+            messages.Add($"[Error] Buildings.xml is not valid XML: {ex.Message}");
             return;
         }
 
         if (document.Root?.Name.LocalName != "ArrayOfModBuildingXML")
         {
-            messages.Add($"[错误] Buildings.xml 根节点应为 <ArrayOfModBuildingXML>，当前为 <{document.Root?.Name.LocalName ?? "空"}>。");
+            messages.Add($"[Error] Buildings.xml root must be <ArrayOfModBuildingXML>, found <{document.Root?.Name.LocalName ?? "null"}>.");
             return;
         }
 
@@ -1705,13 +1762,13 @@ public partial class MainWindow : Window
             var idText = element.Elements().FirstOrDefault(e => e.Name.LocalName == "id")?.Value;
             if (!int.TryParse(idText, out var id))
             {
-                messages.Add("[错误] 存在缺少有效 <id> 的 ModBuildingXML。");
+                messages.Add("[Error] Found ModBuildingXML without a valid <id>.");
                 continue;
             }
 
             if (!seenIds.Add(id))
             {
-                messages.Add($"[错误] 建筑 id 重复：{id}。");
+                messages.Add($"[Error] Duplicate building id: {id}.");
             }
 
             ValidatePositiveInt(element, "direction", id, messages);
@@ -1733,7 +1790,7 @@ public partial class MainWindow : Window
             var size = element.Elements().FirstOrDefault(e => e.Name.LocalName == "size");
             if (size is null)
             {
-                messages.Add($"[错误] 建筑 {id} 缺少 <size>。");
+                messages.Add($"[Error] Building {id} is missing <size>.");
             }
             else
             {
@@ -1754,7 +1811,7 @@ public partial class MainWindow : Window
             ValidateOptionalBool(element, "barrier", id, messages);
         }
 
-        messages.Add($"[信息] 识别到 {seenIds.Count} 个建筑条目。");
+        messages.Add($"[Info] Found {seenIds.Count} building entries.");
     }
 
     private static void ValidatePositiveInt(XElement parent, string childName, int buildingId, List<string> messages, string scope = "building")
@@ -1762,7 +1819,7 @@ public partial class MainWindow : Window
         var value = parent.Elements().FirstOrDefault(e => e.Name.LocalName == childName)?.Value;
         if (!int.TryParse(value, out var number) || number <= 0)
         {
-            messages.Add($"[错误] 建筑 {buildingId} 的 {scope}.{childName} 需要是正整数。");
+            messages.Add($"[Error] Building {buildingId} {scope}.{childName} must be a positive integer.");
         }
     }
 
@@ -1776,7 +1833,7 @@ public partial class MainWindow : Window
 
         if (!bool.TryParse(value.Trim(), out _))
         {
-            messages.Add($"[错误] 建筑 {buildingId} 的 building.{childName} 需要是 true 或 false。");
+            messages.Add($"[Error] Building {buildingId} building.{childName} must be true or false.");
         }
     }
 
@@ -1785,7 +1842,7 @@ public partial class MainWindow : Window
         var value = parent.Elements().FirstOrDefault(e => e.Name.LocalName == "simulateId")?.Value;
         if (!int.TryParse(value, out var simulateId) || simulateId <= 0)
         {
-            messages.Add($"[错误] 建筑 {buildingId} 的 building.simulateId 需要是正整数。");
+            messages.Add($"[Error] Building {buildingId} building.simulateId must be a positive integer.");
             return;
         }
 
@@ -1793,7 +1850,7 @@ public partial class MainWindow : Window
         {
             if (!FarmingGolemOptions.IsKnownSimulateId(simulateId))
             {
-                messages.Add($"[错误] 条目 {buildingId} 的 simulateId 不是有效农业傀儡角色（20191/20192/20193）：{simulateId}。");
+                messages.Add($"[Error] Entry {buildingId} simulateId is not a valid farming golem role (20191/20192/20193): {simulateId}.");
             }
 
             return;
@@ -1801,13 +1858,13 @@ public partial class MainWindow : Window
 
         if (gameData.ProductionLines.Count == 0)
         {
-            messages.Add($"[警告] 未加载 {GameDataPaths.ProductionLinesFileName}，无法校验建筑 {buildingId} 的 simulateId。");
+            messages.Add($"[Warn] {GameDataPaths.ProductionLinesFileName} not loaded; cannot validate simulateId for building {buildingId}.");
             return;
         }
 
         if (gameData.FindProductionLine(simulateId) is null)
         {
-            messages.Add($"[错误] 建筑 {buildingId} 的 simulateId 不在 {GameDataPaths.ProductionLinesFileName} 中：{simulateId}。");
+            messages.Add($"[Error] Building {buildingId} simulateId is not in {GameDataPaths.ProductionLinesFileName}: {simulateId}.");
         }
     }
 
@@ -1857,6 +1914,15 @@ public partial class MainWindow : Window
     private void ParseDynamicsFromEditor()
     {
         dynamics.Clear();
+        if (!IsDynamicDevEnabled)
+        {
+            if (tileBoardMode == TileBoardMode.Combined)
+            {
+                RebuildCombinedTiles();
+            }
+
+            return;
+        }
 
         try
         {
@@ -1902,6 +1968,11 @@ public partial class MainWindow : Window
 
     private void ValidateDynamicsXml(List<string> messages)
     {
+        if (!IsDynamicDevEnabled)
+        {
+            return;
+        }
+
         XDocument document;
         try
         {
@@ -1909,13 +1980,13 @@ public partial class MainWindow : Window
         }
         catch (Exception ex) when (ex is XmlException or InvalidOperationException)
         {
-            messages.Add($"[错误] Dynamics.xml 不是合法 XML：{ex.Message}");
+            messages.Add($"[Error] Dynamics.xml is not valid XML: {ex.Message}");
             return;
         }
 
         if (document.Root?.Name.LocalName != "ArrayOfModDynamicXML")
         {
-            messages.Add($"[错误] Dynamics.xml 根节点应为 <ArrayOfModDynamicXML>，当前为 <{document.Root?.Name.LocalName ?? "空"}>。");
+            messages.Add($"[Error] Dynamics.xml root must be <ArrayOfModDynamicXML>, found <{document.Root?.Name.LocalName ?? "null"}>.");
             return;
         }
 
@@ -1925,13 +1996,13 @@ public partial class MainWindow : Window
             var idText = element.Elements().FirstOrDefault(e => e.Name.LocalName == "id")?.Value;
             if (!int.TryParse(idText, out var id))
             {
-                messages.Add("[错误] 存在缺少有效 <id> 的 ModDynamicXML。");
+                messages.Add("[Error] Found ModDynamicXML without a valid <id>.");
                 continue;
             }
 
             if (!seenIds.Add(id))
             {
-                messages.Add($"[错误] Dynamic id 重复：{id}。");
+                messages.Add($"[Error] Duplicate Dynamic id: {id}.");
             }
 
             ValidatePositiveInt(element, "direction", id, messages);
@@ -1947,7 +2018,7 @@ public partial class MainWindow : Window
                 var sheetError = FarmingGolemPartsSheet.ValidateExportedAssets(currentModRoot, id);
                 if (sheetError is not null)
                 {
-                    messages.Add($"[错误] Dynamic {id}：{sheetError}");
+                    messages.Add($"[Error] Dynamic {id}: {sheetError}");
                 }
             }
 
@@ -1957,7 +2028,7 @@ public partial class MainWindow : Window
             var size = element.Elements().FirstOrDefault(e => e.Name.LocalName == "size");
             if (size is null)
             {
-                messages.Add($"[错误] Dynamic {id} 缺少 <size>。");
+                messages.Add($"[Error] Dynamic {id} is missing <size>.");
             }
             else
             {
@@ -1976,7 +2047,7 @@ public partial class MainWindow : Window
                         scale > DynamicFieldOptions.MaxVisualScale)
                     {
                         messages.Add(
-                            $"[错误] Dynamic {id} 的 scale 须在 {DynamicFieldOptions.MinVisualScale}–{DynamicFieldOptions.MaxVisualScale} 之间。");
+                            $"[Error] Dynamic {id} scale must be between {DynamicFieldOptions.MinVisualScale} and {DynamicFieldOptions.MaxVisualScale}.");
                     }
                     else if (size is not null && DynamicFieldOptions.UsesScaledPlaceSize(typeValue))
                     {
@@ -1986,13 +2057,13 @@ public partial class MainWindow : Window
                         if (sxOk && sx != expected.X)
                         {
                             messages.Add(
-                                $"[错误] Dynamic {id} 的 size.x 应按原版占地×scale 为 {expected.X}，当前为 {sx}。");
+                                $"[Error] Dynamic {id} size.x should be {expected.X} (base footprint × scale), found {sx}.");
                         }
 
                         if (syOk && sy != expected.Y)
                         {
                             messages.Add(
-                                $"[错误] Dynamic {id} 的 size.y 应按原版占地×scale 为 {expected.Y}，当前为 {sy}。");
+                                $"[Error] Dynamic {id} size.y should be {expected.Y} (base footprint × scale), found {sy}.");
                         }
                     }
                 }
@@ -2009,12 +2080,12 @@ public partial class MainWindow : Window
             }
         }
 
-        messages.Add($"[信息] 识别到 {seenIds.Count} 个 Dynamic 条目。");
+        messages.Add($"[Info] Found {seenIds.Count} Dynamic entries.");
     }
 
     private void RefreshDynamicNodesInTree()
     {
-        if (!EnsureModOpen(showMessage: false))
+        if (!IsDynamicDevEnabled || !EnsureModOpen(showMessage: false))
         {
             return;
         }
@@ -2371,20 +2442,24 @@ public partial class MainWindow : Window
         return entries;
     }
 
-    private static void AppendModExplorerChildren(
+    private void AppendModExplorerChildren(
         TreeViewItem modNode,
         string modRoot,
         IReadOnlyList<BuildingEntry> buildingEntries,
         IReadOnlyList<BuildingEntry> dynamicEntries)
     {
-        TryMigrateRootDynamicFolderIntoThing(modRoot);
+        var includeDynamic = IsDynamicDevEnabled;
+        if (includeDynamic)
+        {
+            TryMigrateRootDynamicFolderIntoThing(modRoot);
+        }
 
         foreach (var relativePath in new[] { MainXmlRelativePath, ModRootAssets.IconRelativePath, ModRootAssets.ScreenshotRelativePath })
         {
             var path = Path.Combine(modRoot, relativePath);
             modNode.Items.Add(new TreeViewItem
             {
-                Header = File.Exists(path) ? relativePath : $"{relativePath}（缺失）",
+                Header = File.Exists(path) ? relativePath : $"{relativePath} (missing)",
                 Tag = path,
                 IsExpanded = false
             });
@@ -2401,7 +2476,8 @@ public partial class MainWindow : Window
         var dynamicFolderPath = Path.Combine(modRoot, DynamicFolderRelativePath);
         var buildingsXmlPath = Path.Combine(modRoot, BuildingsXmlRelativePath);
         var dynamicsXmlPath = Path.Combine(modRoot, DynamicsXmlRelativePath);
-        if (!Directory.Exists(thingPath) && !File.Exists(buildingsXmlPath) && !File.Exists(dynamicsXmlPath))
+        if (!Directory.Exists(thingPath) && !File.Exists(buildingsXmlPath) &&
+            !(includeDynamic && File.Exists(dynamicsXmlPath)))
         {
             return;
         }
@@ -2422,7 +2498,7 @@ public partial class MainWindow : Window
 
         var buildingsXmlNode = new TreeViewItem
         {
-            Header = File.Exists(buildingsXmlPath) ? "Buildings.xml" : "Buildings.xml（未创建）",
+            Header = File.Exists(buildingsXmlPath) ? "Buildings.xml" : "Buildings.xml (missing)",
             Tag = buildingsXmlPath,
             IsExpanded = false
         };
@@ -2439,34 +2515,38 @@ public partial class MainWindow : Window
 
         buildingsFolderNode.Items.Add(buildingsXmlNode);
 
-        var dynamicFolderNode = new TreeViewItem
-        {
-            Header = "Dynamic",
-            Tag = dynamicFolderPath,
-            IsExpanded = true
-        };
+        thingNode.Items.Add(buildingsFolderNode);
 
-        var dynamicsXmlNode = new TreeViewItem
+        if (includeDynamic)
         {
-            Header = File.Exists(dynamicsXmlPath) ? "Dynamics.xml" : "Dynamics.xml（未创建）",
-            Tag = dynamicsXmlPath,
-            IsExpanded = false
-        };
-
-        foreach (var d in dynamicEntries.OrderBy(d => d.Id))
-        {
-            dynamicsXmlNode.Items.Add(new TreeViewItem
+            var dynamicFolderNode = new TreeViewItem
             {
-                Header = d.DisplayName,
-                Tag = new DynamicTreeTag(modRoot, d.Id),
+                Header = "Dynamic",
+                Tag = dynamicFolderPath,
+                IsExpanded = true
+            };
+
+            var dynamicsXmlNode = new TreeViewItem
+            {
+                Header = File.Exists(dynamicsXmlPath) ? "Dynamics.xml" : "Dynamics.xml (missing)",
+                Tag = dynamicsXmlPath,
                 IsExpanded = false
-            });
+            };
+
+            foreach (var d in dynamicEntries.OrderBy(d => d.Id))
+            {
+                dynamicsXmlNode.Items.Add(new TreeViewItem
+                {
+                    Header = d.DisplayName,
+                    Tag = new DynamicTreeTag(modRoot, d.Id),
+                    IsExpanded = false
+                });
+            }
+
+            dynamicFolderNode.Items.Add(dynamicsXmlNode);
+            thingNode.Items.Add(dynamicFolderNode);
         }
 
-        dynamicFolderNode.Items.Add(dynamicsXmlNode);
-
-        thingNode.Items.Add(buildingsFolderNode);
-        thingNode.Items.Add(dynamicFolderNode);
         modNode.Items.Add(thingNode);
     }
 
@@ -2481,7 +2561,7 @@ public partial class MainWindow : Window
         {
             ModFileTree.Items.Add(new TreeViewItem
             {
-                Header = "（Mods 目录不可用）",
+                Header = "Mods directory unavailable",
                 IsEnabled = false
             });
             return;
@@ -2499,7 +2579,9 @@ public partial class MainWindow : Window
         {
             var modNode = CreateOverviewModTreeItem(entry, isExpanded: false);
             var buildingEntries = ReadBuildingEntriesFromMod(entry.FullPath);
-            var dynamicEntries = ReadDynamicEntriesFromMod(entry.FullPath);
+            var dynamicEntries = IsDynamicDevEnabled
+                ? ReadDynamicEntriesFromMod(entry.FullPath)
+                : Array.Empty<BuildingEntry>();
             AppendModExplorerChildren(modNode, entry.FullPath, buildingEntries, dynamicEntries);
             root.Items.Add(modNode);
         }
@@ -2805,14 +2887,14 @@ public partial class MainWindow : Window
         var doc = XDocument.Parse(buildingsXmlText, LoadOptions.PreserveWhitespace);
         if (doc.Root?.Name.LocalName != "ArrayOfModBuildingXML")
         {
-            throw new InvalidOperationException("Buildings.xml 根节点不是 ArrayOfModBuildingXML。");
+            throw new InvalidOperationException("Buildings.xml root is not ArrayOfModBuildingXML.");
         }
 
         if (doc.Root.Elements().Any(e => e.Name.LocalName == "ModBuildingXML" &&
                                         int.TryParse(e.Elements().FirstOrDefault(x => x.Name.LocalName == "id")?.Value, out var id) &&
                                         id == b.Id))
         {
-            throw new InvalidOperationException($"Buildings.xml 中已存在相同 id：{b.Id}。");
+            throw new InvalidOperationException($"Buildings.xml already contains id: {b.Id}.");
         }
 
         var element = CreateModBuildingXmlElement(
@@ -2841,7 +2923,7 @@ public partial class MainWindow : Window
     private sealed record OverviewModEntry(string FullPath, string FolderName, bool HasMainXml, string Category)
     {
         public string DisplayName
-            => HasMainXml ? FolderName : $"{FolderName}（未创建 main.xml）";
+            => HasMainXml ? FolderName : $"{FolderName} (missing main.xml)";
     }
 
     private EditableBuilding GetEditableBuildingFromSelectionOrDefaults()
@@ -2945,7 +3027,7 @@ public partial class MainWindow : Window
         var doc = XDocument.Parse(buildingsXmlText, LoadOptions.PreserveWhitespace);
         if (doc.Root?.Name.LocalName != "ArrayOfModBuildingXML")
         {
-            throw new InvalidOperationException("Buildings.xml 根节点不是 ArrayOfModBuildingXML。");
+            throw new InvalidOperationException("Buildings.xml root is not ArrayOfModBuildingXML.");
         }
 
         var existing = doc.Root.Elements().FirstOrDefault(e => e.Name.LocalName == "ModBuildingXML" &&
@@ -3040,7 +3122,7 @@ public partial class MainWindow : Window
             }
             catch (Exception ex)
             {
-                Log($"迁移建筑图片失败（{oldId}→{newId}）：{ex.Message}");
+                Log($"Failed to migrate building images ({oldId}→{newId}): {ex.Message}");
             }
         }
     }
@@ -3050,7 +3132,7 @@ public partial class MainWindow : Window
         var doc = XDocument.Parse(buildingsXmlText, LoadOptions.PreserveWhitespace);
         if (doc.Root?.Name.LocalName != "ArrayOfModBuildingXML")
         {
-            throw new InvalidOperationException("Buildings.xml 根节点不是 ArrayOfModBuildingXML。");
+            throw new InvalidOperationException("Buildings.xml root is not ArrayOfModBuildingXML.");
         }
 
         var existing = doc.Root.Elements().FirstOrDefault(e => e.Name.LocalName == "ModBuildingXML" &&
@@ -3080,7 +3162,7 @@ public partial class MainWindow : Window
         var doc = XDocument.Parse(dynamicsXmlText, LoadOptions.PreserveWhitespace);
         if (doc.Root?.Name.LocalName != "ArrayOfModDynamicXML")
         {
-            throw new InvalidOperationException("Dynamics.xml 根节点不是 ArrayOfModDynamicXML。");
+            throw new InvalidOperationException("Dynamics.xml root is not ArrayOfModDynamicXML.");
         }
 
         var existing = doc.Root.Elements().FirstOrDefault(e => e.Name.LocalName == "ModDynamicXML" &&
@@ -3108,7 +3190,7 @@ public partial class MainWindow : Window
         var doc = XDocument.Parse(dynamicsXmlText, LoadOptions.PreserveWhitespace);
         if (doc.Root?.Name.LocalName != "ArrayOfModDynamicXML")
         {
-            throw new InvalidOperationException("Dynamics.xml 根节点不是 ArrayOfModDynamicXML。");
+            throw new InvalidOperationException("Dynamics.xml root is not ArrayOfModDynamicXML.");
         }
 
         var existing = doc.Root.Elements().FirstOrDefault(e => e.Name.LocalName == "ModDynamicXML" &&

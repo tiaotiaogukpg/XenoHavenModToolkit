@@ -13,6 +13,11 @@ internal sealed class AppSettings
     /// </summary>
     public string? Language { get; set; }
 
+    /// <summary>
+    /// 开发开关：为 true 时显示 Dynamic / 农业傀儡相关功能；默认 false（对外隐藏）。
+    /// </summary>
+    public bool EnableDynamicDevFeatures { get; set; }
+
     public static string GetConfigFilePath() => AppPaths.GetConfigFilePath();
 
     public static AppSettings Load()

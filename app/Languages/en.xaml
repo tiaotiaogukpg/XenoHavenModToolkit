@@ -36,6 +36,8 @@
     <sys:String x:Key="Str.Main.SteamReconnectTip">Retry after starting Steam and signing in</sys:String>
     <sys:String x:Key="Str.Main.About">About</sys:String>
     <sys:String x:Key="Str.Main.AboutTip">Show app name and version</sys:String>
+    <sys:String x:Key="Str.Main.Settings">Settings</sys:String>
+    <sys:String x:Key="Str.Main.SettingsTip">App settings (hold Alt to show developer options)</sys:String>
     <sys:String x:Key="Str.Main.ConsoleTitle">CONSOLE / Log / Validation</sys:String>
     <sys:String x:Key="Str.Main.SteamAccountTitle">Steam Account</sys:String>
     <sys:String x:Key="Str.Main.SteamConnectFailed">Could not connect to Steam.
@@ -168,6 +170,12 @@ Created item PublishedFileId={0}, but writing main.xml failed: {1}</sys:String>
     <!-- AppSettings -->
     <sys:String x:Key="Str.Settings.SaveFailed">Failed to save settings: {0}
 {1}</sys:String>
+    <sys:String x:Key="Str.Settings.Title">Settings</sys:String>
+    <sys:String x:Key="Str.Settings.OpenLastMod">Open last project on startup</sys:String>
+    <sys:String x:Key="Str.Settings.Advanced">Developer options</sys:String>
+    <sys:String x:Key="Str.Settings.EnableDynamicDev">Enable Dynamic / Farming Golem features</sys:String>
+    <sys:String x:Key="Str.Settings.EnableDynamicDevTip">When off, hides the Dynamic tree, golem editor, and category picker (default off).</sys:String>
+    <sys:String x:Key="Str.Settings.UnlockHint">Hold Alt and open Settings to reveal developer options.</sys:String>
 
     <!-- About -->
     <sys:String x:Key="Str.About.Title">About</sys:String>
